@@ -26,9 +26,8 @@ for url, name in LIBS.items():
     src = src.replace(tag, '<script>' + code + '</script>')
 
 # 2. Replace the Google Fonts link with embedded font files.
-FONTS = [('Alexandria', 'alexandria', [500, 700], ['arabic', 'latin']),
-         ('IBM Plex Sans Arabic', 'ibm-plex-sans-arabic', [400, 500, 600], ['arabic', 'latin']),
-         ('IBM Plex Mono', 'ibm-plex-mono', [500, 600], ['latin'])]
+FONTS = [('Readex Pro', 'readex-pro', [400, 500, 600, 700], ['arabic', 'latin']),
+         ('Spectral', 'spectral', [700], ['latin'])]
 ranges = json.loads((VENDOR / 'fonts' / 'ranges.json').read_text())
 faces = []
 for family, slug, weights, subsets in FONTS:
@@ -47,7 +46,7 @@ title = re.search(r'<title>.*?</title>', src).group(0)
 src = src.replace(title, '', 1)
 head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-        '<meta name="theme-color" content="#14202B"><link rel="manifest" href="manifest.webmanifest">'
+        '<meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest">'
         '<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">'
         '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان">'
         '<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}'
@@ -62,7 +61,7 @@ manifest = {
     "name": "ميزان يومي", "short_name": "ميزان",
     "description": "يومك موزون بين الكلية والكورس والشغل والجيم والقرآن",
     "lang": "ar", "dir": "rtl", "start_url": "./", "scope": "./", "display": "standalone",
-    "orientation": "any", "background_color": "#EEF1F4", "theme_color": "#14202B",
+    "orientation": "any", "background_color": "#E7ECE3", "theme_color": "#6E1A28",
     "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
               {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
               {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]}
@@ -84,29 +83,34 @@ self.addEventListener('fetch', e => {{
 }});
 """, encoding='utf-8')
 
-# 6. Icons: a balance with a green and an amber pan.
+# 6. Icons: the guilloche rosette in paper ink on the oxblood shell colour.
 try:
     from PIL import Image, ImageDraw
 except ImportError:
     print('Pillow not installed; icons left as they are')
 else:
-    INK, PAPER, GREEN, AMBER = (20, 32, 43), (238, 241, 244), (74, 203, 145), (241, 176, 74)
+    import math
+    SHELL, PAPER, OCHRE = (110, 26, 40), (250, 251, 246), (228, 197, 92)
     def icon(size, maskable=False):
         k = 4; W = 512 * k
         if maskable:
-            im = Image.new('RGBA', (W, W), INK + (255,)); d = ImageDraw.Draw(im)
+            im = Image.new('RGBA', (W, W), SHELL + (255,)); d = ImageDraw.Draw(im)
         else:
             im = Image.new('RGBA', (W, W), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
-            d.rounded_rectangle([0, 0, W - 1, W - 1], radius=112 * k, fill=INK + (255,))
-        sc = 0.86 if maskable else 1.0
-        P = lambda x, y: ((256 + (x - 256) * sc) * k, (256 + (y - 256) * sc) * k)
-        line = lambda a, b, w: d.line([P(*a), P(*b)], fill=PAPER, width=int(w * k * sc))
-        line((256, 150), (256, 372), 22); line((176, 384), (336, 384), 24); line((120, 180), (392, 180), 20)
-        cx, cy = P(256, 148); r = 22 * k * sc; d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=PAPER)
-        for x0, col in ((120, GREEN), (392, AMBER)):
-            line((x0, 180), (x0 - 44, 272), 8); line((x0, 180), (x0 + 44, 272), 8)
-            a, b = P(x0 - 58, 232), P(x0 + 58, 312)
-            d.pieslice([a[0], a[1], b[0], b[1]], 0, 180, fill=col)
+            d.rounded_rectangle([0, 0, W - 1, W - 1], radius=112 * k, fill=SHELL + (255,))
+        sc = (0.78 if maskable else 0.9) * k
+        cx = cy = W / 2
+        for i in range(48):
+            ang = math.radians(i * 7.5)
+            col = OCHRE if i >= 24 else PAPER
+            pts = []
+            for t in range(0, 361, 6):
+                tt = math.radians(t)
+                x, y = 92 + 92 * math.cos(tt), 30 * math.sin(tt)
+                pts.append((cx + (x * math.cos(ang) - y * math.sin(ang)) * sc, cy + (x * math.sin(ang) + y * math.cos(ang)) * sc))
+            d.line(pts, fill=col, width=int(3.2 * k))
+        r = 52 * sc; d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=SHELL)
+        r2 = 52 * sc; d.ellipse([cx - r2, cy - r2, cx + r2, cy + r2], outline=PAPER, width=int(3 * k))
         return im.resize((size, size), Image.LANCZOS)
     icon(192).save(ROOT / 'icon-192.png'); icon(512).save(ROOT / 'icon-512.png')
     icon(512, True).save(ROOT / 'icon-maskable-512.png')

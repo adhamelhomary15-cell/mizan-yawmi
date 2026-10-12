@@ -22,7 +22,7 @@ A personal day planner built around the Egyptian student's real day: Arabic and 
 
 ## Operating Context
 
-- Used mostly on the phone, many short opens through the day to tick off finished blocks, and at night to review how the day went.
+- Used mostly on the phone outdoors in daylight, many short opens through the day to tick off finished blocks, and at night to review how the day went.
 - Also opened on a laptop.
 - Installed to the home screen as a PWA from GitHub Pages and expected to work offline.
 - The day runs roughly 7:00 to 1:00 at night; the app treats the day as ending at 1:00.
@@ -32,13 +32,14 @@ A personal day planner built around the Egyptian student's real day: Arabic and 
 - Tabs: Today (timeline with check-offs, prayer times, main-course target card, day progress), Week (shape of the week, planned vs done hours, per-subject study), Course (main course modules by week, add new courses from a template, pick the main course), Tasks (one-off tasks with due dates, weekly fixed appointments).
 - Schedule is defined in code (`src/planner.html`, `SCHED`), with two variants per day that switch when Maghrib moves across 5:45pm (the clocks change at the end of October).
 - Progress lives on the device (localStorage); the claude.ai artifact copy syncs through the account instead. Copies do not share progress.
-- Schedule changes: small ones should be possible inside the app by the user; bigger ones are made through Claude in the repo. In-app schedule editing does not exist yet.
+- Schedule changes: small ones happen inside the app (skip a block for a day, add a one-off block); bigger ones are made through Claude in the repo.
 - Single self-contained HTML file, no build step beyond `tools/build.py` inlining libraries and fonts. Libraries: Preact + htm, adhan (Egyptian General Authority of Survey method).
 - Midterm dates are unknown (expected late November or December).
 
 ## Brand Commitments
 
-- Name: ميزان يومي. Short name on the home screen: ميزان. Icon: a balance with a green pan and an amber pan.
+- Name: ميزان يومي (binding). Short name on the home screen: ميزان. Icon: the guilloche rosette on oxblood (changed in the October redesign; the owner kept only the name as binding).
+- Avoid: Islamic ornament as decoration, neon or glow, anything that reads as a corporate app.
 - Language: Egyptian colloquial Arabic for all UI copy; course and subject names stay in English as the university writes them.
 
 ## Evidence on Hand

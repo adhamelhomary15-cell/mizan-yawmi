@@ -1,29 +1,33 @@
 <title>ميزان يومي</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&family=Spectral:wght@700&display=swap">
 <style>
-/* Layout: phone-first RTL app. Bottom tab bar on phones, side rail from 960px. Today leads with the block in progress. */
+/* Layout: phone-first RTL app. Oxblood shell (bottom bar on phones, side rail from 960px). World: Egyptian banknote inks on security paper; signature: the day's guilloche rosette. */
 :root{
-  --bg:#EEF1F4; --surface:#FFFFFF; --fg:#14202B; --muted:#5A6875; --line:#D5DCE3; --quiet:#D3DAE1; --danger:#B3261E;
-  /* four families: university (blue), course (violet), work (amber), life (green) */
-  --uni:#2B3FB0; --study:#2F62A8; --course:#6A3FC0; --work:#8A5200; --quran:#0B6B47; --gym:#176A70; --personal:#4A6B2E;
+  --bg:#E7ECE3; --surface:#FAFBF6; --fg:#1D1B17; --muted:#585C52; --line:#CDD3C6; --quiet:#D6DBCF; --danger:#B4300C;
+  --shell:#6E1A28; --shell-fg:#FAFBF6; --shell-dim:#E9C9CF;
+  /* denominations: oxblood and madder (university), plum (course), sepia (work), ochre (gym, Quran, your time) */
+  --uni:#7B1E2E; --study:#94304B; --course:#5B2A6B; --work:#5A402B; --gym:#735600; --quran:#6A4E00; --personal:#7A5A0A;
   --tint:9%;
-  --font-display:"Alexandria","IBM Plex Sans Arabic",system-ui,sans-serif;
-  --font-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,system-ui,sans-serif;
-  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --font-display:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
+  --font-body:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
+  --font-mono:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
+  --font-num:"Spectral",Georgia,"Times New Roman",serif;
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0E1419; --surface:#151E25; --fg:#E4EAEF; --muted:#94A3B0; --line:#26333D; --quiet:#2C3842; --danger:#FF8A80;
-    --uni:#9AA8FF; --study:#86B6EE; --course:#B79BF6; --work:#EBB05A; --quran:#58CF98; --gym:#6FD3BE; --personal:#A9CF86;
+    --bg:#16141A; --surface:#201D24; --fg:#EDE9E1; --muted:#A7A39A; --line:#36313B; --quiet:#3A3540; --danger:#FF9A76;
+    --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
+    --uni:#EE8E9C; --study:#F2A7B8; --course:#CFA0DD; --work:#D8B898; --gym:#E4C55C; --quran:#E8C96A; --personal:#EFD98F;
     --tint:15%; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0E1419; --surface:#151E25; --fg:#E4EAEF; --muted:#94A3B0; --line:#26333D; --quiet:#2C3842; --danger:#FF8A80;
-  --uni:#9AA8FF; --study:#86B6EE; --course:#B79BF6; --work:#EBB05A; --quran:#58CF98; --gym:#6FD3BE; --personal:#A9CF86;
+  --bg:#16141A; --surface:#201D24; --fg:#EDE9E1; --muted:#A7A39A; --line:#36313B; --quiet:#3A3540; --danger:#FF9A76;
+  --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
+  --uni:#EE8E9C; --study:#F2A7B8; --course:#CFA0DD; --work:#D8B898; --gym:#E4C55C; --quran:#E8C96A; --personal:#EFD98F;
   --tint:15%; color-scheme:dark;
 }
 html{scrollbar-color:var(--quiet) var(--bg)}
@@ -45,7 +49,7 @@ button{font:inherit;color:inherit}
 .sec{display:flex;flex-direction:column;gap:var(--s3)}
 .sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:var(--s1) var(--s3)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
-.c-uni{--c:var(--uni)} .c-study{--c:var(--study)} .c-course{--c:var(--course)} .c-work{--c:var(--work)} .c-gym{--c:var(--gym)} .c-quran{--c:var(--quran)} .c-personal{--c:var(--personal)} .c-move{--c:var(--quiet)} .c-rest{--c:var(--quiet)} .c-life{--c:var(--quran)}
+.c-uni{--c:var(--uni)} .c-study{--c:var(--study)} .c-course{--c:var(--course)} .c-work{--c:var(--work)} .c-gym{--c:var(--gym)} .c-quran{--c:var(--quran)} .c-personal{--c:var(--personal)} .c-move{--c:var(--quiet)} .c-rest{--c:var(--quiet)} .c-life{--c:var(--gym)}
 
 /* headers: the heading leads, the date sits under it */
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s3)}
@@ -53,7 +57,7 @@ button{font:inherit;color:inherit}
 .sub{font-size:14px;color:var(--muted)}
 .sync{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;padding-top:6px}
 .sync i{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;flex:none}
-.sync.cloud i{background:var(--quran)}
+.sync.cloud i{background:var(--gym)}
 .btn{min-height:40px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .btn:hover{border-color:var(--muted)}
 .btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
@@ -72,8 +76,8 @@ button{font:inherit;color:inherit}
 .dp .dd{font-family:var(--font-mono);font-weight:600;font-size:15px}
 .dp.is-today .dn{color:var(--fg);font-weight:600}
 .dp.is-today{border-color:var(--line)}
-.dp[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.dp[aria-pressed="true"] .dn{color:var(--bg)}
+.dp[aria-pressed="true"]{background:var(--shell);color:var(--shell-fg);border-color:var(--shell)}
+.dp[aria-pressed="true"] .dn{color:var(--shell-dim)}
 
 /* now card: the block in progress, one tap to finish it */
 .now{display:flex;flex-direction:column;gap:var(--s3);background:color-mix(in srgb,var(--c) var(--tint),var(--surface));border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));border-radius:18px;padding:var(--s4)}
@@ -82,7 +86,7 @@ button{font:inherit;color:inherit}
 .now-meta b{color:var(--c);font-weight:600}
 .now-actions{display:flex;flex-wrap:wrap;gap:var(--s2)}
 .now-actions .btn{min-height:48px;font-size:15px;padding-inline:18px}
-.now-actions .btn.primary{background:var(--c);border-color:var(--c);color:var(--surface)}
+.now-actions .btn.primary{background:var(--c);border-color:var(--c);color:var(--surface);flex:1 1 12rem}
 .now-actions .btn.primary[aria-pressed="true"]{background:var(--surface);color:var(--c)}
 .now-next{display:flex;flex-direction:column;gap:2px;border-top:1px solid color-mix(in srgb,var(--c) 22%,var(--line));padding-top:var(--s3);font-size:14px}
 .now-next .row-line{display:flex;justify-content:space-between;gap:var(--s3)}
@@ -106,22 +110,25 @@ button{font:inherit;color:inherit}
 
 /* balance: university and course on one pan, work and life on the other */
 .balance{display:flex;flex-direction:column;gap:var(--s2)}
-.balance svg{width:100%;max-width:360px;height:auto;align-self:center;overflow:visible}
-.balance .beam{transition:transform .3s cubic-bezier(.16,1,.3,1);transform-box:view-box}
-.balance .pan-a{fill:var(--uni)} .balance .pan-b{fill:var(--quran)}
-.balance .stroke{stroke:var(--fg);stroke-linecap:round}
-.balance .post{fill:var(--fg)}
+.balance svg{width:100%;max-width:280px;height:auto;align-self:center}
+.balance .ring{fill:none;stroke:var(--line);stroke-width:1}
+.balance .petal{fill:none;stroke:var(--c);stroke-width:1.1;transition:stroke .45s cubic-bezier(.16,1,.3,1),stroke-width .45s cubic-bezier(.16,1,.3,1)}
+.balance .petal.off{stroke:var(--quiet);stroke-width:.8}
+.balance .axis-line{stroke:var(--line);stroke-width:1}
+.balance .core{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.balance .core-num{font-family:var(--font-num);font-weight:700;font-size:24px;fill:var(--fg)}
+.balance .core-lbl{font-family:var(--font-body);font-size:10px;fill:var(--muted)}
 .balance-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);font-size:14px}
 .balance-legend div{display:flex;flex-direction:column;gap:2px}
-.balance-legend b{font-family:var(--font-mono);font-size:20px;font-weight:600}
-.balance-legend .a b{color:var(--uni)} .balance-legend .b b{color:var(--quran)}
+.balance-legend b{font-family:var(--font-num);font-size:26px;font-weight:700;line-height:1.1}
+.balance-legend .a b{color:var(--uni)} .balance-legend .b b{color:var(--gym)}
 .balance-legend .b{text-align:end}
 .balance-note{font-size:14px;color:var(--muted);text-align:center}
 
 /* timeline */
 .note{color:var(--muted);font-size:14px;max-width:62ch}
 .timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.row{display:grid;grid-template-columns:44px 82px minmax(0,1fr);gap:var(--s2);align-items:start;border-radius:14px}
+.row{display:grid;grid-template-columns:44px 82px minmax(0,1fr) auto;gap:var(--s2);align-items:start;border-radius:14px}
 .row.main{background:color-mix(in srgb,var(--c) var(--tint),var(--surface));padding:6px 10px 6px 6px}
 .row.quiet{padding:2px 10px 2px 6px;color:var(--muted);font-size:14px}
 .row.is-now{outline:2px solid var(--fg);outline-offset:-2px}
@@ -155,6 +162,9 @@ button{font:inherit;color:inherit}
 .mk{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:1px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--fg)}
 .mk svg{width:12px;height:12px;color:var(--quran)}
 .mk.appt{border-color:var(--quran);color:var(--quran);font-weight:600}
+.denom{direction:ltr;unicode-bidi:isolate;font-family:var(--font-num);font-weight:700;font-size:26px;line-height:1;color:var(--c);padding-top:10px;white-space:nowrap;font-variant-numeric:lining-nums}
+.denom small{font-family:var(--font-body);font-weight:500;font-size:11px;margin-inline-start:2px}
+.row.done .denom,.row.skipped .denom{opacity:.45}
 .row-actions{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:var(--s2);padding:0 0 var(--s2)}
 .add-block{align-self:flex-start}
 .head-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px;min-width:0}
@@ -270,25 +280,26 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .toast .btn{background:transparent;color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
 
 /* bottom nav */
-.nav{position:fixed;inset-inline:0;bottom:0;z-index:5;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px))}
+.nav{position:fixed;inset-inline:0;bottom:0;z-index:5;background:var(--shell);color:var(--shell-fg);padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px))}
 .nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
-.nav button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;min-height:52px;padding:6px 0;border-radius:12px;cursor:pointer;color:var(--muted);font-size:12px}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;min-height:52px;padding:6px 0;border-radius:12px;cursor:pointer;color:var(--shell-dim);font-size:12px}
+.nav button:focus-visible{outline-color:var(--shell-fg)}
 .nav button svg{width:22px;height:22px}
-.nav button[aria-current="page"]{color:var(--fg);font-weight:600;background:color-mix(in srgb,var(--fg) 7%,transparent)}
+.nav button[aria-current="page"]{color:var(--shell-fg);font-weight:600;background:color-mix(in srgb,var(--shell-fg) 16%,transparent)}
 
 .fail{max-width:560px;margin:40px auto;padding-inline:16px;color:var(--muted);text-align:center}
 @media (max-width:400px){
-  .row{grid-template-columns:44px 76px minmax(0,1fr);gap:6px}
+  .row{grid-template-columns:44px 76px minmax(0,1fr) auto;gap:6px}
   .time .end{font-size:11.5px}
   .stat{grid-template-columns:minmax(0,6rem) minmax(0,1fr) auto}
 }
 @media (min-width:960px){
   .shell{padding-inline-start:232px}
-  .nav{top:0;bottom:0;inset-inline-start:0;inset-inline-end:auto;width:232px;border-top:0;border-inline-end:1px solid var(--line);padding:28px 14px;display:flex;flex-direction:column;gap:22px}
+  .nav{top:0;bottom:0;inset-inline-start:0;inset-inline-end:auto;width:232px;padding:28px 14px;display:flex;flex-direction:column;gap:22px}
   .nav-in{display:flex;flex-direction:column;gap:4px;max-width:none;margin:0}
   .nav button{flex-direction:row;justify-content:flex-start;gap:12px;min-height:44px;padding:10px 12px;font-size:15px}
   .brand{display:block;font-family:var(--font-display);font-weight:700;font-size:21px;line-height:1.3;padding-inline:12px}
-  .brand small{display:block;font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--muted);margin-top:4px}
+  .brand small{display:block;font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--shell-dim);margin-top:4px}
   .wrap{max-width:1120px;padding-inline:40px;padding-block:36px 48px;gap:var(--s6)}
   .toast{bottom:var(--s5)}
   .today-view{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"head head" "main side";gap:var(--s6) 36px;align-items:start}
@@ -303,7 +314,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   .tasksv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"head head" "tasks appts";gap:var(--s5) 36px;align-items:start}
   .a-tasks{grid-area:tasks} .a-appts{grid-area:appts}
 }
-@media (prefers-reduced-motion: reduce){ .fill,.balance .beam,.chk i{transition:none} }
+@media (prefers-reduced-motion: reduce){ .fill,.balance .petal,.chk i{transition:none} }
 </style>
 
 <div id="app" dir="rtl" lang="ar">
@@ -556,12 +567,15 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return {t:((hh % 12) || 12) + ':' + pad(mm), s: hh < 12 ? 'ص' : 'م'};
   }
   const fmtStr = min => { const f = fmt(min); return f.t + f.s; };
+  // Wrapped in LTR isolates so "1½" never reorders to "½1" inside Arabic text.
   function hoursText(min){
     const hh = Math.floor(min/60), r = Math.round(min % 60);
     const fr = {0:'',15:'¼',30:'½',45:'¾'}[r];
-    if (fr === undefined) return (min/60).toFixed(1);
-    if (hh === 0) return fr || '0';
-    return hh + fr;
+    let n;
+    if (fr === undefined) n = (min/60).toFixed(1);
+    else if (hh === 0) n = fr || '0';
+    else n = hh + fr;
+    return '\u2066' + n + '\u2069';
   }
   const durText = min => min < 60 ? min + ' د' : hoursText(min) + ' س';
   function countdown(min){
@@ -810,31 +824,38 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   const plainTitle = text => showTitle(text).replace('|', ' · ');
 
-  // The balance: university and course on one pan, work and life on the other. The pan with more done sinks.
+  // The balance as a guilloche rosette: university and course on one half, work and life on the other.
+  // Each half has 36 fine petals; a petal is inked in a category's colour for its share of the half's planned time that got done.
   function Balance({a, b, label}){
     const pa = a.plan ? a.done / a.plan : 0, pb = b.plan ? b.done / b.plan : 0;
-    const ang = Math.max(-12, Math.min(12, (pa - pb) * 18)) * Math.PI / 180;
-    const cx = 180, cy = 34, L = 132;
-    const ax = cx + L * Math.cos(ang), ay = cy + L * Math.sin(ang);
-    const bx = cx - L * Math.cos(ang), by = cy - L * Math.sin(ang);
-    const pan = (x, y, cls) => html`<g>
-      <path class="stroke" d=${`M${x} ${y}L${x - 40} ${y + 50}M${x} ${y}L${x + 40} ${y + 50}`} stroke-width="2" fill="none" />
-      <path class=${cls} d=${`M${x - 52} ${y + 50}H${x + 52}A52 26 0 0 1 ${x - 52} ${y + 50}Z`} />
-    </g>`;
+    const N = 36, cx = 120, cy = 120;
+    const inks = side => {
+      const out = []; let used = 0;
+      side.order.forEach(k => { const n = side.plan ? Math.round((side.by[k] || 0) / side.plan * N) : 0; for (let i = 0; i < n && used < N; i++, used++) out.push(k); });
+      while (out.length < N) out.push(null);
+      return out;
+    };
+    const petals = (side, from, cls) => inks(side).map((k, i) => {
+      const ang = from + (i + 0.5) * 180 / N;
+      return html`<ellipse cx=${cx + 52} cy=${cy} rx="52" ry="15" transform=${`rotate(${ang.toFixed(2)} ${cx} ${cy})`} class=${k ? 'petal c-' + k : 'petal off'} />`;
+    });
     let note;
     if (!a.done && !b.done) note = 'لسه مفيش حاجة متعلّمة ' + label + '.';
     else if (Math.abs(pa - pb) < 0.12) note = 'الميزان متوازن ' + label + '.';
-    else if (pa > pb) note = 'الكفة مايلة ناحية الكلية والكورس، والشغل والحياة متأخرين.';
-    else note = 'الكفة مايلة ناحية الشغل والحياة، والكلية والكورس متأخرين.';
+    else if (pa > pb) note = 'الكلية والكورس واخدين أكتر من حقهم، والشغل والحياة متأخرين.';
+    else note = 'الشغل والحياة واخدين أكتر من حقهم، والكلية والكورس متأخرين.';
     const pct = v => Math.round(v * 100) + '%';
+    const total = a.done + b.done;
     return html`<div class="balance">
-      <svg viewBox="0 0 360 150" role="img" aria-label=${note}>
-        <rect class="post" x="176" y="34" width="8" height="98" rx="2" />
-        <rect class="post" x="128" y="130" width="104" height="8" rx="4" />
-        <line class="stroke" x1=${bx} y1=${by} x2=${ax} y2=${ay} stroke-width="7" />
-        <circle class="post" cx=${cx} cy=${cy} r="9" />
-        ${pan(ax, ay, 'pan-a')}
-        ${pan(bx, by, 'pan-b')}
+      <svg viewBox="0 0 240 240" role="img" aria-label=${note}>
+        <circle class="ring" cx=${cx} cy=${cy} r="110" />
+        <circle class="ring" cx=${cx} cy=${cy} r="106" />
+        <g>${petals(a, -90, 'a')}</g>
+        <g>${petals(b, 90, 'b')}</g>
+        <line class="axis-line" x1=${cx} y1="6" x2=${cx} y2="234" />
+        <circle class="core" cx=${cx} cy=${cy} r="34" />
+        <text class="core-num" x=${cx} y=${cy + 6} text-anchor="middle">${hoursText(total)}</text>
+        <text class="core-lbl" x=${cx} y=${cy + 22} text-anchor="middle">ساعة</text>
       </svg>
       <div class="balance-legend">
         <div class="a"><span>الكلية والكورس</span><b>${pct(pa)}</b><span class="small muted"><bdi class="num">${hoursText(a.done)}</bdi> من <bdi class="num">${hoursText(a.plan)}</bdi> س</span></div>
@@ -844,12 +865,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
   function balanceOf(days, store){
-    const a = {done:0, plan:0}, b = {done:0, plan:0};
+    const a = {done:0, plan:0, by:{}, order:['uni','study','course']}, b = {done:0, plan:0, by:{}, order:['work','gym','quran']};
     days.forEach(d => dayBlocks(d, store).forEach(bl => {
       const f = FAMILY[bl.cat]; if (!f) return;
       const st = statusOf(store, d, bl.key); if (st === 'skip') return;
       const m = bl.e - bl.s, side = f === 'a' ? a : b;
-      side.plan += m; if (st === 'done') side.done += m;
+      side.plan += m; if (st === 'done'){ side.done += m; side.by[bl.cat] = (side.by[bl.cat] || 0) + m; }
     }));
     return {a, b};
   }
@@ -900,7 +921,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       <span class="target-name"><bdi>${c.name}</bdi></span>
       <span class="small muted">التارجت الأساسي · خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span>
       <span class="track"><span class="fill" style=${{display:'block', width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></span></span>
-      ${next ? html`<span class="small">الجاي: <bdi class="mono">${next[0]}</bdi> <bdi>${next[1]}</bdi></span>
+      ${next ? html`<span class="small">الجاي: <bdi dir="ltr">${next[0]} · ${next[1]}</bdi></span>
         ${wk && behind ? html`<span class="small muted">فاضل <bdi class="num">${behind}</bdi> في خطة الأسبوع ده</span>` : null}`
         : html`<span class="small">خلّصت الكورس كله.</span>`}
     </button>`;
@@ -1055,7 +1076,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
               const body = html`
                 <span class="title"><${Title} text=${b.title} />${quiet ? html`<span class="muted small"> · ${durText(b.e - b.s)}</span>` : null}${cur ? html`<span class="now-pill">دلوقتي</span>` : null}</span>
                 ${quiet ? (b.detail ? html`<span class="meta">${b.detail}</span>` : null)
-                  : html`<span class="meta"><b>${CATS[b.cat].label}</b> · ${durText(b.e - b.s)}${st === 'skip' ? ' · اتلغى' : ''}${b.detail ? ' · ' + b.detail : ''}</span>`}
+                  : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
               return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' c-' + b.cat + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '')}>
                 <div>${tracked ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
@@ -1063,6 +1084,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
                   : html`<button type="button" class="row-body" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${() => setOpen(isOpen ? null : b.key)}>${body}</button>`}
+                ${quiet ? null : html`<span class="denom" aria-hidden="true">${(b.e - b.s) < 60 ? (b.e - b.s) : hoursText(b.e - b.s)}<small>${(b.e - b.s) < 60 ? 'د' : 'س'}</small></span>`}
                 ${isOpen ? html`<div class="row-actions">
                   ${tracked ? (st === 'skip'
                     ? html`<button type="button" class="btn" onClick=${() => { setStatus(update, iso, b.key, null); setOpen(null); }}>رجّعه للجدول</button>`
