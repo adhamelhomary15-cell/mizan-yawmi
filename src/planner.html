@@ -265,8 +265,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .filters button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .add-form{display:flex;flex-direction:column;gap:10px}
 .course-form{gap:12px}
-.install{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
-.install p{display:flex;flex-direction:column;min-width:0}
+.install,.notice{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.install p,.notice p{display:flex;flex-direction:column;min-width:0}
+.notice .btn{flex:none}
 
 /* layout blocks */
 .today-view,.weekv,.coursev,.tasksv{display:flex;flex-direction:column;gap:var(--s5)}
@@ -629,11 +630,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     ptCache[iso] = r;
     return r;
   }
-  // Maghrib after 5:45pm = "late" variant (before the clocks go back), otherwise the early variant.
+  // Last Thursday of October (the last day before the clocks go back), as an ISO date. UTC arithmetic, no local zone.
+  function lastThursdayOfOctober(year){
+    const d = new Date(Date.UTC(year, 9, 31));
+    while (d.getUTCDay() !== 4) d.setUTCDate(d.getUTCDate() - 1);
+    return year + '-10-' + pad(d.getUTCDate());
+  }
+  // Maghrib at or after 5:45pm = "late" variant (A), otherwise the early variant (B).
+  // If prayer times can't be computed, fall back to the dates that line up with that rule every year:
+  // late from 16 February through the last Thursday of October.
   function phaseFor(iso){
     const p = prayers(iso);
     if (p) return p.maghrib >= 17*60 + 45 ? 'A' : 'B';
-    return iso < '2026-10-30' ? 'A' : 'B';
+    const y = Number(iso.slice(0, 4));
+    return iso >= y + '-02-16' && iso <= lastThursdayOfOctober(y) ? 'A' : 'B';
   }
   function blocksFor(iso){
     const day = SCHED[weekday(iso)];
@@ -702,7 +712,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   /* ---------------- storage: db (per-person) with local fallback ---------------- */
   const LOCAL_KEY = 'fall26-planner-v1';
   const LOCAL_OK = (() => { try { localStorage.setItem('__probe', '1'); localStorage.removeItem('__probe'); return true; } catch(e){ return false; } })();
-  const EMPTY = () => ({v:1, checks:{}, modules:{}, tasks:[], appts:[], courses:[], mainCourse:BUILTIN_ID, extras:{}});
+  const EMPTY = () => ({v:1, checks:{}, modules:{}, tasks:[], appts:[], courses:[], mainCourse:BUILTIN_ID, extras:{}, phaseSeen:null});
   const isISO = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
   const isHM = s => typeof s === 'string' && /^\d{2}:\d{2}$/.test(s);
   function normalize(d){
@@ -717,7 +727,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       const list = d.extras[k].filter(x => x && typeof x.id === 'string' && isHM(x.s) && isHM(x.e) && CATS[x.cat] && typeof x.title === 'string');
       if (list.length) extras[k] = list;
     });
-    return {v:1, checks: d.checks && typeof d.checks === 'object' ? d.checks : {}, modules: d.modules && typeof d.modules === 'object' ? d.modules : {}, tasks: Array.isArray(d.tasks) ? d.tasks : [], appts: Array.isArray(d.appts) ? d.appts : [], courses, mainCourse: main, extras};
+    return {v:1, checks: d.checks && typeof d.checks === 'object' ? d.checks : {}, modules: d.modules && typeof d.modules === 'object' ? d.modules : {}, tasks: Array.isArray(d.tasks) ? d.tasks : [], appts: Array.isArray(d.appts) ? d.appts : [], courses, mainCourse: main, extras, phaseSeen: d.phaseSeen === 'A' || d.phaseSeen === 'B' ? d.phaseSeen : null};
   }
   function loadLocal(){ try { const r = localStorage.getItem(LOCAL_KEY); return r ? normalize(JSON.parse(r)) : null; } catch(e){ return null; } }
   function saveLocal(s){ try { localStorage.setItem(LOCAL_KEY, JSON.stringify(s)); } catch(e){} }
@@ -1437,6 +1447,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','tasks'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
+    // One-time notice after the day version (A late / B early) switches. phaseSeen is the last version the owner saw:
+    // first run records it silently, a later difference shows the notice, "تمام" records the new one.
+    const phaseNow = phaseFor(now.iso);
+    useEffect(() => { if (store.phaseSeen === null) update(s => { s.phaseSeen = phaseNow; return s; }); }, [store.phaseSeen]);
+    const ackPhase = () => update(s => { s.phaseSeen = phaseNow; return s; });
+    const phaseNotice = store.phaseSeen !== null && store.phaseSeen !== phaseNow;
     useEffect(() => { const t = setInterval(() => setNow(effectiveNow()), 30000); return () => clearInterval(t); }, []);
     // Installable copy (hosted with its manifest): offer "add to home screen" when the browser allows it.
     const [installEvt, setInstallEvt] = useState(null);
@@ -1476,6 +1492,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </nav>
       <main class="wrap">
         ${installEvt ? html`<div class="install"><p><b>ثبّت ميزان يومي</b><span class="small muted">أيقونة على الشاشة الرئيسية، ويشتغل من غير نت</span></p><button type="button" class="btn primary" onClick=${install}>ثبّت</button></div>` : null}
+        <div aria-live="polite">${phaseNotice ? html`<div class="notice"><p>${phaseNow === 'A' ? 'المغرب بقى بعد 5:45، فمواعيد الشغل والجيم اتغيرت.' : 'المغرب بقى قبل 5:45، فمواعيد الشغل والجيم اتغيرت.'}</p><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></div>` : null}</div>
         ${view}
         <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
       </main>
