@@ -1,4 +1,4 @@
----
+﻿---
 
 description: "Task list for 001 automatic schedule switch at Maghrib 5:45pm"
 ---
@@ -101,10 +101,10 @@ plan phase 2 = US1, plan phases 3 and 4 = US3, plan phase 5 = Polish. US2 is ver
 
 **Purpose**: Build, verify, and ship.
 
-- [ ] T017 Run `tools/build.py` with the full Python path from the repo root; confirm it regenerates `index.html`, `sw.js` and the manifest with no error
-- [ ] T018 Run quickstart.md sections 3 and 5 against the built `index.html`: tick preservation across the switch, `checks` byte-identical, no network request from the notice, same behavior offline, and the fallback with `window.adhan` unavailable
-- [ ] T019 [P] Update the `RULES` text at `src/planner.html:~660` ("آخر أكتوبر الساعة بترجع ساعة...") only if it no longer describes the behavior; otherwise leave it
-- [ ] T020 Commit the source change and the regenerated files together on branch `001-auto-schedule-switch`, tick every finished task in this file, and report results to the owner. Open or update a PR only when the owner asks
+- [x] T017 Run `tools/build.py` with the full Python path from the repo root; confirm it regenerates `index.html`, `sw.js` and the manifest with no error
+- [ ] T018 Run quickstart.md sections 3 and 5 against the built `index.html`: tick preservation across the switch, `checks` byte-identical, no network request from the notice, same behavior offline, and the fallback with `window.adhan` unavailable **Partly done**: items 1-4 and the fallback pass on the built page (research.md, Phase 5). The offline cold start (SC-005) could not run in the browser pane because it refuses service-worker registration; the owner must check it on a phone.
+- [x] T019 [P] Update the `RULES` text at `src/planner.html:~660` ("آخر أكتوبر الساعة بترجع ساعة...") only if it no longer describes the behavior; otherwise leave it
+- [x] T020 Commit the source change and the regenerated files together on branch `001-auto-schedule-switch`, tick every finished task in this file, and report results to the owner. Open or update a PR only when the owner asks
 
 ---
 

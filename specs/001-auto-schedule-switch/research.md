@@ -79,6 +79,23 @@ Served the source over a local static server and drove it in the browser pane. C
   tapping undo within 7 seconds of dismissing the notice could bring the notice back. It is harmless
   and not fixed.
 
+## Verification notes (Phase 5, built `index.html`, 2026-10-13)
+
+- **Build (T017)**: `tools/build.py` exits 0 ("built index.html (297 KB), cache mizan-c33828a9e2").
+  It also re-rendered the four icon PNGs with a different Pillow, although nothing about the icons
+  changed; those were reverted (`git checkout`) and are not part of this change. The `index.html`
+  diff is only the edits from `src/planner.html`, and `sw.js` only gets the new cache name.
+- **Version on the built page (US1)**: with a faked clock, 2026-10-29 shows the late version and
+  2026-10-30 the early one, both with prayer times computed and with prayer times switched off
+  (fallback rule). The notice text confirms it each way: «بعد 5:45» on 29 Oct, «قبل 5:45» on 30 Oct.
+- **Safety on the built page**: `checks` byte-identical after showing and dismissing the notice; no
+  `fetch`/XHR call from the notice; the page makes no request outside its own origin and
+  `index.html` contains no external `src`/`href`/`url()`/`@import`.
+- **Not verified, needs a real phone**: a true offline cold start. The browser pane used here refuses
+  service-worker registration ("unknown error when fetching the script", although `sw.js` itself loads
+  with status 200), so the install-and-offline path (SC-005) could not be exercised. What was checked
+  instead is that the built page is self-contained.
+
 ## R1. Is the switch already implemented?
 
 - **Decision**: Keep the existing per-date choice; do not rewrite it.
