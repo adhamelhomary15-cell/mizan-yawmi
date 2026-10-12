@@ -148,7 +148,7 @@ button{font:inherit;color:inherit}
 .title{font-weight:600;font-size:15.5px;line-height:1.45}
 .row.quiet .title{font-weight:400;font-size:14px}
 .subj{font-weight:600}
-.meta{margin-top:2px;font-size:13px;color:var(--muted)}
+.meta{margin-top:2px;font-size:13px;color:var(--muted);text-wrap:pretty}
 .meta b{color:var(--c);font-weight:600}
 .now-pill{display:inline-block;font-size:11px;font-weight:600;background:var(--fg);color:var(--bg);padding:0 8px;border-radius:999px;margin-inline-start:6px;vertical-align:2px}
 .marks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -511,7 +511,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     }}
   };
 
-  const COURSE = {name:'Arab Automators', sub:'n8n و AI Automation · محاضرات لايف السبت 9ص والتلات 9م'};
+  const COURSE = {name:'Arab Automators', sub:'أتمتة بـ n8n والذكاء الاصطناعي · لايف السبت 9ص والتلات 9م'};
 
   const PLAN = [
     {from:'2026-10-12', to:'2026-10-16', label:'12 – 16 أكتوبر', note:'أسبوع ناقص (بادئ من الاتنين)، وجلسة الجمعة تخلّص موديول 02.', items:[
@@ -897,7 +897,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
-  function NowCard({iso, now, store, update}){
+  function NowCard({iso, now, store, update, skip}){
     const blocks = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
     const live = blocks.filter(b => now.min >= b.s && now.min < b.e && statusOf(store, iso, b.key) !== 'skip');
     const cur = live.length ? live[live.length - 1] : null;
@@ -921,7 +921,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </div>
       <div class="now-actions">
         <button type="button" class="btn primary" aria-pressed=${st === 'done' ? 'true' : 'false'} onClick=${() => setStatus(update, iso, main.key, st === 'done' ? null : 'done')}><${CheckSvg} />${st === 'done' ? 'اتعلّم، رجّعه' : 'خلّصته'}</button>
-        <button type="button" class="btn" onClick=${() => setStatus(update, iso, main.key, 'skip')}>اتلغى النهارده</button>
+        <button type="button" class="btn" onClick=${() => skip(main)}>اتلغى النهارده</button>
       </div>
       <div class="now-next">
         ${after ? html`<p class="row-line"><span class="lbl">بعده</span><span><${Title} text=${after.title} /> · ${fmtStr(after.s)}</span></p>` : null}
@@ -947,7 +947,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       onDone();
     };
     return html`<form class="panel add-form" onSubmit=${submit}>
-      <div class="sec-head"><h3>حاجة زيادة لليوم ده</h3><button type="button" class="btn ghost small" onClick=${onDone}>إلغاء</button></div>
+      <div class="sec-head"><h2>حاجة زيادة لليوم ده</h2><button type="button" class="btn ghost small" onClick=${onDone}>إلغاء</button></div>
       <div class="form-row">
         <label class="field wide" for="ab-title">إيه هي<input id="ab-title" value=${title} onInput=${x => setTitle(x.target.value)} placeholder="مثلاً: محاضرة تعويضية Networks" maxlength="80" /></label>
         <label class="field" for="ab-s">من<input id="ab-s" type="time" value=${s} onInput=${x => setS(x.target.value)} /></label>
@@ -960,7 +960,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </form>`;
   }
 
-  function TodayView({iso, setIso, now, store, update, goTab, remove}){
+  function TodayView({iso, setIso, now, store, update, goTab, remove, act}){
+    const skip = b => act('اتلغى "' + plainTitle(b.title) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
     const blocks = dayBlocks(iso, store);
     const p = prayers(iso);
     const appts = apptsFor(iso, store);
@@ -985,10 +986,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </div>
 
       <div class="today-main">
-        <div class="o-now">${isToday ? html`<${NowCard} iso=${iso} now=${now} store=${store} update=${update} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
+        <div class="o-now">${isToday ? html`<${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
 
         <div class="sec o-timeline">
-          <p class="note">${SCHED[wd].note}</p>
           <ol class="timeline">
             ${blocks.map(b => {
               const quiet = b.cat === 'rest' || b.cat === 'move';
@@ -1015,7 +1015,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
                 ${isOpen ? html`<div class="row-actions">
                   ${tracked ? (st === 'skip'
                     ? html`<button type="button" class="btn" onClick=${() => { setStatus(update, iso, b.key, null); setOpen(null); }}>رجّعه للجدول</button>`
-                    : html`<button type="button" class="btn" onClick=${() => { setStatus(update, iso, b.key, 'skip'); setOpen(null); }}>اتلغى النهارده</button>`) : null}
+                    : html`<button type="button" class="btn" onClick=${() => { setOpen(null); skip(b); }}>اتلغى النهارده</button>`) : null}
                   ${b.extra ? html`<button type="button" class="btn ghost" onClick=${() => { setOpen(null); remove('اتمسحت "' + b.title + '"', s => { s.extras[iso] = (s.extras[iso] || []).filter(x => x.id !== b.extra); return s; }); }}>امسحها</button>` : null}
                 </div>` : null}
               </li>`;
@@ -1023,6 +1023,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </ol>
           ${adding ? html`<${AddBlock} iso=${iso} update=${update} onDone=${() => setAdding(false)} />`
             : html`<button type="button" class="btn add-block" onClick=${() => setAdding(true)}><${Plus} />ضيف حاجة لليوم ده</button>`}
+          <p class="note">${SCHED[wd].note}</p>
           <p class="small muted">دوس على أي بلوك عشان تلغيه النهارده. ${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة للجيزة بطريقة الهيئة المصرية العامة للمساحة.' : ''}</p>
         </div>
       </div>
@@ -1217,7 +1218,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         <div class="top-meta">
           <h1><bdi>${c.name}</bdi></h1>
           <p class="sub">${isMain ? 'الكورس الأساسي، التارجت الأول للفترة دي' : 'كورس إضافي'}</p>
-          <p class="small muted">${c.sub ? html`<bdi>${c.sub}</bdi> · ` : null}من ${dateLabel(c.from)} لحد ${dateLabel(c.to)}</p>
+          <p class="small muted">${c.sub ? html`<bdi dir="rtl">${c.sub}</bdi> · ` : null}من ${dateLabel(c.from)} لحد ${dateLabel(c.to)}</p>
         </div>
         <button type="button" class="btn primary" aria-expanded=${adding ? 'true' : 'false'} onClick=${() => setAdding(!adding)}><${Plus} /><span>كورس جديد</span></button>
       </div>
@@ -1240,6 +1241,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </div>` : null}
       ${isMain && !c.builtin ? html`<p class="small muted">وقت الكورس في الجدول اليومي بقى لـ <bdi>${c.name}</bdi>.</p>` : null}
 
+      <h2>الخطة أسبوع بأسبوع</h2>
       <div class="weeks">
         ${plan.map((w, wi) => {
           const cur = today >= w.from && today <= w.to;
@@ -1377,17 +1379,18 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const goTab = t => { setTab(t); try { window.scrollTo(0, 0); } catch(e){} };
     const goDay = d => { setIso(d); goTab('today'); };
     // Deletions apply at once and offer an undo for a few seconds.
-    const remove = (text, fn) => {
+    const act = (text, fn) => {
       const snap = JSON.stringify(store);
       update(fn);
       if (toastTimer.current) clearTimeout(toastTimer.current);
       setToast({text, undo: () => update(() => JSON.parse(snap))});
       toastTimer.current = setTimeout(() => setToast(null), 7000);
     };
+    const remove = act;
     MAIN_NAME = mainCourse(store).name;
 
     let view;
-    if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} />`;
+    if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} />`;
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
     else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} />`;
