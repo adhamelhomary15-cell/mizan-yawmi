@@ -157,9 +157,10 @@ button{font:inherit;color:inherit}
 .mk.appt{border-color:var(--quran);color:var(--quran);font-weight:600}
 .row-actions{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:var(--s2);padding:0 0 var(--s2)}
 .add-block{align-self:flex-start}
-.head-actions{display:flex;align-items:center;gap:6px;flex:none}
+.head-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px;min-width:0}
+.o-head .top{flex-wrap:wrap}
 .arrows{display:inline-flex;gap:6px}
-.review-btn{align-self:flex-start}
+.review-all{align-self:flex-start}
 .review{display:flex;flex-direction:column;gap:var(--s3);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:var(--s4)}
 .review-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .review-list li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s2) var(--s3);padding:10px 0;border-top:1px solid var(--line)}
@@ -914,7 +915,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
-  function NowCard({iso, now, store, update, skip}){
+  function NowCard({iso, now, store, update, skip, onReview}){
     const blocks = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
     const live = blocks.filter(b => now.min >= b.s && now.min < b.e && statusOf(store, iso, b.key) !== 'skip');
     const cur = live.length ? live[live.length - 1] : null;
@@ -926,7 +927,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const fri = weekday(iso) === 5;
     if (!main) return html`<section class="now c-quran" aria-label="دلوقتي">
       <p class="now-done">مفيش حاجة تانية في جدول النهارده.</p>
-      ${(() => { const left = blocks.filter(b => statusOf(store, iso, b.key) === null).length; return left ? html`<p class="now-meta">فيه <bdi class="num">${left}</bdi> بلوك لسه معلّمتش عليهم. دوس "راجع يومك" فوق وعلّمهم.</p>` : null; })()}
+      ${(() => { const left = blocks.filter(b => statusOf(store, iso, b.key) === null).length; return left ? html`<p class="now-meta">فيه <bdi class="num">${left}</bdi> بلوك لسه معلّمتش عليهم.</p>
+        <div class="now-actions"><button type="button" class="btn primary" onClick=${onReview}>راجع يومك</button></div>` : null; })()}
       <${DayProgress} iso=${iso} store=${store} />
     </section>`;
     const st = statusOf(store, iso, main.key);
@@ -950,7 +952,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
 
   // Night review: everything not yet marked, one tap each. Opened from the header button.
-  function Review({iso, now, store, update, skip, onClose}){
+  function Review({iso, now, store, update, skip, act, onClose}){
     const isToday = iso === now.iso;
     const tracked = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
     const open = tracked.filter(b => statusOf(store, iso, b.key) === null && (!isToday || b.s <= now.min));
@@ -967,6 +969,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </li>`)}
       </ul>` : html`<p class="review-empty">${later ? 'كل اللي فات متعلّم.' : 'كل بلوكات اليوم متعلّمة.'}</p>`}
+      ${open.length > 1 ? html`<button type="button" class="btn review-all" onClick=${() => act('اتعلّم ' + open.length + ' بلوك إنهم خلصوا', s => { const c = s.checks[iso] || {}; open.forEach(b => { c[b.key] = true; }); s.checks[iso] = c; return s; })}><${CheckSvg} />علّمهم كلهم خلصوا</button>` : null}
       ${later ? html`<p class="small muted">فاضل <bdi class="num">${later}</bdi> بلوك لسه ميعادهم مجاش.</p>` : null}
       <${DayProgress} iso=${iso} store=${store} />
       <${Balance} a=${ab.a} b=${ab.b} label=${isToday ? 'النهارده' : 'اليوم ده'} />
@@ -1025,16 +1028,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
           <div class="head-actions">
             ${!isToday ? html`<button type="button" class="btn" onClick=${() => setIso(now.iso)}>النهارده</button>` : null}
+            <button type="button" class="btn" aria-expanded=${reviewing ? 'true' : 'false'} onClick=${() => setReviewing(!reviewing)}>${reviewing ? 'اقفل المراجعة' : 'راجع يومك'}</button>
             <${WeekArrows} iso=${iso} setIso=${setIso} />
           </div>
         </div>
         <${DayPicker} iso=${iso} setIso=${setIso} now=${now} />
-        <button type="button" class="btn review-btn" aria-expanded=${reviewing ? 'true' : 'false'} onClick=${() => setReviewing(!reviewing)}>${reviewing ? 'اقفل المراجعة' : 'راجع يومك'}</button>
       </div>
 
       <div class="today-main">
-        <div class="o-now">${reviewing ? html`<${Review} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} onClose=${() => setReviewing(false)} />`
-          : isToday ? html`<${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
+        <div class="o-now">${reviewing ? html`<${Review} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} act=${act} onClose=${() => setReviewing(false)} />`
+          : isToday ? html`<${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} onReview=${() => setReviewing(true)} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
 
         <div class="sec o-timeline">
           <ol class="timeline">
@@ -1187,7 +1190,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       <div class="sec a-subjects">
         <h2>مذاكرة الكلية بالمادة</h2>
         <div class="panel stats">
-          ${Object.keys(SUBJ).sort((a, b) => (subjPlan[b] || 0) - (subjPlan[a] || 0)).map(k => statRow('study', html`<bdi class="subj">${SUBJ[k]}</bdi>`, subjPlan[k] || 0, subjGot[k] || 0))}
+          ${Object.keys(SUBJ).sort((a, b) => (subjPlan[b] || 0) - (subjPlan[a] || 0)).map(k => statRow('study', html`<bdi class="subj" title=${SUBJ[k]}>${k}</bdi>`, subjPlan[k] || 0, subjGot[k] || 0))}
         </div>
       </div>
 
