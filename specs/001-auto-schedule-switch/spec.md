@@ -8,6 +8,13 @@
 
 **Input**: User description: "تبديل نسخة الجدول تلقائيًا لما المغرب يعدّي 5:45م"
 
+## Clarifications
+
+### Session 2026-10-13
+
+- Q: When prayer-time calculation fails, should the fallback follow the real 5:45pm Maghrib line or the summer-time dates? → A: Follow the real line: late version from about 16 February through the last Thursday of October, early otherwise.
+- Q: If the owner misses the first day after a switch, when does the notice appear? → A: The first time the app is opened after the switch, however many days later, until dismissed.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The day's plan follows the sun without me touching anything (Priority: P1)
@@ -65,28 +72,32 @@ stable plan.
 ### User Story 3 - I can tell which version I'm looking at (Priority: P3)
 
 The owner can tell that the plan changed at the switch, so a different gym time is not mistaken for
-a mistake. On the first day after the switch, the app shows a short notice that the plan moved
-because Maghrib moved, and it does not show any permanent label.
+a mistake. The first time the owner opens the app after a switch, the app shows a short notice that
+the plan moved because Maghrib moved, however many days later that is, and it does not show any
+permanent label.
 
 **Why this priority**: Avoids confusion the first morning after the change; lower value than the
 switch itself.
 
-**Independent Test**: Open the app on 2026-10-30 and check for the notice; dismiss it and reopen.
+**Independent Test**: Open the app on 2026-10-30, and separately on 2026-11-03 without having opened
+it in between, and check for the notice; dismiss it and reopen.
 
 **Acceptance Scenarios**:
 
 1. **Given** the first day on the new version, **When** the owner opens Today, **Then** the notice
    is shown.
-2. **Given** the notice was dismissed, **When** the owner reopens the app the same day or later,
-   **Then** it does not appear again.
+2. **Given** the owner did not open the app on the switch day, **When** they open it several days
+   later, **Then** the notice is shown on that first open.
+3. **Given** the notice was dismissed, **When** the owner reopens the app the same day or later,
+   **Then** it does not appear again for that switch.
 
 ---
 
 ### Edge Cases
 
 - Prayer times cannot be computed on the device: the app MUST still pick a version, using a yearly
-  repeating rule: the late version from the last Friday of April through the last Thursday of
-  October, and the early version on all other dates.
+  repeating rule: the late version from 16 February through the last Thursday of October, and the
+  early version on all other dates.
 - The day runs until 1:00am: between midnight and 1:00 the app shows the previous date, so the
   version MUST be the one for that previous date.
 - A date whose Maghrib is exactly 5:45pm belongs to the late version.
@@ -110,14 +121,16 @@ switch itself.
   date and visible after the switch.
 - **FR-007**: The system MUST NOT mark, unmark, or move any block as done as a result of the switch
   (constitution Principle II).
-- **FR-008**: When prayer times are unavailable, the system MUST select the late version from the
-  last Friday of April through the last Thursday of October, and the early version otherwise,
-  with no yearly manual update. For 2026 this gives late through 2026-10-29 and early from
-  2026-10-30, the same as the prayer-time result.
+- **FR-008**: When prayer times are unavailable, the system MUST select the late version from
+  16 February through the last Thursday of October, and the early version otherwise, with no yearly
+  manual update. This tracks the real 5:45pm Maghrib line (Maghrib passes 5:45pm around 16 February
+  and drops below it when the clocks go back). For 2026 it gives late through 2026-10-29 and early
+  from 2026-10-30, the same as the prayer-time result, and it MUST agree with that result on every
+  date except at most one day around 16 February.
 - **FR-009**: The switch MUST NOT send any data off the device (constitution Principle III).
-- **FR-010**: On the first day on a new version, the system MUST show a short notice that the plan
-  moved because Maghrib moved. The owner MUST be able to dismiss it, and it MUST NOT reappear for
-  that switch after dismissal.
+- **FR-010**: The first time the app is opened after a version switch, however many days later, the
+  system MUST show a short notice that the plan moved because Maghrib moved. The owner MUST be able
+  to dismiss it, and it MUST NOT reappear for that switch after dismissal.
 
 ### Key Entities
 
@@ -146,10 +159,11 @@ switch itself.
   through 2026-10-29 (Maghrib 18:11) and the early version from 2026-10-30 (Maghrib 17:10), when the
   clocks go back. This spec therefore defines the expected behavior to verify, plus the gaps in the
   clarifications, not an unrelated new mechanism.
-- Egypt's summer time runs from the last Friday of April to the last Thursday of October (clocks
-  go back overnight into the last Friday of October, 2026-10-30 in the check above). This rule is
-  the owner's stated basis for the fallback and should be checked against the official announcement
-  each year.
+- Egypt's clocks go back overnight into the last Friday of October (2026-10-30 in the check above),
+  so the last Thursday of October is the last late-version day. The 16 February start comes from a
+  date-by-date check with the bundled prayer-time library for 2027 (Maghrib 17:44 on 15 February,
+  17:54 on 1 March); the exact day can shift by a day between years, and the clock-change date
+  should be checked against the official announcement each year.
 - Prayer times keep using the Egyptian General Authority of Survey method for Giza.
 - Out of scope: changing the 17:45 threshold, adding more versions, midterm dates, and syncing
   between devices.

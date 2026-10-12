@@ -35,5 +35,7 @@
   Q2 yearly repeating fallback rule (B); Q3 verify and close both gaps (B).
 - Finding: the current app already switches versions per date (see Assumptions). The work is to
   verify that behavior and close the two gaps (notice, yearly fallback).
-- The summer-time dates in the fallback come from the owner's rule and should be checked against
-  the official announcement each year.
+- Clarify session 2026-10-13: fallback now follows the real 5:45pm Maghrib line (16 February to the
+  last Thursday of October); the earlier summer-time-based fallback disagreed with FR-001 from
+  February to April. The clock-change date should be checked against the official announcement each
+  year.
