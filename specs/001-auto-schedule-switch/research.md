@@ -58,6 +58,27 @@ prayer times are available.
     note says pray Maghrib, then go), and never lies fully outside the window.
   The switch itself is correct; the late version is simply too coarse for summer.
 
+## Verification notes (Phase 4, run in the browser on 2026-10-13)
+
+Served the source over a local static server and drove it in the browser pane. Clock today is 13 Oct
+2026, so the current version is `A`.
+
+- **First run** (empty storage): `phaseSeen` is set to `A` silently, no notice.
+- **Store field**: a value of `'X'`, `null`, or a missing key all load as `null`, are set to `A` on
+  load, and show no notice; the saved `checks` are kept. `'A'`/`'B'` survive a reload.
+- **Notice**: with `phaseSeen` set to `B`, the notice shows «المغرب بقى بعد 5:45، فمواعيد الشغل
+  والجيم اتغيرت.» on all four tabs. With a faked clock of 2026-11-02 and `phaseSeen` `A`, it shows
+  «المغرب بقى قبل 5:45، فمواعيد الشغل والجيم اتغيرت.» (the early-version sentence, confirmed by the owner).
+- **Dismiss**: `تمام` writes only `phaseSeen`; the notice is gone and does not return after a reload.
+  `checks` (`{"2026-10-12": {"15:45-work": true, "18:00-gym": "skip"}}`) was byte-identical before and after.
+- **Network**: no `fetch` or XHR call from showing or dismissing the notice.
+- **Layout**: at a phone-width viewport the banner is 66px tall with a 40px button and the page has
+  no horizontal overflow; no console errors.
+- **Not tested here**: offline mode and the built `index.html` (Phase 5, T017-T018).
+- **Known narrow edge**: the "undo" snapshot taken when a block is skipped includes `phaseSeen`, so
+  tapping undo within 7 seconds of dismissing the notice could bring the notice back. It is harmless
+  and not fixed.
+
 ## R1. Is the switch already implemented?
 
 - **Decision**: Keep the existing per-date choice; do not rewrite it.

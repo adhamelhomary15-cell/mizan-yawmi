@@ -82,16 +82,16 @@ plan phase 2 = US1, plan phases 3 and 4 = US3, plan phase 5 = Polish. US2 is ver
 
 ### Store field (plan phase 3)
 
-- [ ] T010 [US3] In `src/planner.html` add `phaseSeen:null` to `EMPTY()` (line 705) and to the object returned by `normalize()` (line 720): value is kept only if it is exactly `'A'` or `'B'`, otherwise `null`. Keep `v:1`. Without this the field is erased on the next `update()` (research R4)
-- [ ] T011 [US3] In `src/planner.html` add the first-run rule inside `App` (after `useStore()`, line 1434): when `store.phaseSeen` is `null`, call `update` once to set it to `phaseFor(now.iso)` silently, with no notice and no change to any other field
-- [ ] T012 [US3] Check in the browser console that saved data without `phaseSeen` loads, that `'A'` and `'B'` survive an `update()` round trip, that an invalid value becomes `null`, and that `checks` is byte-identical before and after (data-model.md "Compatibility")
+- [x] T010 [US3] In `src/planner.html` add `phaseSeen:null` to `EMPTY()` (line 705) and to the object returned by `normalize()` (line 720): value is kept only if it is exactly `'A'` or `'B'`, otherwise `null`. Keep `v:1`. Without this the field is erased on the next `update()` (research R4)
+- [x] T011 [US3] In `src/planner.html` add the first-run rule inside `App` (after `useStore()`, line 1434): when `store.phaseSeen` is `null`, call `update` once to set it to `phaseFor(now.iso)` silently, with no notice and no change to any other field
+- [x] T012 [US3] Check in the browser console that saved data without `phaseSeen` loads, that `'A'` and `'B'` survive an `update()` round trip, that an invalid value becomes `null`, and that `checks` is byte-identical before and after (data-model.md "Compatibility")
 
 ### Notice banner (plan phase 4)
 
-- [ ] T013 [P] [US3] In `src/planner.html` add a small style block for the banner next to `.install` (line 268), reusing the `.install` pattern and existing DESIGN.md tokens only (no new colors, glow, or ornament)
-- [ ] T014 [US3] In `App` (`src/planner.html`, before `${view}` at line 1470) render the banner when `store.phaseSeen` is non-null and differs from `phaseFor(now.iso)`: a `role="status"` region with one sentence and one button `تمام`. Sentence when the current version is `A`: «المغرب بقى بعد 5:45، فمواعيد الشغل والجيم اتغيرت.» When it is `B`: «المغرب بقى قبل 5:45، فمواعيد الشغل والجيم اتغيرت.» (the `B` sentence is pending the owner's confirmation, see research.md R6)
-- [ ] T015 [US3] Wire `تمام` to `update(s => { s.phaseSeen = phaseFor(now.iso); return s; })` so it writes only `phaseSeen`. No timer, no auto-dismiss, no network call
-- [ ] T016 [US3] Run quickstart.md section 4 (all four steps) on each of the four tabs and at phone width; fix any layout problem inside the banner only
+- [x] T013 [P] [US3] In `src/planner.html` add a small style block for the banner next to `.install` (line 268), reusing the `.install` pattern and existing DESIGN.md tokens only (no new colors, glow, or ornament)
+- [x] T014 [US3] In `App` (`src/planner.html`, before `${view}` at line 1470) render the banner when `store.phaseSeen` is non-null and differs from `phaseFor(now.iso)`: a `role="status"` region with one sentence and one button `تمام`. Sentence when the current version is `A`: «المغرب بقى بعد 5:45، فمواعيد الشغل والجيم اتغيرت.» When it is `B`: «المغرب بقى قبل 5:45، فمواعيد الشغل والجيم اتغيرت.» (the `B` sentence is pending the owner's confirmation, see research.md R6)
+- [x] T015 [US3] Wire `تمام` to `update(s => { s.phaseSeen = phaseFor(now.iso); return s; })` so it writes only `phaseSeen`. No timer, no auto-dismiss, no network call
+- [x] T016 [US3] Run quickstart.md section 4 (all four steps) on each of the four tabs and at phone width; fix any layout problem inside the banner only
 
 **Checkpoint**: US3 works on its own. Owner reviews the diff and the Arabic copy.
 
