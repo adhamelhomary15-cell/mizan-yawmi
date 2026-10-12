@@ -13,6 +13,7 @@
 ### Session 2026-10-13
 
 - Q: When prayer-time calculation fails, should the fallback follow the real 5:45pm Maghrib line or the summer-time dates? → A: Follow the real line: late version from about 16 February through the last Thursday of October, early otherwise.
+- Q: SC-003 said every gym block falls between Maghrib and Isha, but the schedule has two fixed gym times. Narrow the criterion or add versions? → A: Narrow it to what the early version actually does and call the late version approximate; summer tracking becomes a separate feature.
 - Q: If the owner misses the first day after a switch, when does the notice appear? → A: The first time the app is opened after the switch, however many days later, until dismissed.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -31,8 +32,8 @@ land at the wrong time of day, which breaks the plan's honesty (Product Principl
 
 **Independent Test**: Open the app for a date before the change and a date after it (for example
 2026-10-29 and 2026-10-30) on a day that has two versions (Saturday, Monday, or Thursday). The two
-dates show different block times for work and gym, and in both the gym falls between that date's
-Maghrib and Isha.
+dates show different block times for work and gym, and the early version's gym starts shortly before
+that date's Maghrib, as the schedule note says (see SC-003).
 
 **Acceptance Scenarios**:
 
@@ -146,8 +147,12 @@ it in between, and check for the notice; dismiss it and reopen.
 - **SC-001**: On every date from 2026-10-01 to 2026-12-31, the version shown matches the rule in
   FR-001, with 0 mismatches in a date-by-date check.
 - **SC-002**: The owner performs 0 manual steps to get the new version after the clocks change.
-- **SC-003**: On both versions, 100% of gym blocks fall between that date's Maghrib and Isha, and
-  100% of "work before Maghrib" blocks end before Maghrib.
+- **SC-003**: On the early version, on 100% of dates the gym block starts between 0 and 60 minutes
+  before that date's Maghrib (the owner prays Maghrib, then goes) and never lies outside the
+  Maghrib-to-Isha window, and the work block labelled "ends before Maghrib" ends before Maghrib. The
+  late version has fixed times and is approximate: its gym block can start well before Maghrib in
+  summer (up to about 2 hours in midsummer). Tighter tracking of Maghrib in summer is out of scope
+  here and is tracked as a separate feature.
 - **SC-004**: 100% of ticks saved before the switch still display unchanged after it.
 - **SC-005**: The switch works in airplane mode on a phone with no loss of function.
 
@@ -167,3 +172,6 @@ it in between, and check for the notice; dismiss it and reopen.
 - Prayer times keep using the Egyptian General Authority of Survey method for Giza.
 - Out of scope: changing the 17:45 threshold, adding more versions, midterm dates, and syncing
   between devices.
+- Known limit (found in the Phase 3 check, research.md): with only two fixed versions, the late
+  version's gym and work times do not follow Maghrib through summer (Maghrib reaches about 20:01).
+  Making the gym follow Maghrib all year is a separate feature, not part of this one.

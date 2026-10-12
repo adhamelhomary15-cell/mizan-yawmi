@@ -68,7 +68,7 @@ plan phase 2 = US1, plan phases 3 and 4 = US3, plan phase 5 = Polish. US2 is ver
 
 - [x] T007 [US2] Trace every consumer of schedule blocks in `src/planner.html` (`dayBlocks` at line 789, `balanceOf`, `WeekView` at line 1123, `Review` at line 976, `TodayView` at line 1029) and confirm each gets blocks through `blocksFor(iso)` for the date being shown, not for today's date. List any consumer that does not; if none, record "no gap" in `specs/001-auto-schedule-switch/research.md` under "Verification notes"
 - [x] T008 [US2] Confirm FR-006 by reading how `store.checks[iso][block.key]` is keyed (`time + '-' + category`) and that a version change for a *different* date cannot rewrite another date's keys. Record the finding in `specs/001-auto-schedule-switch/research.md`
-- [ ] T009 [US2] If T007 or T008 finds a gap, stop and report it to the owner with a proposed fix before editing anything (Principle I); otherwise mark this phase complete
+- [x] T009 [US2] If T007 or T008 finds a gap, stop and report it to the owner with a proposed fix before editing anything (Principle I); otherwise mark this phase complete
 
 **Checkpoint**: Owner reviews the findings. A found gap becomes new tasks only after approval.
 

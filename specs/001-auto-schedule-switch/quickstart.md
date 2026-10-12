@@ -26,8 +26,8 @@ Expected: `index.html`, `sw.js`, and the manifest regenerate with no error. Do n
 Serve the repo root locally and open it at phone width. In the console:
 
 1. Today, a Saturday/Monday/Thursday: note the gym and work times. Use the browser clock override or
-   the Week view to compare 2026-10-29 with 2026-10-30; the times differ and the gym sits between
-   Maghrib and Isha in both (SC-003).
+   the Week view to compare 2026-10-29 with 2026-10-30; the times differ, and on 2026-10-30 the gym
+   starts 0 to 60 minutes before that day's Maghrib (SC-003, early version).
 2. Week view for the week of 2026-10-26: each day shows its own version; planned hours match.
 3. Reload with a saved tick on 2026-10-26: the tick is still there after the date moves past the
    switch (SC-004).
