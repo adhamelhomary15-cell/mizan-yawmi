@@ -34,6 +34,30 @@ prayer times are available.
   (the file has just the definition and that one call), so the version cannot change within a day.
 - Syntax check of the edited inline script: parses.
 
+## Verification notes (Phase 3, read-only)
+
+- **T007, no code gap**: every consumer gets blocks through `dayBlocks(iso, store)` -> `blocksFor(iso)`
+  (`src/planner.html:797-798`) for the date it is showing, never for today's date:
+  `dayCounts` (812, by `iso`), `balanceOf(days)` (876-878, per `d`), `NowCard` (949, `iso` prop),
+  `Review` (987, `iso` prop), `TodayView` (1040, `iso` prop), `WeekView` (1139 and 1183, per week day `d`;
+  `balanceOf(days)` at 1163). The per-weekday `note` text (`SCHED[wd].note`, line 1108) does not depend
+  on the version.
+- **T008, no code gap**: ticks live at `store.checks[iso][time + '-' + category]`
+  (`statusOf`/`setStatus`, lines 805-815). `phaseFor` depends only on its own date, so a switch on one
+  date cannot rewrite another date's keys. One narrow edge: if prayer times are computed on one load and
+  unavailable on another, the 16 Feb dates in 2027, 2028 and 2032 (and only those) could resolve to a
+  different version and orphan that day's ticks. It needs a failing prayer library on exactly those
+  dates, so it is recorded, not fixed.
+- **T009, gap found in the spec, not the code**: SC-003 says every gym block falls between that date's
+  Maghrib and Isha. The schedule has only two fixed gym times (late version 18:00-19:45, early version
+  16:45-18:30), so it cannot hold. Checked over 2026-10-01 to 2027-09-30 with the vendored library, as if
+  every day were a gym day:
+  - late version: the block starts before Maghrib on 233 of 255 days, by up to 121 minutes (Maghrib
+    20:01 on 2027-06-29), and lies fully outside the Maghrib-Isha window on 76 days (summer);
+  - early version: the block starts 10 to 59 minutes before Maghrib on all 110 days (by design: the
+    note says pray Maghrib, then go), and never lies fully outside the window.
+  The switch itself is correct; the late version is simply too coarse for summer.
+
 ## R1. Is the switch already implemented?
 
 - **Decision**: Keep the existing per-date choice; do not rewrite it.
