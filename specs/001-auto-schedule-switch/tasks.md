@@ -49,10 +49,10 @@ plan phase 2 = US1, plan phases 3 and 4 = US3, plan phase 5 = Polish. US2 is ver
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] In `src/planner.html` `phaseFor(iso)` (around line 633), replace the fixed-date fallback `return iso < '2026-10-30' ? 'A' : 'B';` with the yearly rule: `'A'` from 16 February through the last Thursday of October inclusive, `'B'` otherwise. Compute the last Thursday with UTC date arithmetic on the ISO string (no local time zone). Keep the primary branch (`p.maghrib >= 17*60 + 45`) unchanged
-- [ ] T004 [US1] Update the comment above `phaseFor` in `src/planner.html` so it describes both the primary rule and the fallback rule
-- [ ] T005 [US1] Make the fallback in `tools/check-phase.js` import-or-copy exactly the function body written in T003 (same code, not a re-derivation), then run `node tools/check-phase.js`; it must exit 0 with at most one disagreeing day per year around 16 Feb and none in October. If it does not, adjust T003 and rerun, and show the owner the output
-- [ ] T006 [US1] Confirm FR-005 and FR-002 by reading `src/planner.html`: days whose `blocks` is an array (single version) never reach `phaseFor` (`blocksFor`, line 638-640), and `phaseFor` takes only an ISO date so it cannot change within a day. Record the two line references in `specs/001-auto-schedule-switch/research.md` under "Verification notes"
+- [x] T003 [US1] In `src/planner.html` `phaseFor(iso)` (around line 633), replace the fixed-date fallback `return iso < '2026-10-30' ? 'A' : 'B';` with the yearly rule: `'A'` from 16 February through the last Thursday of October inclusive, `'B'` otherwise. Compute the last Thursday with UTC date arithmetic on the ISO string (no local time zone). Keep the primary branch (`p.maghrib >= 17*60 + 45`) unchanged
+- [x] T004 [US1] Update the comment above `phaseFor` in `src/planner.html` so it describes both the primary rule and the fallback rule
+- [x] T005 [US1] Make the fallback in `tools/check-phase.js` import-or-copy exactly the function body written in T003 (same code, not a re-derivation), then run `node tools/check-phase.js`; it must exit 0 with at most one disagreeing day per year around 16 Feb and none in October. If it does not, adjust T003 and rerun, and show the owner the output
+- [x] T006 [US1] Confirm FR-005 and FR-002 by reading `src/planner.html`: days whose `blocks` is an array (single version) never reach `phaseFor` (`blocksFor`, line 638-640), and `phaseFor` takes only an ISO date so it cannot change within a day. Record the two line references in `specs/001-auto-schedule-switch/research.md` under "Verification notes"
 
 **Checkpoint**: US1 is complete and testable on its own. Owner reviews the `phaseFor` diff and the script output.
 

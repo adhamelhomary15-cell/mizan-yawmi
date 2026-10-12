@@ -22,6 +22,18 @@ prayer times are available.
   17 Feb (one day, inside the allowed margin). It agrees on every October switch in all ten years.
 - **Conclusion**: the plan's assumptions hold. T003 can use the yearly rule as written.
 
+## Verification notes (Phase 2)
+
+- **T005**: `node tools/check-phase.js` now loads `lastThursdayOfOctober` and `phaseFor` straight out of
+  `src/planner.html` (prayer times switched off) and compares them with the computed rule for
+  2026-2035. Result: exit 0, every year ok; the only disagreements are 16 Feb 2027, 2028 and 2032.
+  Negative control: `--fallback=current` still exits 1.
+- **T006, FR-005**: `blocksFor` (`src/planner.html:647-649`) calls `phaseFor` only when
+  `day.blocks` is an object with versions; days whose `blocks` is an array never reach it.
+- **T006, FR-002**: `phaseFor(iso)` takes only an ISO date and `blocksFor` is its only caller
+  (the file has just the definition and that one call), so the version cannot change within a day.
+- Syntax check of the edited inline script: parses.
+
 ## R1. Is the switch already implemented?
 
 - **Decision**: Keep the existing per-date choice; do not rewrite it.

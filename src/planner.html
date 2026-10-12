@@ -629,11 +629,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     ptCache[iso] = r;
     return r;
   }
-  // Maghrib after 5:45pm = "late" variant (before the clocks go back), otherwise the early variant.
+  // Last Thursday of October (the last day before the clocks go back), as an ISO date. UTC arithmetic, no local zone.
+  function lastThursdayOfOctober(year){
+    const d = new Date(Date.UTC(year, 9, 31));
+    while (d.getUTCDay() !== 4) d.setUTCDate(d.getUTCDate() - 1);
+    return year + '-10-' + pad(d.getUTCDate());
+  }
+  // Maghrib at or after 5:45pm = "late" variant (A), otherwise the early variant (B).
+  // If prayer times can't be computed, fall back to the dates that line up with that rule every year:
+  // late from 16 February through the last Thursday of October.
   function phaseFor(iso){
     const p = prayers(iso);
     if (p) return p.maghrib >= 17*60 + 45 ? 'A' : 'B';
-    return iso < '2026-10-30' ? 'A' : 'B';
+    const y = Number(iso.slice(0, 4));
+    return iso >= y + '-02-16' && iso <= lastThursdayOfOctober(y) ? 'A' : 'B';
   }
   function blocksFor(iso){
     const day = SCHED[weekday(iso)];
