@@ -34,8 +34,8 @@ plan phase 2 = US1, plan phases 3 and 4 = US3, plan phase 5 = Polish. US2 is ver
 
 **Purpose**: Prove the plan's assumptions before changing anything.
 
-- [ ] T001 Create `tools/check-phase.js`: a Node script that loads `tools/vendor/adhan.umd.min.js`, computes Maghrib for Giza (30.0, 31.17, Egyptian method, Cairo time) for every date 2026-01-01 to 2035-12-31, derives the version with the primary rule (late `A` if Maghrib >= 17:45, else `B`) and with a copy of the fallback rule, and prints per year: the date the primary rule switches to late, the date it switches to early, and every date where the two rules disagree. Exit non-zero if any disagreement is more than one day per year around 16 Feb or occurs in October
-- [ ] T002 Run `node tools/check-phase.js` against the **current** fallback (`iso < '2026-10-30' ? 'A' : 'B'` from `src/planner.html:633-637`) and record the output in `specs/001-auto-schedule-switch/research.md` under a new "Baseline run" heading, confirming 2026-10-29 is `A` (Maghrib 18:11) and 2026-10-30 is `B` (17:10)
+- [x] T001 Create `tools/check-phase.js`: a Node script that loads `tools/vendor/adhan.umd.min.js`, computes Maghrib for Giza (30.0, 31.17, Egyptian method, Cairo time) for every date 2026-01-01 to 2035-12-31, derives the version with the primary rule (late `A` if Maghrib >= 17:45, else `B`) and with a copy of the fallback rule, and prints per year: the date the primary rule switches to late, the date it switches to early, and every date where the two rules disagree. Exit non-zero if any disagreement is more than one day per year around 16 Feb or occurs in October
+- [x] T002 Run `node tools/check-phase.js` against the **current** fallback (`iso < '2026-10-30' ? 'A' : 'B'` from `src/planner.html:633-637`) and record the output in `specs/001-auto-schedule-switch/research.md` under a new "Baseline run" heading, confirming 2026-10-29 is `A` (Maghrib 18:11) and 2026-10-30 is `B` (17:10)
 
 **Checkpoint**: Owner reviews the baseline output. Phases 2+ do not start until the owner approves.
 

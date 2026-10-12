@@ -2,6 +2,26 @@
 
 No open unknowns remained in the spec. These are the design decisions, with what was checked.
 
+## Baseline run (T002, 2026-10-13)
+
+`node tools/check-phase.js --fallback=current` (the fallback in `src/planner.html` today) and
+`--fallback=yearly` (the proposed rule), over 2026-2035. Computed with the vendored adhan library
+(Giza 30.0, 31.17, Egyptian method, Cairo time); the primary rule is the one the app uses when
+prayer times are available.
+
+- **Primary rule, 2026**: switches to late `A` on 2026-02-16 (Maghrib 17:45) and to early `B` on
+  2026-10-30 (Maghrib 17:10). Confirms 2026-10-29 is `A` (18:11) and 2026-10-30 is `B` (17:10).
+  Across years the October switch is the day after the last Thursday of October (2027-10-29,
+  2028-10-27, 2030-11-01, 2031-10-31, ...).
+- **Current fallback (fixed date 2026-10-30)**: FAIL in every year. In 2026 it is already wrong from
+  1 Jan to 15 Feb (46 days: it says `A`, computed is `B`); from 2027 on it says `B` all year after
+  2026-10-30, so about 250 days a year disagree. It only matters when prayer times are unavailable,
+  but there it is wrong for most of next year.
+- **Proposed yearly fallback** (late 16 Feb to the last Thursday of October): passes in all ten years.
+  It agrees on every date except 16 Feb in 2027, 2028 and 2032, where the computed switch lands on
+  17 Feb (one day, inside the allowed margin). It agrees on every October switch in all ten years.
+- **Conclusion**: the plan's assumptions hold. T003 can use the yearly rule as written.
+
 ## R1. Is the switch already implemented?
 
 - **Decision**: Keep the existing per-date choice; do not rewrite it.
