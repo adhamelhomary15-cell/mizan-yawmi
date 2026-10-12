@@ -65,8 +65,8 @@ button{font:inherit;color:inherit}
 .icon-btn svg{width:18px;height:18px}
 
 /* day picker */
-.daypick{display:flex;align-items:center;gap:6px}
-.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;flex:1;min-width:0}
+.daypick{display:block}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;min-width:0}
 .dp{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;padding:4px 0;border-radius:12px;border:1px solid transparent;background:none;cursor:pointer;line-height:1.3}
 .dp .dn{font-size:12px;color:var(--muted)}
 .dp .dd{font-family:var(--font-mono);font-weight:600;font-size:15px}
@@ -157,6 +157,19 @@ button{font:inherit;color:inherit}
 .mk.appt{border-color:var(--quran);color:var(--quran);font-weight:600}
 .row-actions{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:var(--s2);padding:0 0 var(--s2)}
 .add-block{align-self:flex-start}
+.head-actions{display:flex;align-items:center;gap:6px;flex:none}
+.arrows{display:inline-flex;gap:6px}
+.review-btn{align-self:flex-start}
+.review{display:flex;flex-direction:column;gap:var(--s3);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:var(--s4)}
+.review-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.review-list li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s2) var(--s3);padding:10px 0;border-top:1px solid var(--line)}
+.review-list li:first-child{border-top:0}
+.review-text{display:flex;flex-direction:column;min-width:0;flex:1 1 12rem}
+.review-actions{display:flex;gap:var(--s2)}
+.review-actions .btn.primary{background:var(--c);border-color:var(--c);color:var(--surface)}
+.review-empty{font-family:var(--font-display);font-weight:500;font-size:17px}
+.add-task{align-self:flex-start}
+.panel > .add-task{display:inline-flex}
 
 /* main target */
 .target{display:flex;flex-direction:column;gap:6px;width:100%;text-align:start;cursor:pointer;background:color-mix(in srgb,var(--course) var(--tint),var(--surface));border:1px solid color-mix(in srgb,var(--course) 30%,var(--line));border-radius:14px;padding:12px 14px}
@@ -281,7 +294,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   .o-head{grid-area:head}
   .today-main{display:flex;flex-direction:column;gap:var(--s5);grid-area:main;min-width:0}
   .today-side{display:flex;flex-direction:column;gap:var(--s5);grid-area:side;position:sticky;top:24px;min-width:0}
-  .daypick{max-width:600px}
+  .daypick{max-width:640px}
   .weekv{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);grid-template-areas:"head head" "strips balance" "strips stats" "subjects rules";gap:var(--s5) 36px;align-items:start}
   .a-head{grid-area:head} .a-balance{grid-area:balance} .a-strips{grid-area:strips} .a-stats{grid-area:stats} .a-subjects{grid-area:subjects} .a-rules{grid-area:rules}
   .weeks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
@@ -841,16 +854,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
 
   /* ---------------- Today ---------------- */
+  function WeekArrows({iso, setIso}){
+    return html`<span class="arrows">
+      <button type="button" class="icon-btn" aria-label="الأسبوع اللي فات" onClick=${() => setIso(addDays(iso, -7))}><${Chevron} dir="prev" /></button>
+      <button type="button" class="icon-btn" aria-label="الأسبوع الجاي" onClick=${() => setIso(addDays(iso, 7))}><${Chevron} dir="next" /></button>
+    </span>`;
+  }
   function DayPicker({iso, setIso, now}){
     const ws = weekStart(iso);
     const days = WEEK_ORDER.map((_, i) => addDays(ws, i));
     return html`<div class="daypick">
-      <button type="button" class="icon-btn" aria-label="الأسبوع اللي فات" onClick=${() => setIso(addDays(iso, -7))}><${Chevron} dir="prev" /></button>
       <div class="days">
         ${days.map(d => html`<button type="button" class=${'dp' + (d === now.iso ? ' is-today' : '')} aria-pressed=${d === iso ? 'true' : 'false'} aria-label=${DAY_NAMES[weekday(d)] + ' ' + dateLabel(d)} onClick=${() => setIso(d)}>
           <span class="dn">${DAY_SHORT[weekday(d)]}</span><span class="dd">${Number(d.slice(8))}</span></button>`)}
       </div>
-      <button type="button" class="icon-btn" aria-label="الأسبوع الجاي" onClick=${() => setIso(addDays(iso, 7))}><${Chevron} dir="next" /></button>
     </div>`;
   }
 
@@ -882,9 +899,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       <span class="target-name"><bdi>${c.name}</bdi></span>
       <span class="small muted">التارجت الأساسي · خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span>
       <span class="track"><span class="fill" style=${{display:'block', width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></span></span>
-      <span class="small">${next
-        ? html`الجاي: <bdi class="mono">${next[0]}</bdi> <bdi>${next[1]}</bdi>${wk && behind ? html`<span class="muted"> · فاضل <bdi class="num">${behind}</bdi> في خطة الأسبوع ده</span>` : null}`
-        : 'خلّصت الكورس كله.'}</span>
+      ${next ? html`<span class="small">الجاي: <bdi class="mono">${next[0]}</bdi> <bdi>${next[1]}</bdi></span>
+        ${wk && behind ? html`<span class="small muted">فاضل <bdi class="num">${behind}</bdi> في خطة الأسبوع ده</span>` : null}`
+        : html`<span class="small">خلّصت الكورس كله.</span>`}
     </button>`;
   }
 
@@ -909,6 +926,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const fri = weekday(iso) === 5;
     if (!main) return html`<section class="now c-quran" aria-label="دلوقتي">
       <p class="now-done">مفيش حاجة تانية في جدول النهارده.</p>
+      ${(() => { const left = blocks.filter(b => statusOf(store, iso, b.key) === null).length; return left ? html`<p class="now-meta">فيه <bdi class="num">${left}</bdi> بلوك لسه معلّمتش عليهم. دوس "راجع يومك" فوق وعلّمهم.</p>` : null; })()}
       <${DayProgress} iso=${iso} store=${store} />
     </section>`;
     const st = statusOf(store, iso, main.key);
@@ -928,6 +946,30 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         ${nx ? html`<p class="row-line"><span class="lbl">${fri && nx[0] === 'dhuhr' ? 'الجمعة' : nx[1]}</span><span>${fmtStr(p[nx[0]])} · بعد ${countdown(p[nx[0]] - now.min)}</span></p>` : null}
       </div>
       <${DayProgress} iso=${iso} store=${store} />
+    </section>`;
+  }
+
+  // Night review: everything not yet marked, one tap each. Opened from the header button.
+  function Review({iso, now, store, update, skip, onClose}){
+    const isToday = iso === now.iso;
+    const tracked = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
+    const open = tracked.filter(b => statusOf(store, iso, b.key) === null && (!isToday || b.s <= now.min));
+    const later = isToday ? tracked.filter(b => statusOf(store, iso, b.key) === null && b.s > now.min).length : 0;
+    const ab = balanceOf([iso], store);
+    return html`<section class="review" aria-label="مراجعة اليوم">
+      <div class="sec-head"><h2>${isToday ? 'راجع يومك' : 'مراجعة ' + DAY_NAMES[weekday(iso)]}</h2><button type="button" class="btn ghost small" onClick=${onClose}>اقفل</button></div>
+      ${open.length ? html`<ul class="review-list">
+        ${open.map(b => html`<li class=${'c-' + b.cat}>
+          <div class="review-text"><span class="title"><${Title} text=${b.title} /></span><span class="meta"><b>${CATS[b.cat].label}</b> · ${fmtStr(b.s)} لحد ${fmtStr(b.e)}</span></div>
+          <div class="review-actions">
+            <button type="button" class="btn primary" onClick=${() => setStatus(update, iso, b.key, 'done')}><${CheckSvg} />خلّصته</button>
+            <button type="button" class="btn" onClick=${() => skip(b)}>اتلغى</button>
+          </div>
+        </li>`)}
+      </ul>` : html`<p class="review-empty">${later ? 'كل اللي فات متعلّم.' : 'كل بلوكات اليوم متعلّمة.'}</p>`}
+      ${later ? html`<p class="small muted">فاضل <bdi class="num">${later}</bdi> بلوك لسه ميعادهم مجاش.</p>` : null}
+      <${DayProgress} iso=${iso} store=${store} />
+      <${Balance} a=${ab.a} b=${ab.b} label=${isToday ? 'النهارده' : 'اليوم ده'} />
     </section>`;
   }
 
@@ -968,6 +1010,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const isToday = iso === now.iso;
     const [open, setOpen] = useState(null);
     const [adding, setAdding] = useState(false);
+    const [reviewing, setReviewing] = useState(false);
     useEffect(() => { setOpen(null); setAdding(false); }, [iso]);
     const dayTasks = store.tasks.filter(t => !t.done && t.due && (t.due === iso || (isToday && t.due < iso)));
     const wd = weekday(iso);
@@ -980,13 +1023,18 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
             <h1>${DAY_NAMES[wd]}</h1>
             <p class="sub">${dateLabel(iso)}${isToday ? ' · النهارده' : ''}</p>
           </div>
-          ${!isToday ? html`<button type="button" class="btn" onClick=${() => setIso(now.iso)}>ارجع للنهارده</button>` : null}
+          <div class="head-actions">
+            ${!isToday ? html`<button type="button" class="btn" onClick=${() => setIso(now.iso)}>النهارده</button>` : null}
+            <${WeekArrows} iso=${iso} setIso=${setIso} />
+          </div>
         </div>
         <${DayPicker} iso=${iso} setIso=${setIso} now=${now} />
+        <button type="button" class="btn review-btn" aria-expanded=${reviewing ? 'true' : 'false'} onClick=${() => setReviewing(!reviewing)}>${reviewing ? 'اقفل المراجعة' : 'راجع يومك'}</button>
       </div>
 
       <div class="today-main">
-        <div class="o-now">${isToday ? html`<${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
+        <div class="o-now">${reviewing ? html`<${Review} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} onClose=${() => setReviewing(false)} />`
+          : isToday ? html`<${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
 
         <div class="sec o-timeline">
           <ol class="timeline">
@@ -1083,10 +1131,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return html`<div class="weekv">
       <div class="top a-head">
         <div class="top-meta"><h1>الأسبوع</h1><p class="sub">${dateLabel(days[0])} – ${dateLabel(days[6])}</p></div>
-        <div style="display:flex;gap:6px">
-          <button type="button" class="icon-btn" aria-label="الأسبوع اللي فات" onClick=${() => setIso(addDays(iso, -7))}><${Chevron} dir="prev" /></button>
-          <button type="button" class="icon-btn" aria-label="الأسبوع الجاي" onClick=${() => setIso(addDays(iso, 7))}><${Chevron} dir="next" /></button>
-        </div>
+        <${WeekArrows} iso=${iso} setIso=${setIso} />
       </div>
 
       <div class="sec a-balance"><h2>ميزان الأسبوع</h2><div class="panel"><${Balance} a=${bal.a} b=${bal.b} label="الأسبوع ده" /></div></div>
@@ -1272,6 +1317,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const [tag, setTag] = useState('uni');
     const [due, setDue] = useState('');
     const [filter, setFilter] = useState('open');
+    const [taskForm, setTaskForm] = useState(false);
+    const [apptForm, setApptForm] = useState(false);
 
     const addAppt = e => {
       e.preventDefault();
@@ -1279,13 +1326,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       if (!time){ setApptErr('اختار الساعة.'); return; }
       setApptErr('');
       update(s => { s.appts.push({id: uid36(), label: label.trim().slice(0, 60), day: Number(day), time}); return s; });
-      setLabel(''); setTime('');
+      setLabel(''); setTime(''); setApptForm(false);
     };
     const addTask = e => {
       e.preventDefault();
       if (!text.trim()) return;
       update(s => { s.tasks.push({id: uid36(), text: text.trim().slice(0, 140), tag, due: due || '', done: false, created: now.iso}); return s; });
-      setText(''); setDue('');
+      setText(''); setDue(''); setTaskForm(false);
     };
     const appts = store.appts.slice().sort((a, b) => WEEK_ORDER.indexOf(Number(a.day)) - WEEK_ORDER.indexOf(Number(b.day)) || a.time.localeCompare(b.time));
     const open = store.tasks.filter(t => !t.done).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
@@ -1295,28 +1342,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return html`<div class="tasksv">
       <div class="top a-head"><div class="top-meta"><h1>المهام</h1><p class="sub">مهام ليها ميعاد، ومواعيد ثابتة كل أسبوع</p></div></div>
 
-      <div class="sec a-appts">
-        <div class="sec-head"><h2>مواعيد كل أسبوع</h2><p class="small muted">بتظهر جوه الجدول في يومها</p></div>
-        <div class="panel">
-          ${appts.length ? html`<div>${appts.map(a => html`<div class="appt">
-              <div><p>${a.label}</p><p class="when">${DAY_NAMES[a.day]} · ${fmtStr(toMin(a.time))}</p></div>
-              <button type="button" class="btn ghost small" onClick=${() => goDay(addDays(weekStart(now.iso), WEEK_ORDER.indexOf(Number(a.day))))}>افتح اليوم</button>
-              <button type="button" class="del" aria-label=${'امسح ' + a.label} onClick=${() => remove('اتمسح ميعاد "' + a.label + '"', s => { s.appts = s.appts.filter(x => x.id !== a.id); return s; })}>امسح</button>
-            </div>`)}</div>`
-            : html`<p class="empty">التسميع والجيم والكلية متحطين في الجدول خلاص. ضيف هنا أي ميعاد ثابت تاني، زي ميتنج شغل أسبوعي، وهيظهر جوه يومه.</p>`}
-          <form class="form" style="margin-top:12px" onSubmit=${addAppt}>
-            <div class="form-row">
-              <label class="field wide" for="appt-label">الميعاد<input id="appt-label" value=${label} onInput=${e => setLabel(e.target.value)} placeholder="مثلاً: ميتنج الفريق" maxlength="60" /></label>
-              <label class="field" for="appt-day">اليوم<select id="appt-day" value=${day} onChange=${e => setDay(e.target.value)}>
-                ${WEEK_ORDER.map(d => html`<option value=${String(d)}>${DAY_NAMES[d]}</option>`)}</select></label>
-              <label class="field" for="appt-time">الساعة<input id="appt-time" type="time" value=${time} onInput=${e => setTime(e.target.value)} /></label>
-            </div>
-            ${apptErr ? html`<p class="form-err" role="alert">${apptErr}</p>` : null}
-            <div><button type="submit" class="btn primary">ضيف الميعاد</button></div>
-          </form>
-        </div>
-      </div>
-
       <div class="sec a-tasks">
         <div class="sec-head"><h2>المهام</h2>
           <div class="filters">
@@ -1325,16 +1350,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
         <div class="panel">
-          <form class="form" onSubmit=${addTask}>
+          ${taskForm ? html`<form class="form" onSubmit=${addTask} style="margin-bottom:10px">
             <div class="form-row">
               <label class="field wide" for="task-text">مهمة جديدة<input id="task-text" value=${text} onInput=${e => setText(e.target.value)} placeholder="مثلاً: حل شيت 3 في Math-3" maxlength="140" /></label>
               <label class="field" for="task-tag">النوع<select id="task-tag" value=${tag} onChange=${e => setTag(e.target.value)}>
                 ${Object.keys(TASK_TAGS).map(k => html`<option value=${k}>${TASK_TAGS[k]}</option>`)}</select></label>
               <label class="field" for="task-due">آخر ميعاد (اختياري)<input id="task-due" type="date" value=${due} onInput=${e => setDue(e.target.value)} /></label>
             </div>
-            <div><button type="submit" class="btn primary">ضيف المهمة</button></div>
-          </form>
-          <div class="tlist" style="margin-top:10px">
+            <div class="form-row"><button type="submit" class="btn primary">ضيف المهمة</button><button type="button" class="btn ghost" onClick=${() => setTaskForm(false)}>إلغاء</button></div>
+          </form>` : html`<button type="button" class="btn add-task" onClick=${() => setTaskForm(true)}><${Plus} />مهمة جديدة</button>`}
+          <div class="tlist" style="margin-top:6px">
             ${shown.length ? shown.map(t => html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : '')}>
               <${Check} on=${!!t.done} cat=${t.tag} label=${(t.done ? 'رجّع: ' : 'خلّص: ') + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = !x.done; return s; })} />
               <div style="min-width:0"><p class="ttext">${t.text}</p>
@@ -1344,6 +1369,28 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
       </div>
+      <div class="sec a-appts">
+        <div class="sec-head"><h2>مواعيد كل أسبوع</h2>${!apptForm ? html`<button type="button" class="btn small" onClick=${() => setApptForm(true)}><${Plus} />ميعاد</button>` : null}</div>
+        <div class="panel">
+          ${appts.length ? html`<div>${appts.map(a => html`<div class="appt">
+              <div><p>${a.label}</p><p class="when">${DAY_NAMES[a.day]} · ${fmtStr(toMin(a.time))}</p></div>
+              <button type="button" class="btn ghost small" onClick=${() => goDay(addDays(weekStart(now.iso), WEEK_ORDER.indexOf(Number(a.day))))}>افتح اليوم</button>
+              <button type="button" class="del" aria-label=${'امسح ' + a.label} onClick=${() => remove('اتمسح ميعاد "' + a.label + '"', s => { s.appts = s.appts.filter(x => x.id !== a.id); return s; })}>امسح</button>
+            </div>`)}</div>`
+            : html`<p class="empty">التسميع والجيم والكلية متحطين في الجدول خلاص. أي ميعاد ثابت تاني، زي ميتنج شغل أسبوعي، ضيفه من "+ ميعاد" وهيظهر جوه يومه.</p>`}
+          ${apptForm ? html`<form class="form" style="margin-top:12px" onSubmit=${addAppt}>
+            <div class="form-row">
+              <label class="field wide" for="appt-label">الميعاد<input id="appt-label" value=${label} onInput=${e => setLabel(e.target.value)} placeholder="مثلاً: ميتنج الفريق" maxlength="60" /></label>
+              <label class="field" for="appt-day">اليوم<select id="appt-day" value=${day} onChange=${e => setDay(e.target.value)}>
+                ${WEEK_ORDER.map(d => html`<option value=${String(d)}>${DAY_NAMES[d]}</option>`)}</select></label>
+              <label class="field" for="appt-time">الساعة<input id="appt-time" type="time" value=${time} onInput=${e => setTime(e.target.value)} /></label>
+            </div>
+            ${apptErr ? html`<p class="form-err" role="alert">${apptErr}</p>` : null}
+            <div class="form-row"><button type="submit" class="btn primary">ضيف الميعاد</button><button type="button" class="btn ghost" onClick=${() => setApptForm(false)}>إلغاء</button></div>
+          </form>` : null}
+        </div>
+      </div>
+
     </div>`;
   }
 
