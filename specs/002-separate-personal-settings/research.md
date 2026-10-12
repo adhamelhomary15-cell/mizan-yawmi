@@ -102,3 +102,22 @@ No open unknowns in the spec. These are the design decisions, with what was chec
 - **Needs the owner's approval** before executing (Principle I).
 - **Alternatives considered**: Rewriting the history or recreating the repo (rejected by the owner);
   leaving documents in place (rejected: violates Principle VI).
+
+## Parity baseline (T001)
+
+The "before" build for the parity check is `src/planner.html` at commit `f989b91` (main after the constitution
+v1.1.0 merge), saved locally as `.private/old.html` (untracked). The parity harness
+(`tools/check-parity.js`) was checked old-against-old (0 differences) and against two deliberately
+mutated copies (a changed block time, an added subject): each exits 1, so the harness can fail.
+
+## Verification notes (Phases 1-2, 2026-10-13)
+
+- `.gitignore` now ignores `.private/` and `*.settings.local.json`; verified with `git check-ignore`
+  on sample paths and `git status` (nothing private listed).
+- `node tools/check-settings.js` accepts the embedded example; `--self-test` runs 17 cases (empty,
+  not JSON, wrong format, newer version, bad time zone, missing location, latitude out of range, unknown
+  category, unknown subject, blocks out of order, bad time text, bad day key, bad prayer method, course
+  week with from after to, over 1 MB, unknown top-level field as a warning only) and all pass.
+- `settings.example.json` was generated from the embedded example and reviewed: generic values only.
+- The owner's settings file was generated locally by a one-off script (kept in the private folder),
+  validates with exit 0, and has not been printed or committed.
