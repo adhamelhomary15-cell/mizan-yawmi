@@ -1,0 +1,63 @@
+# Runs the repo's own dev checks on every pull request and on main. Read-only: it builds and compares, never
+# pushes or deploys. No secrets are used.
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generated files match the source
+        run: |
+          python3 tools/build.py
+          node tools/check-settings.js --write-example
+          git diff --exit-code -- index.html sw.js manifest.webmanifest settings.example.json \
+            || { echo "::error::Run 'python3 tools/build.py' and 'node tools/check-settings.js --write-example', then commit the result."; exit 1; }
+
+      - name: Settings
+        run: |
+          node tools/check-settings.js
+          node tools/check-settings.js --self-test
+
+      - name: Edit rules
+        run: |
+          node tools/check-edit.js
+          node tools/check-edit.js --self-test
+
+      - name: Task paste
+        run: |
+          node tools/check-paste.js
+          node tools/check-paste.js --self-test
+
+      - name: Prayer-anchored blocks
+        run: |
+          node tools/check-anchors.js --require-fit
+          node tools/check-anchors.js --self-test
+
+      - name: Workout rules
+        run: |
+          node tools/check-workout.js
+          node tools/check-workout.js --self-test
+
+      - name: Privacy check works
+        # The owner's private settings are not in the repo, so CI can only prove the checker itself works.
+        # The real scan runs locally before each commit (AGENTS.md).
+        run: node tools/check-private.js --self-test
