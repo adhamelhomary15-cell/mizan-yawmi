@@ -51,6 +51,13 @@ function report(label, res) {
 
 function selfTest() {
   const ex = () => JSON.parse(exampleText);
+  // The example with an anchor set on one block of day 0 (index -1 means the last block); empty detail and subject fill the gap.
+  const withAnchor = (index, a) => JSON.stringify((() => {
+    const o = ex(), blocks = o.week['0'].blocks, b = blocks[index < 0 ? blocks.length + index : index];
+    while (b.length < 5) b.push('');
+    b[5] = a;
+    return o;
+  })());
   const cases = [
     ['example is accepted', exampleText, true, null],
     ['empty file', '', false, 'not-settings'],
@@ -68,7 +75,19 @@ function selfTest() {
     ['bad prayer method', JSON.stringify(Object.assign(ex(), {prayerMethod: 'Nope'})), false, 'invalid'],
     ['course week with from after to', JSON.stringify((() => { const o = ex(); o.course.plan[0].from = '2030-01-01'; return o; })()), false, 'invalid'],
     ['file over 1 MB', JSON.stringify(Object.assign(ex(), {name: 'x'})) + ' '.repeat(MAX_BYTES), false, 'too-large'],
-    ['unknown top-level field is only a warning', JSON.stringify(Object.assign(ex(), {extraThing: 1})), true, null]
+    // Blocks tied to a prayer time: a sixth element {prayer, dir, min}. Blocks at index 2 are in the middle of day 0.
+    ['anchor on a middle block is accepted', withAnchor(2, {prayer: 'maghrib', dir: 'before', min: 30}), true, null],
+    ['anchor with min 0 and 180 is accepted', withAnchor(2, {prayer: 'isha', dir: 'after', min: 180}), true, null],
+    ['anchor with an unknown prayer', withAnchor(2, {prayer: 'sunrise', dir: 'before', min: 30}), false, 'invalid'],
+    ['anchor with an unknown direction', withAnchor(2, {prayer: 'maghrib', dir: 'later', min: 30}), false, 'invalid'],
+    ['anchor minutes out of range', withAnchor(2, {prayer: 'maghrib', dir: 'before', min: 200}), false, 'invalid'],
+    ['anchor minutes not a whole number', withAnchor(2, {prayer: 'maghrib', dir: 'before', min: 30.5}), false, 'invalid'],
+    ['anchor with an extra key', withAnchor(2, {prayer: 'maghrib', dir: 'before', min: 30, extra: 1}), false, 'invalid'],
+    ['anchor that is not an object', withAnchor(2, 'maghrib'), false, 'invalid'],
+    ['anchor on the first block', withAnchor(0, {prayer: 'maghrib', dir: 'before', min: 30}), false, 'invalid'],
+    ['anchor on the last block', withAnchor(-1, {prayer: 'maghrib', dir: 'before', min: 30}), false, 'invalid'],
+    ['a block with seven items', JSON.stringify((() => { const o = ex(); const b = o.week['0'].blocks[2]; while (b.length < 5) b.push(''); b.push({prayer: 'maghrib', dir: 'before', min: 30}, 'x'); return o; })()), false, 'invalid'],
+    ['unknown top-level field is only a warning',JSON.stringify(Object.assign(ex(), {extraThing: 1})), true, null]
   ];
   let failed = 0;
   cases.forEach(([label, text, wantOk, wantCode]) => {

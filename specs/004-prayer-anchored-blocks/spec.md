@@ -219,8 +219,9 @@ the third is accepted.
 - A block has real length only up to the next block's start (the schedule has no gaps), so the block just
   before an anchored block necessarily ends where the anchored block starts; that is why it also absorbs part
   of the change, as noted in the clarification answer.
-- The minimum length an absorbing block may be left with is 15 minutes; the exact value is fixed at planning
-  time and documented in the settings contract.
+- The minimum length an absorbing block may be left with is 15 minutes (or its length at its fixed time, if
+  that was shorter, so a block that was already short never blocks the anchor by itself); the value is
+  documented in the settings contract.
 - Existing settings files stay valid: anchors are optional, and a file without them behaves as today.
 - Out of scope: anchoring several blocks at once to one prayer in a single entry, anchoring to sunrise or
   to another block, editing anchors inside the app, notifications, and recurring-date rules.

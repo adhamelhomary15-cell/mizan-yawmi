@@ -46,8 +46,10 @@ Output: `{blocks, notice}`.
 4. Walk the list carrying `delta` (0 before the first anchor): an anchored block starts at `computed` and
    sets the carried `delta`; any other block starts at `fixedStart + delta`.
 5. Each block ends where the next starts; the last block ends at `END`.
-6. Fit check: every block before an anchored block and the last block must be at least 15 minutes long.
-   If not, discard the result: fixed times everywhere, `notice = 'nofit'`.
+6. Fit check: every block before an anchored block and the last block must be at least 15 minutes long
+   (or at least as long as it is at its fixed time, when that is shorter than 15, so a block that was already
+   short never makes the day "not fit" by itself). If not, discard the result: fixed times everywhere,
+   `notice = 'nofit'`.
 
 Lengths change only for the block before each anchored block and for the last block.
 

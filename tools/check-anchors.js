@@ -1,0 +1,165 @@
+#!/usr/bin/env node
+/*
+ * Dev-only check for blocks tied to a prayer time (not shipped with the app).
+ *
+ *   node tools/check-anchors.js              run the checks against src/planner.html
+ *   node tools/check-anchors.js --self-test  break the layout rule on purpose and check that this script notices
+ *
+ * It runs the app's own layoutDay (the block between "start of anchor layout" and "end of anchor layout" in
+ * src/planner.html), so the app and this tool cannot disagree. It prints check names and counts only.
+ *
+ * Exit codes: 0 all checks pass, 1 a check failed, 2 usage or I/O error.
+ */
+const fs = require('fs');
+const path = require('path');
+
+const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'planner.html'), 'utf8');
+const START_MARK = '// start of anchor layout', END_MARK = '// end of anchor layout';
+
+function load(source) {
+  const a = source.indexOf(START_MARK), b = source.indexOf(END_MARK);
+  if (a < 0 || b < 0 || b < a) throw new Error('anchor layout block not found in src/planner.html');
+  return new Function(source.slice(a, b) + '\nreturn layoutDay;')();
+}
+
+const START = 420, END = 1500;
+const clone = x => JSON.parse(JSON.stringify(x));
+const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const tm = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const anchor = (prayer, dir, min) => ({prayer, dir, min});
+
+// A generic day: the exercise block (16:30) is tied to Maghrib; dinner, a course and free time follow it.
+const day = a => [
+  ['07:00', 'rest', 'Wake up'], ['08:00', 'study', 'Study'], ['14:30', 'study', 'Reading'],
+  ['16:30', 'exercise', 'Workout', '', '', a], ['18:00', 'rest', 'Dinner'], ['19:00', 'course', 'Course'], ['21:00', 'personal', 'Free time']
+];
+const PM = {fajr: 300, dhuhr: 720, asr: 900, maghrib: 1080, isha: 1200};
+const round5 = m => Math.round(m / 5) * 5;
+const lengths = r => r.blocks.map(b => b.e - b.s);
+
+function runChecks(layoutDay) {
+  const results = [];
+  const check = (name, fn) => { let ok = false; try { ok = !!fn(); } catch (e) { ok = false; } results.push([name, ok]); };
+  const lay = (list, pm) => layoutDay(clone(list), pm, START, END);
+  const plainList = day(undefined).map(b => b.slice(0, 5));
+
+  check('a day with no anchors is laid out as before, with no notice, for any prayer times', () => {
+    return [PM, null, {}].every(pm => { const r = lay(plainList, pm); return r.notice === null && r.blocks.length === 7 && r.blocks[0].s === 420 && r.blocks[1].e === tm('14:30') && r.blocks[6].e === END; });
+  });
+  check('an anchored block starts at the prayer time minus or plus its minutes, rounded to 5', () => {
+    return ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].every(p => ['before', 'after'].every(dir => [0, 30, 45, 180].every(min => {
+      const pm = {fajr: 303, dhuhr: 722, asr: 903, maghrib: 1081, isha: 1202};
+      const r = lay(day(anchor(p, dir, min)), pm);
+      const want = round5(pm[p] + (dir === 'before' ? -min : min));
+      const usable = want >= START && r.notice === null;
+      return !usable || r.blocks[3].s === want;
+    })));
+  });
+  check('when it fits, the first start and the last end do not move', () => {
+    const r = lay(day(anchor('maghrib', 'before', 30)), PM);
+    return r.notice === null && r.blocks[0].s === tm('07:00') && r.blocks[6].e === END;
+  });
+  check('everything after the anchored block shifts with it; the block before and the last one absorb', () => {
+    const fixed = lay(plainList, PM), r = lay(day(anchor('maghrib', 'before', 30)), PM);
+    const delta = 1080 - 30 - tm('16:30');
+    return r.notice === null && r.blocks[3].s === 1050 && r.blocks[4].s === tm('18:00') + delta && r.blocks[5].s === tm('19:00') + delta && r.blocks[6].s === tm('21:00') + delta
+      && lengths(r)[2] === lengths(fixed)[2] + delta && lengths(r)[6] === lengths(fixed)[6] - delta;
+  });
+  check('only the block before the anchored block and the last block change length', () => {
+    const fixed = lay(plainList, PM);
+    return [-60, 0, 90, 150].every(shift => {
+      const pm = Object.assign({}, PM, {maghrib: 1080 + shift});
+      const r = lay(day(anchor('maghrib', 'before', 30)), pm);
+      return r.notice === null && lengths(r).every((l, i) => (i === 2 || i === 6) ? true : l === lengths(fixed)[i]);
+    });
+  });
+  check('blocks never overlap and always have a positive length when the day fits', () => {
+    return [-120, -30, 0, 60, 120, 180].every(shift => {
+      const r = lay(day(anchor('maghrib', 'before', 30)), Object.assign({}, PM, {maghrib: 1080 + shift}));
+      return r.blocks.every((b, i) => b.e > b.s && (i === 0 || b.s === r.blocks[i - 1].e));
+    });
+  });
+  check('two anchored blocks: each follows its prayer and the block before each absorbs', () => {
+    const list = [['07:00', 'rest', 'A'], ['10:00', 'study', 'B', '', '', anchor('dhuhr', 'before', 15)], ['13:00', 'work', 'C'], ['16:00', 'exercise', 'D', '', '', anchor('maghrib', 'before', 30)], ['18:00', 'rest', 'E'], ['21:00', 'personal', 'F']];
+    const r = lay(list, PM);
+    return r.notice === null && r.blocks[1].s === round5(720 - 15) && r.blocks[3].s === round5(1080 - 30)
+      && r.blocks[2].s === tm('13:00') + (705 - tm('10:00')) && r.blocks[0].e === 705;
+  });
+  check('an absorbing block may shrink to 15 minutes but not below', () => {
+    // the last block (21:00) shrinks by delta; 240 minutes at fixed time, so delta 225 leaves 15 and delta 230 leaves 10
+    const at15 = lay(day(anchor('maghrib', 'before', 30)), Object.assign({}, PM, {maghrib: 1245}));
+    const at10 = lay(day(anchor('maghrib', 'before', 30)), Object.assign({}, PM, {maghrib: 1250}));
+    return at15.notice === null && lengths(at15)[6] === 15 && at10.notice === 'nofit' && at10.blocks.every((b, i) => b.s === tm(day()[i][0]));
+  });
+  check('when the day does not fit, every block is at its fixed time and the notice is nofit', () => {
+    const r = lay(day(anchor('maghrib', 'after', 180)), PM);
+    return r.notice === 'nofit' && r.blocks.every((b, i) => b.s === tm(day()[i][0])) && r.blocks[6].e === END;
+  });
+  check('missing prayer times, or a missing prayer, give fixed times and the unavailable notice', () => {
+    return [null, undefined, {}, {fajr: 300}, {maghrib: NaN}].every(pm => { const r = lay(day(anchor('maghrib', 'before', 30)), pm); return r.notice === 'unavailable' && r.blocks.every((b, i) => b.s === tm(day()[i][0])); });
+  });
+  check('a prayer time after midnight is treated as the next day', () => {
+    const list = [['07:00', 'rest', 'A'], ['23:50', 'study', 'B', '', '', anchor('fajr', 'after', 0)], ['24:00', 'rest', 'C']];
+    const r = lay(list, {fajr: 10});
+    return r.notice === null && r.blocks[1].s === 1450 && r.blocks[2].s === 1460 && r.blocks[2].e === END;
+  });
+  check('keys always use the fixed start and category, anchored or not, fitting or not', () => {
+    const want = day().map(b => b[0] + '-' + b[1]);
+    return [PM, null, Object.assign({}, PM, {maghrib: 1250})].every(pm => eq(lay(day(anchor('maghrib', 'before', 30)), pm).blocks.map(b => b.key), want));
+  });
+  check('title, detail and subject are carried over unchanged', () => {
+    const list = [['07:00', 'rest', 'T1', 'D1', 'S1'], ['10:00', 'study', 'T2', '', '', anchor('dhuhr', 'before', 0)], ['13:00', 'rest', 'T3']];
+    const r = lay(list, PM);
+    return r.blocks[0].title === 'T1' && r.blocks[0].detail === 'D1' && r.blocks[0].subj === 'S1' && r.blocks[2].detail === '' && r.blocks[2].subj === '';
+  });
+  check('layoutDay does not change its input', () => {
+    const list = day(anchor('maghrib', 'before', 30)), copy = clone(list);
+    layoutDay(list, PM, START, END);
+    return eq(list, copy);
+  });
+  check('the layout block never mentions done, checks or modules', () => {
+    const block = html.slice(html.indexOf(START_MARK), html.indexOf(END_MARK));
+    return !/\bchecks\b|\bmodules\b|\.done\b/.test(block);
+  });
+  return results;
+}
+
+function report(results) {
+  results.forEach(([n, ok]) => console.log((ok ? 'ok    ' : 'FAIL  ') + n));
+  const failed = results.filter(r => !r[1]).length;
+  console.log('\n' + (results.length - failed) + ' of ' + results.length + ' checks passed');
+  return failed;
+}
+
+if (process.argv.includes('--self-test')) {
+  // Each mutation breaks one rule in a copy of the source; the checks MUST notice.
+  const mutations = [
+    ['the 15-minute floor is lowered to 5', s => s.replace('Math.min(15, was)', 'Math.min(5, was)')],
+    ['rounding to 5 minutes is removed', s => s.replace('Math.round((pm[b[5].prayer] + (b[5].dir === \'before\' ? -1 : 1) * b[5].min) / 5) * 5', '(pm[b[5].prayer] + (b[5].dir === \'before\' ? -1 : 1) * b[5].min)')],
+    ['keys use the computed start', s => s.replace("key: b[0] + '-' + b[1]}", "key: starts[i] + '-' + b[1]}")],
+    ['the last block keeps its length instead of absorbing', s => s.replace(': END, cat: b[1]', ': starts[i] + (END - fixed[i]), cat: b[1]')],
+    ['the nofit notice is not set', s => s.replace("notice: 'nofit'", 'notice: null')],
+    ['the unavailable notice is not set', s => s.replace("notice: 'unavailable'", 'notice: null')],
+    ['direction is ignored', s => s.replace("(b[5].dir === 'before' ? -1 : 1)", '-1')],
+    ['blocks after the anchor do not shift', s => s.replace('return fixed[i] + delta;', 'return fixed[i];')]
+  ];
+  let missed = 0;
+  mutations.forEach(([name, mutate]) => {
+    const mutated = mutate(html);
+    if (mutated === html) { console.log('FAIL  mutation did not apply: ' + name); missed++; return; }
+    let results;
+    try { results = runChecks(load(mutated)); } catch (e) { results = [['load', false]]; }
+    const noticed = results.some(r => !r[1]);
+    console.log((noticed ? 'ok    ' : 'FAIL  ') + 'noticed: ' + name);
+    if (!noticed) missed++;
+  });
+  const clean = runChecks(load(html)).every(r => r[1]);
+  console.log((clean ? 'ok    ' : 'FAIL  ') + 'the unmodified source passes');
+  if (!clean) missed++;
+  console.log('\n' + (missed ? missed + ' self-test case(s) failed' : 'all ' + (mutations.length + 1) + ' self-test cases passed'));
+  process.exit(missed ? 1 : 0);
+}
+
+let results;
+try { results = runChecks(load(html)); } catch (e) { console.error(e.message); process.exit(2); }
+process.exit(report(results) ? 1 : 0);
