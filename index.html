@@ -1541,8 +1541,83 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
+  /* ---------------- edit rules (pure; tools/check-edit.js runs this block) ---------------- */
+  // start of edit rules
+  const TASK_EDIT_KEYS = ['text', 'tag', 'due'];
+  const APPT_EDIT_KEYS = ['label', 'day', 'time'];
+  function validateTaskFields(f, tags){
+    const text = String(f && f.text != null ? f.text : '').trim().slice(0, 140);
+    if (!text) return {ok:false, error:'اكتب نص المهمة.'};
+    const tag = f && f.tag;
+    if (typeof tag !== 'string' || !Object.prototype.hasOwnProperty.call(tags, tag)) return {ok:false, error:'اختار النوع.'};
+    const due = f && f.due ? String(f.due) : '';
+    if (due && (!/^\d{4}-\d{2}-\d{2}$/.test(due) || isNaN(Date.parse(due + 'T00:00:00Z')))) return {ok:false, error:'التاريخ مش مظبوط.'};
+    return {ok:true, value:{text, tag, due}};
+  }
+  function validateApptFields(f, days){
+    const label = String(f && f.label != null ? f.label : '').trim().slice(0, 60);
+    if (!label) return {ok:false, error:'اكتب اسم الميعاد.'};
+    const time = f && f.time ? String(f.time) : '';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return {ok:false, error:'اختار الساعة.'};
+    const day = Number(f && f.day);
+    if (f == null || f.day === '' || f.day == null || !days.includes(day)) return {ok:false, error:'اختار اليوم.'};
+    return {ok:true, value:{label, day, time}};
+  }
+  // Changes only the record with this id, and only the keys in allowedKeys. Returns a new list.
+  function applyEdit(list, id, patch, allowedKeys){
+    return list.map(r => {
+      if (!r || r.id !== id) return r;
+      const next = Object.assign({}, r);
+      allowedKeys.forEach(k => { if (patch && Object.prototype.hasOwnProperty.call(patch, k)) next[k] = patch[k]; });
+      return next;
+    });
+  }
+  // Undo of one edit: puts the old values back into that record only; a record that is gone stays gone.
+  function restoreFields(list, id, before, allowedKeys){
+    return applyEdit(list, id, before, allowedKeys);
+  }
+  // end of edit rules
+
+  /* ---------------- one form for adding and editing a task or an appointment ---------------- */
+  // initial: task {text, tag, due} or appt {label, day, time}. onSubmit gets the validated, trimmed value.
+  function ItemForm({kind, initial, idPrefix, textLabel, submitLabel, focusFirst, onSubmit, onCancel}){
+    const isTask = kind === 'task';
+    const [draft, setDraft] = useState(() => isTask
+      ? {text: initial.text, tag: Object.prototype.hasOwnProperty.call(TASK_TAGS, initial.tag) ? initial.tag : '', due: initial.due || ''}
+      : {label: initial.label, day: String(initial.day), time: initial.time || ''});
+    const [err, setErr] = useState('');
+    const first = useRef(null);
+    useEffect(() => { if (focusFirst && first.current) first.current.focus(); }, []);
+    const set = k => e => setDraft(d => Object.assign({}, d, {[k]: e.target.value}));
+    const submit = e => {
+      e.preventDefault();
+      const r = isTask ? validateTaskFields(draft, TASK_TAGS) : validateApptFields(draft, WEEK_ORDER);
+      if (!r.ok){ setErr(r.error); return; }
+      setErr('');
+      onSubmit(r.value);
+    };
+    const onKey = e => { if (e.key === 'Escape'){ e.preventDefault(); onCancel(); } };
+    return html`<form class="form" onSubmit=${submit} onKeyDown=${onKey}>
+      <div class="form-row">
+        ${isTask ? html`
+          <label class="field wide" for=${idPrefix + '-text'}>${textLabel}<input id=${idPrefix + '-text'} ref=${first} value=${draft.text} onInput=${set('text')} placeholder="مثلاً: حل شيت 3" maxlength="140" /></label>
+          <label class="field" for=${idPrefix + '-tag'}>النوع<select id=${idPrefix + '-tag'} value=${draft.tag} onChange=${set('tag')}>
+            ${draft.tag === '' ? html`<option value="">اختار النوع</option>` : null}
+            ${Object.keys(TASK_TAGS).map(k => html`<option value=${k}>${TASK_TAGS[k]}</option>`)}</select></label>
+          <label class="field" for=${idPrefix + '-due'}>آخر ميعاد (اختياري)<input id=${idPrefix + '-due'} type="date" value=${draft.due} onInput=${set('due')} /></label>`
+        : html`
+          <label class="field wide" for=${idPrefix + '-label'}>${textLabel}<input id=${idPrefix + '-label'} ref=${first} value=${draft.label} onInput=${set('label')} placeholder="مثلاً: ميتنج الفريق" maxlength="60" /></label>
+          <label class="field" for=${idPrefix + '-day'}>اليوم<select id=${idPrefix + '-day'} value=${draft.day} onChange=${set('day')}>
+            ${WEEK_ORDER.map(d => html`<option value=${String(d)}>${DAY_NAMES[d]}</option>`)}</select></label>
+          <label class="field" for=${idPrefix + '-time'}>الساعة<input id=${idPrefix + '-time'} type="time" value=${draft.time} onInput=${set('time')} /></label>`}
+      </div>
+      ${err ? html`<p class="form-err" role="alert">${err}</p>` : null}
+      <div class="form-row"><button type="submit" class="btn primary">${submitLabel}</button><button type="button" class="btn ghost" onClick=${onCancel}>إلغاء</button></div>
+    </form>`;
+  }
+
   /* ---------------- Tasks & appointments ---------------- */
-  function TasksView({now, store, update, goDay, remove}){
+  function TasksView({now, store, update, goDay, remove, actEdit}){
     const [label, setLabel] = useState('');
     const [day, setDay] = useState('5');
     const [time, setTime] = useState('');
@@ -1763,6 +1838,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       toastTimer.current = setTimeout(() => setToast(null), 7000);
     };
     const remove = act;
+    // Edits undo only the edited record (undoFn), never the whole store, so a tick made in the meantime stays.
+    const actEdit = (text, fn, undoFn) => {
+      update(fn);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({text, undo: () => update(undoFn)});
+      toastTimer.current = setTimeout(() => setToast(null), 7000);
+    };
     MAIN_NAME = mainCourse(store).name;
 
     let view;
@@ -1770,7 +1852,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
     else if (tab === 'settings') view = html`<${SettingsView} />`;
-    else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} />`;
+    else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
 
     return html`<div class="shell">
       <nav class="nav" aria-label="أقسام">

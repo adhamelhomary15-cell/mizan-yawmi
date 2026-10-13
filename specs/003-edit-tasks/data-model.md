@@ -33,13 +33,13 @@ No new stored fields and no storage migration. Records live in the progress obje
 
 ## Pure functions (in `src/planner.html`, covered by `tools/check-edit.js`)
 
-- `validateTaskFields({text, tag, due})` returns `{ok, error?, value?}`; `value` is trimmed and cut to the
-  limit. Error cases: empty text, tag not in `TASK_TAGS`.
-- `validateApptFields({label, day, time})` returns `{ok, error?, value?}`. Error cases: empty name, no
-  time, day outside the week.
-- `applyEdit(list, id, patch)` returns the list with only the record `id` changed, only for the allowed
+- `validateTaskFields({text, tag, due}, tags)` returns `{ok, error?, value?}`; `value` is trimmed and cut to the
+  limit. Error cases: empty text, tag not in `TASK_TAGS`, due not a real date.
+- `validateApptFields({label, day, time}, days)` returns `{ok, error?, value?}`. Error cases: empty name, no
+  time, day outside the week (`اختار اليوم.`).
+- `applyEdit(list, id, patch, allowedKeys)` returns the list with only the record `id` changed, only for the allowed
   fields; any other key in `patch` is ignored; an unknown id returns the list unchanged.
-- `restoreFields(list, id, before)` is the undo: puts the old values back into the record `id` if it
+- `restoreFields(list, id, before, allowedKeys)` is the undo: puts the old values back into the record `id` if it
   still exists; otherwise returns the list unchanged.
 
 ## State transitions

@@ -18,6 +18,7 @@ variant.
 | Title of the text field | `نص المهمة` (the add form keeps `مهمة جديدة`) |
 | Buttons | `احفظ التعديل` (submit), `إلغاء` |
 | Empty text | inline `form-err` (`role="alert"`): `اكتب نص المهمة.`; record unchanged |
+| Date not a real date | `التاريخ مش مظبوط.`; record unchanged |
 | Type no longer available | select shows an empty `اختار النوع` option; save blocked with `اختار النوع.` |
 | Focus | first field on open; Escape = cancel; back to the row's `عدّل` button after save or cancel |
 
