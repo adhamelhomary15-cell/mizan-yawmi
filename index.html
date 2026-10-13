@@ -2285,9 +2285,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const Stopwatch = () => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M9.5 3.5h5"/></svg>`;
 
   // A confirmation that stays in view at the bottom; focus starts on the safe choice.
-  function Sheet({label, children}){
+  function Sheet({label, onClose, children}){
     const ref = useRef(null);
-    useEffect(() => { const b = ref.current && ref.current.querySelector('[data-first]'); if (b) b.focus(); }, []);
+    useEffect(() => {
+      const b = ref.current && ref.current.querySelector('[data-first]'); if (b) b.focus();
+      const key = e => { if (e.key === 'Escape') onClose(); };
+      document.addEventListener('keydown', key);
+      return () => document.removeEventListener('keydown', key);
+    }, []);
     return html`<div class="wk-sheet" role="dialog" aria-label=${label} ref=${ref}>${children}</div>`;
   }
 
@@ -2353,7 +2358,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     if (panel === 'pick') return html`<${ExercisePicker} all=${all} onPick=${addExercise} onCreate=${createExercise} onBack=${() => setPanel(null)} />`;
 
     const setField = (ei, si, f, v) => {
-      patch(c => { const s = c.exercises[ei].sets[si]; s[f] = v; s.done = false; });
+      patch(c => { const s = c.exercises[ei].sets[si]; s[f] = v; s.done = false; if (c.rest && c.rest.ei === ei && c.rest.si === si) c.rest = null; });
       if (bad && bad.ei === ei && bad.si === si) setBad(null);
     };
     // A set is done only by this tap, and only with valid numbers.
@@ -2423,19 +2428,19 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         </section>`;
       }) : html`<p class="empty">ضيف أول تمرين وابدأ سجّل.</p>`}
       <button type="button" class="btn" id="wk-add-ex" onClick=${() => { setMenu(null); setPanel('pick'); top(); }}><${Plus} />ضيف تمرين</button>
-      ${panel === 'finish' ? html`<${Sheet} label="إنهاء التمرينة">
+      ${panel === 'finish' ? html`<${Sheet} label="إنهاء التمرينة" onClose=${() => setPanel(null)}>
         ${fin.ok ? html`<p><b>تخلّص التمرينة؟</b></p><p class="small"><bdi>${fin.workout.exercises.reduce((n, x) => n + x.sets.length, 0)}</bdi> مجموعة · <bdi>${fin.workout.exercises.length}</bdi> تمرين · المدة <bdi dir="ltr">${formatClock(elapsedMs(cur.startedAt, Date.now()))}</bdi>${fin.dropped ? html`<br /><bdi>${fin.dropped}</bdi> مجموعة مش معلّمة خلصانة، وهتتشال.` : null}</p>`
           : html`<p><b>${fin.error}</b></p><p class="small muted">علّم مجموعة بالأرقام وبعدين خلّص.</p>`}
         <div class="wk-sheet-actions"><button type="button" class="btn primary" disabled=${!fin.ok} onClick=${saveFinish}>احفظ التمرينة</button><button type="button" class="btn" data-first="1" onClick=${() => setPanel(null)}>كمّل</button></div>
       <//>` : null}
       <${WakeLock} />
-      ${panel === 'rest' ? html`<${Sheet} label="وقت الراحة">
+      ${panel === 'rest' ? html`<${Sheet} label="وقت الراحة" onClose=${() => setPanel(null)}>
         <p><b>وقت الراحة بين المجموعات</b></p>
         <div class="wk-step"><button type="button" class="btn" aria-label="قلّل 15 ثانية" onClick=${() => setPrefs(p => { p.restSeconds = Math.max(10, p.restSeconds - 15); })}>−15</button><bdi dir="ltr" class="num wk-step-v" aria-live="polite">${formatClock(data.prefs.restSeconds * 1000)}</bdi><button type="button" class="btn" aria-label="زوّد 15 ثانية" onClick=${() => setPrefs(p => { p.restSeconds = Math.min(600, p.restSeconds + 15); })}>+15</button></div>
         <button type="button" class="btn" role="switch" aria-checked=${data.prefs.sound ? 'true' : 'false'} onClick=${() => setPrefs(p => { p.sound = !p.sound; })}>التنبيه الصوتي: ${data.prefs.sound ? 'شغّال' : 'مقفول'}</button>
         <div class="wk-sheet-actions"><button type="button" class="btn primary" data-first="1" onClick=${() => setPanel(null)}>تمام</button></div>
       <//>` : null}
-      ${panel === 'discard' ? html`<${Sheet} label="إلغاء التمرينة">
+      ${panel === 'discard' ? html`<${Sheet} label="إلغاء التمرينة" onClose=${() => setPanel(null)}>
         <p><b>متأكد؟</b></p><p class="small">التمرينة مش هتتحفظ والأرقام اللي كتبتها هتروح.</p>
         <div class="wk-sheet-actions"><button type="button" class="btn danger" onClick=${discard}>أيوه، الغيها</button><button type="button" class="btn" data-first="1" onClick=${() => setPanel(null)}>لأ</button></div>
       <//>` : null}
