@@ -43,7 +43,8 @@ The prayer location and method come from the user's settings, not from a fixed c
   (what is in use, import a settings file, reset to the example).
 - The schedule, subjects, category labels, course plan, rules text, time zone, prayer location and method, the
   day-version rule, and language all come from a settings object: the stored settings file if there is one,
-  otherwise the embedded example. A day can have two versions that switch by a prayer-time threshold.
+  otherwise the embedded example. A day can have two versions that switch by a prayer-time threshold, and a block can be tied to a prayer
+  (for example 30 minutes before Maghrib) so it follows the real prayer time all year.
 - Progress (ticks, tasks, added courses) lives on the device (localStorage) under its own key, separate from the
   settings. Importing, replacing, or resetting settings never touches progress.
 - Single self-contained HTML file; `tools/build.py` inlines libraries and fonts. Libraries: Preact + htm, adhan

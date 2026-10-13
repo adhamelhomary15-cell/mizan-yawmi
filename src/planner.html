@@ -414,7 +414,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
    ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
    ["13:30", "rest", "غدا وراحة"],
    ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
-   ["16:30", "gym", "مثال: رياضة"],
+   ["16:30", "gym", "مثال: رياضة", "بيبدأ قبل المغرب بنص ساعة", "", {"prayer": "maghrib", "dir": "before", "min": 30}],
    ["18:00", "rest", "عشا"],
    ["19:00", "course", "مثال: كورس", "جلسة كورس"],
    ["21:00", "personal", "وقتك", "وقت حر"]
@@ -650,7 +650,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       let prev = -1;
       list.forEach((b, i) => {
         const at = path + '[' + i + ']';
-        if (!Array.isArray(b) || b.length < 2 || b.length > 5) { bad('invalid', at, 'a block is [start, category, title, detail, subject] with 2 to 5 items'); return; }
+        if (!Array.isArray(b) || b.length < 2 || b.length > 6) { bad('invalid', at, 'a block is [start, category, title, detail, subject, anchor] with 2 to 6 items'); return; }
         const t = timeOk(b[0]);
         if (t === null) bad('invalid', at + '.start', 'start must be HH:MM from 00:00 to 24:59');
         else { if (t <= prev) bad('invalid', at + '.start', 'blocks must be in ascending time order'); prev = t; }
@@ -658,6 +658,18 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         if (!isStr(b[2], 1, 120)) bad('invalid', at + '.title', 'title must be 1 to 120 characters');
         if (b[3] !== undefined && !isStr(b[3], 0, 300)) bad('invalid', at + '.detail', 'detail must be at most 300 characters');
         if (b[4] !== undefined && b[4] !== '' && !(subs && Object.prototype.hasOwnProperty.call(subs, b[4]))) bad('unknown-id', at + '.subject', 'subject is not defined in subjects');
+        if (b.length === 6) {
+          // The sixth element ties the block to a prayer time: {prayer, dir, min}. The block's start stays as the fixed fallback time.
+          const a = b[5], an = at + '.anchor';
+          if (!isObj(a)) bad('invalid', an, 'anchor must be an object with prayer, dir and min');
+          else {
+            Object.keys(a).forEach(k => { if (k !== 'prayer' && k !== 'dir' && k !== 'min') bad('invalid', an + '.' + k, 'anchor has only prayer, dir and min'); });
+            if (['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].indexOf(a.prayer) < 0) bad('invalid', an + '.prayer', 'prayer must be fajr, dhuhr, asr, maghrib or isha');
+            if (a.dir !== 'before' && a.dir !== 'after') bad('invalid', an + '.dir', 'dir must be before or after');
+            if (!Number.isInteger(a.min) || a.min < 0 || a.min > 180) bad('invalid', an + '.min', 'min must be a whole number from 0 to 180');
+            if (i === 0 || i === list.length - 1) bad('invalid', an, 'the first and the last block of a day cannot be tied to a prayer');
+          }
+        }
       });
     };
     const week = isObj(obj.week) ? obj.week : null;
@@ -854,14 +866,51 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const until = f.lateUntil === 'last-thursday-october' ? lastThursdayOfOctober(y) : y + '-' + f.lateUntil;
     return iso >= y + '-' + f.lateFrom && iso <= until ? 'A' : 'B';
   }
-  function blocksFor(iso){
-    const day = SCHED[weekday(iso)] || {blocks: []};
-    const list = Array.isArray(day.blocks) ? day.blocks : (day.blocks[phaseFor(iso)] || day.blocks.A);
-    return list.map((b, i) => {
-      const s = toMin(b[0]), e = i + 1 < list.length ? toMin(list[i+1][0]) : END;
-      return {s, e, cat:b[1], title:b[2], detail:b[3] || '', subj:b[4] || '', key:b[0] + '-' + b[1]};
+  // start of anchor layout
+  // Lays out one day's block list. A block may carry a sixth element {prayer, dir, min}: it then starts at that
+  // day's prayer time (pm: minutes since midnight per prayer, or null) minus or plus min, rounded to 5 minutes.
+  // The schedule has no gaps (a block ends where the next starts, the last ends at END), so everything after an
+  // anchored block shifts with it, the block just before it ends where it starts, and the last block takes the
+  // rest. If prayer times are missing, or an absorbing block would get shorter than 15 minutes (or than it
+  // already was at its fixed time, when that was less), every block keeps its fixed time and a notice says why.
+  // Keys always use the fixed start, so ticks never move.
+  function layoutDay(list, pm, START, END){
+    const tm = t => { const [a, b] = t.split(':').map(Number); return a * 60 + b; };
+    const make = starts => list.map((b, i) => ({s: starts[i], e: i + 1 < list.length ? starts[i + 1] : END, cat: b[1], title: b[2], detail: b[3] || '', subj: b[4] || '', key: b[0] + '-' + b[1]}));
+    const fixed = list.map(b => tm(b[0]));
+    if (!list.some(b => b[5])) return {blocks: make(fixed), notice: null};
+    if (!pm || list.some(b => b[5] && !Number.isFinite(pm[b[5].prayer]))) return {blocks: make(fixed), notice: 'unavailable'};
+    let delta = 0;
+    const starts = list.map((b, i) => {
+      if (!b[5]) return fixed[i] + delta;
+      let m = Math.round((pm[b[5].prayer] + (b[5].dir === 'before' ? -1 : 1) * b[5].min) / 5) * 5;
+      if (m < START) m += 1440;
+      delta = m - fixed[i];
+      return m;
     });
+    const fits = list.every((b, i) => {
+      const last = i === list.length - 1;
+      if (!last && !list[i + 1][5]) return true;
+      const len = (last ? END : starts[i + 1]) - starts[i];
+      const was = (last ? END : fixed[i + 1]) - fixed[i];
+      return len >= Math.min(15, was);
+    });
+    return fits ? {blocks: make(starts), notice: null} : {blocks: make(fixed), notice: 'nofit'};
   }
+  // end of anchor layout
+  // The day's block list from the settings (version A or B by phaseFor), laid out for that date's prayer times.
+  function listFor(iso){
+    const day = SCHED[weekday(iso)] || {blocks: []};
+    return Array.isArray(day.blocks) ? day.blocks : (day.blocks[phaseFor(iso)] || day.blocks.A);
+  }
+  function dayLayout(iso){ return layoutDay(listFor(iso), prayers(iso), START, END); }
+  function blocksFor(iso){ return dayLayout(iso).blocks; }
+  // null, 'unavailable' (no prayer times for this date) or 'nofit' (the day cannot hold the anchors): blocks are at their fixed times.
+  function dayNotice(iso){ return dayLayout(iso).notice; }
+  const ANCHOR_NOTICES = {
+    unavailable: 'أوقات الصلاة مش متاحة، فالبلوكات المربوطة بالصلاة على مواعيدها الثابتة.',
+    nofit: 'اليوم ده مش بيسع ربط البلوكات بالصلاة، فهي على مواعيدها الثابتة.'
+  };
   function apptsFor(iso, store){
     const wd = weekday(iso);
     return (store.appts || []).filter(a => Number(a.day) === wd && a.time).map(a => {
@@ -1311,6 +1360,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           ${adding ? html`<${AddBlock} iso=${iso} update=${update} onDone=${() => setAdding(false)} />`
             : html`<button type="button" class="btn add-block" onClick=${() => setAdding(true)}><${Plus} />ضيف حاجة لليوم ده</button>`}
           ${(SCHED[wd] || {}).note ? html`<p class="note">${SCHED[wd].note}</p>` : null}
+          ${ANCHOR_NOTICES[dayNotice(iso)] ? html`<p class="note">${ANCHOR_NOTICES[dayNotice(iso)]}</p>` : null}
           <p class="small muted">دوس على أي بلوك عشان تلغيه النهارده. ${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
         </div>
       </div>
@@ -1735,7 +1785,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   function summaryOf(s){
     const days = Object.keys(s.week), blocks = days.reduce((n, k) => { const b = s.week[k].blocks; return n + (Array.isArray(b) ? b.length : Object.keys(b).reduce((m, v) => m + b[v].length, 0)); }, 0);
-    return {days: days.length, blocks, course: s.course ? s.course.name : '', language: s.language, place: s.location.label || ''};
+    const lists = days.reduce((a, k) => { const b = s.week[k].blocks; return a.concat(Array.isArray(b) ? [b] : Object.keys(b).map(v => b[v])); }, []);
+    const anchored = lists.reduce((n, l) => n + l.filter(b => b.length === 6).length, 0);
+    return {days: days.length, blocks, anchored, course: s.course ? s.course.name : '', language: s.language, place: s.location.label || ''};
   }
   function SettingsView(){
     const [pending, setPending] = useState(null);
@@ -1786,7 +1838,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           <div aria-live="polite">
             ${msgs.length ? html`<div class="notice" role="alert" tabindex="-1" ref=${msgRef}><p><b>مقدرتش أستورد الملف</b>${msgs.map(m => html`<span class="small"><bdi>${m}</bdi></span>`)}</p></div>` : null}
             ${sm ? html`<div class="notice"><p><b>جاهز للاستيراد: ${pending.settings.name || 'من غير اسم'}</b>
-              <span class="small">${sm.days} أيام · ${sm.blocks} بلوك${sm.course ? ' · كورس: ' : ''}${sm.course ? html`<bdi>${sm.course}</bdi>` : null} · الموقع: <bdi>${sm.place || '—'}</bdi> · اللغة: <bdi>${sm.language}</bdi>${pending.warnings ? ' · فيه ' + pending.warnings + ' حقول مش معروفة هتتجاهل' : ''}</span>
+              <span class="small">${sm.days} أيام · ${sm.blocks} بلوك${sm.anchored ? ' · ' + sm.anchored + ' بلوك مربوط بالصلاة' : ''}${sm.course ? ' · كورس: ' : ''}${sm.course ? html`<bdi>${sm.course}</bdi>` : null} · الموقع: <bdi>${sm.place || '—'}</bdi> · اللغة: <bdi>${sm.language}</bdi>${pending.warnings ? ' · فيه ' + pending.warnings + ' حقول مش معروفة هتتجاهل' : ''}</span>
               <span class="small muted">${LOADED.isExample ? 'هيحل محل المثال.' : 'هيحل محل الإعدادات الحالية (' + (CFG.name || 'من غير اسم') + ').'}</span></p>
               <span><button type="button" class="btn primary" onClick=${apply}>استبدل</button> <button type="button" class="btn ghost" onClick=${() => setPending(null)}>إلغاء</button></span></div>` : null}
           </div>
