@@ -199,7 +199,8 @@ button{font:inherit;color:inherit}
 .tdue.late{color:var(--danger);font-weight:600}
 .del{min-height:44px;min-width:44px;background:none;border:0;color:var(--muted);cursor:pointer;padding:0 8px;border-radius:10px;font-size:13px}
 .del:hover{color:var(--danger)}
-.edit{min-height:44px;min-width:44px;background:none;border:0;color:var(--muted);cursor:pointer;padding:0 8px;border-radius:10px;font-size:13px}
+.edit{min-height:44px;min-width:44px;background:none;border:0;color:var(--muted);cursor:pointer;padding:0 8px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center}
+.edit svg{width:18px;height:18px;flex:none}
 .edit:hover{color:var(--fg)}
 .tact{display:flex;align-items:center}
 .titem-edit{padding:8px 0;border-top:1px solid var(--line)}
@@ -262,8 +263,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .field textarea{min-height:9rem;resize:vertical;line-height:1.7}
 ::placeholder{color:var(--muted);opacity:1}
 .form-err{font-size:13px;color:var(--danger)}
-.appt{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:var(--s2);align-items:center;padding:4px 0;border-top:1px solid var(--line)}
+.appt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2);align-items:center;padding:4px 0;border-top:1px solid var(--line)}
 .appt:first-child{border-top:0}
+.aact{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.appt-edit{padding:8px 0;border-top:1px solid var(--line)}
+.appt-edit:first-child{border-top:0}
 .appt .when{font-size:13px;color:var(--muted)}
 .empty{font-size:14px;color:var(--muted);padding:6px 0}
 .filters{display:flex;gap:6px}
@@ -1016,6 +1020,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     <button type="button" class=${'chk c-' + cat} role="checkbox" aria-checked=${on ? 'true' : 'false'} aria-label=${label} onClick=${onToggle}><i><${CheckSvg} /></i></button>`;
   const Moon = () => html`<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M10.6 2.2a6 6 0 1 0 3.2 9.9A5 5 0 0 1 10.6 2.2z"/></svg>`;
   const Plus = () => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
+  const Pencil = () => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 7.5l3 3"/></svg>`;
   const Star = () => html`<svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.2l2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.6l-5.3 2.9 1.1-5.9-4.4-4.1 6-.8z"/></svg>`;
   const Chevron = ({dir}) => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d=${dir === 'next' ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'}/></svg>`;
   const Time = ({min}) => { const f = fmt(min); return html`<bdi class="t">${f.t}</bdi><span class="suf">${f.s}</span>`; };
@@ -1618,10 +1623,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
   /* ---------------- Tasks & appointments ---------------- */
   function TasksView({now, store, update, goDay, remove, actEdit}){
-    const [label, setLabel] = useState('');
-    const [day, setDay] = useState('5');
-    const [time, setTime] = useState('');
-    const [apptErr, setApptErr] = useState('');
     const [filter, setFilter] = useState('open');
     const [taskForm, setTaskForm] = useState(false);
     const [apptForm, setApptForm] = useState(false);
@@ -1644,13 +1645,17 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       closeEdit(t.id);
     };
 
-    const addAppt = e => {
-      e.preventDefault();
-      if (!label.trim()){ setApptErr('اكتب اسم الميعاد.'); return; }
-      if (!time){ setApptErr('اختار الساعة.'); return; }
-      setApptErr('');
-      update(s => { s.appts.push({id: uid36(), label: label.trim().slice(0, 60), day: Number(day), time}); return s; });
-      setLabel(''); setTime(''); setApptForm(false);
+    // value comes validated and trimmed from ItemForm (name up to 60 characters, a day number, a time).
+    const addAppt = value => {
+      update(s => { s.appts.push({id: uid36(), label: value.label, day: value.day, time: value.time}); return s; });
+      setApptForm(false);
+    };
+    const saveAppt = (a, value) => {
+      const before = {label: a.label, day: a.day, time: a.time};
+      actEdit('اتعدّل الميعاد',
+        s => { s.appts = applyEdit(s.appts, a.id, value, APPT_EDIT_KEYS); return s; },
+        s => { s.appts = restoreFields(s.appts, a.id, before, APPT_EDIT_KEYS); return s; });
+      closeEdit(a.id);
     };
     // value comes validated and trimmed from ItemForm (text up to 140 characters, a known type, an optional date).
     const addTask = value => {
@@ -1682,7 +1687,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
               <div style="min-width:0"><p class="ttext">${t.text}</p>
                 <p class="small"><span class="ttag">${TASK_TAGS[t.tag]}</span>${t.due ? html` · <span class=${'tdue' + (!t.done && t.due < now.iso ? ' late' : '')}>${dateLabel(t.due)}</span>` : null}</p></div>
               <div class="tact">
-                <button type="button" class="edit" id=${'edit-btn-' + t.id} aria-label=${'عدّل ' + t.text} onClick=${() => openEdit('task', t.id)}>عدّل</button>
+                <button type="button" class="edit" id=${'edit-btn-' + t.id} aria-label=${'عدّل ' + t.text} title="عدّل" onClick=${() => openEdit('task', t.id)}><${Pencil} /></button>
                 <button type="button" class="del" aria-label=${'امسح ' + t.text} onClick=${() => remove('اتمسحت المهمة', s => { s.tasks = s.tasks.filter(x => x.id !== t.id); return s; })}>امسح</button>
               </div>
             </div>`) : html`<p class="empty">${filter === 'open' ? 'مفيش مهام مفتوحة. ضيف مثلاً شيت مطلوب أو ميعاد تسليم.' : 'لسه مخلّصتش مهام.'}</p>`}
@@ -1690,24 +1695,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         </div>
       </div>
       <div class="sec a-appts">
-        <div class="sec-head"><h2>مواعيد كل أسبوع</h2>${!apptForm ? html`<button type="button" class="btn small" onClick=${() => setApptForm(true)}><${Plus} />ميعاد</button>` : null}</div>
+        <div class="sec-head"><h2>مواعيد كل أسبوع</h2>${!apptForm ? html`<button type="button" class="btn small" onClick=${() => { setEditing(null); setApptForm(true); }}><${Plus} />ميعاد</button>` : null}</div>
         <div class="panel">
-          ${appts.length ? html`<div>${appts.map(a => html`<div class="appt">
+          ${appts.length ? html`<div>${appts.map(a => editing && editing.kind === 'appt' && editing.id === a.id
+            ? html`<div class="appt-edit" key=${a.id}><${ItemForm} kind="appt" initial=${{label: a.label, day: a.day, time: a.time}} idPrefix="edit-appt" textLabel="الميعاد" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveAppt(a, v)} onCancel=${() => closeEdit(a.id)} /></div>`
+            : html`<div class="appt" key=${a.id}>
               <div><p>${a.label}</p><p class="when">${DAY_NAMES[a.day]} · ${fmtStr(toMin(a.time))}</p></div>
-              <button type="button" class="btn ghost small" onClick=${() => goDay(addDays(weekStart(now.iso), WEEK_ORDER.indexOf(Number(a.day))))}>افتح اليوم</button>
-              <button type="button" class="del" aria-label=${'امسح ' + a.label} onClick=${() => remove('اتمسح ميعاد "' + a.label + '"', s => { s.appts = s.appts.filter(x => x.id !== a.id); return s; })}>امسح</button>
+              <div class="aact">
+                <button type="button" class="btn ghost small" onClick=${() => goDay(addDays(weekStart(now.iso), WEEK_ORDER.indexOf(Number(a.day))))}>افتح اليوم</button>
+                <button type="button" class="edit" id=${'edit-btn-' + a.id} aria-label=${'عدّل ' + a.label} title="عدّل" onClick=${() => openEdit('appt', a.id)}><${Pencil} /></button>
+                <button type="button" class="del" aria-label=${'امسح ' + a.label} onClick=${() => remove('اتمسح ميعاد "' + a.label + '"', s => { s.appts = s.appts.filter(x => x.id !== a.id); return s; })}>امسح</button>
+              </div>
             </div>`)}</div>`
             : html`<p class="empty">المواعيد الأساسية متحطة في الجدول خلاص. أي ميعاد ثابت تاني، زي ميتنج شغل أسبوعي، ضيفه من "+ ميعاد" وهيظهر جوه يومه.</p>`}
-          ${apptForm ? html`<form class="form" style="margin-top:12px" onSubmit=${addAppt}>
-            <div class="form-row">
-              <label class="field wide" for="appt-label">الميعاد<input id="appt-label" value=${label} onInput=${e => setLabel(e.target.value)} placeholder="مثلاً: ميتنج الفريق" maxlength="60" /></label>
-              <label class="field" for="appt-day">اليوم<select id="appt-day" value=${day} onChange=${e => setDay(e.target.value)}>
-                ${WEEK_ORDER.map(d => html`<option value=${String(d)}>${DAY_NAMES[d]}</option>`)}</select></label>
-              <label class="field" for="appt-time">الساعة<input id="appt-time" type="time" value=${time} onInput=${e => setTime(e.target.value)} /></label>
-            </div>
-            ${apptErr ? html`<p class="form-err" role="alert">${apptErr}</p>` : null}
-            <div class="form-row"><button type="submit" class="btn primary">ضيف الميعاد</button><button type="button" class="btn ghost" onClick=${() => setApptForm(false)}>إلغاء</button></div>
-          </form>` : null}
+          ${apptForm ? html`<div style="margin-top:12px"><${ItemForm} kind="appt" initial=${{label: '', day: 5, time: ''}} idPrefix="appt" textLabel="الميعاد" submitLabel="ضيف الميعاد" focusFirst=${false} onSubmit=${addAppt} onCancel=${() => setApptForm(false)} /></div>` : null}
         </div>
       </div>
 

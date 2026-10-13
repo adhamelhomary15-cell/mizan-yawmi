@@ -6,7 +6,7 @@ variant.
 
 ## Task row
 
-- A new button `عدّل` sits next to `امسح`, with `aria-label="عدّل " + <task text>`; minimum hit area
+- A small pencil icon button (tooltip `عدّل`) sits next to `امسح`, with `aria-label="عدّل " + <task text>`; minimum hit area
   44 × 44 px like `.del`.
 - It appears on open and done tasks alike (FR-001).
 
@@ -27,7 +27,7 @@ doing nothing.
 
 ## Appointment row
 
-- A new button `عدّل` next to `افتح اليوم` and `امسح`, `aria-label="عدّل " + <name>`. The three
+- A small pencil icon button next to `افتح اليوم` and `امسح`, `aria-label="عدّل " + <name>`. The three
   buttons wrap under the text on narrow screens.
 
 ## Edit form (appointment), shown in place of the row
