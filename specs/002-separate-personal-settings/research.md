@@ -165,3 +165,32 @@ mutated copies (a changed block time, an added subject): each exits 1, so the ha
   the new view). The native file input is used on purpose for keyboard and screen-reader access.
 - **Not covered here**: offline cold start of the built page (service workers are not available in the browser
   pane used for testing); the Arabic wording of the messages is a first pass, refined in the error-handling story.
+
+## Privacy baseline (T023-T024, 2026-10-13, before any removal)
+
+`node tools/check-private.js` against the owner's local settings file: the file is ignored and untracked, and
+143 personal values (strings of 4+ characters; bare clock times and dates are skipped as too generic) were
+checked against 136 tracked files. **17 tracked files contain at least one**, so the result is "not clean", as
+expected before the removal phase. Counts (values matched per file; never the values):
+
+| File | Matches |
+|---|---|
+| `index.html` (built app) | 142 |
+| `src/planner.html` | 140 |
+| `README.md`, `manifest.webmanifest`, `tools/build.py` | 4 each |
+| `docs/PLAN.md`, `specs/001-*/research.md` | 3 each |
+| `.impeccable/design.json`, `PRODUCT.md`, `specs/001-*/tasks.md`, `tools/check-phase.js` | 2 each |
+| `AGENTS.md`, `.impeccable/critique/*` (2 files), `specs/001-*/{contracts/store-and-ui.md, data-model.md, spec.md}` | 1 each |
+
+What the matches are, by kind (so remediation can be planned): the schedule and course data in the app source and
+the built copy; the product's one-line description in the readme, the web manifest and the build script (it lists
+the owner's routine categories); location in the product notes, agent rules, and the phase check script; and
+mentions in the first feature's artifacts, the planning doc, and the design critique files.
+
+Check design notes:
+- The check passes a clean repo, catches a value planted in a tracked file, stays clean for unrelated tracked
+  files, catches a settings file that is not ignored, catches one that is tracked, and exits 2 when the settings
+  file is missing. All six cases are in `node tools/check-private.js --self-test` (negative control, T024).
+- Bare clock times and dates are skipped because they match harmlessly everywhere (the first run flagged two clock
+  times in a generic contract example).
+- Limit: exact string matches only; a paraphrase of personal data is not detected.
