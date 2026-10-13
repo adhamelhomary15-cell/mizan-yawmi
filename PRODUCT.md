@@ -39,7 +39,7 @@ The prayer location and method come from the user's settings, not from a fixed c
 
 - Tabs: Today (timeline with check-offs, prayer times, main-course target card, day progress), Week (shape of the
   week, planned vs done hours, per-subject study), Course (main course modules by week, add new courses from a
-  template, pick the main course), Tasks (one-off tasks with due dates, weekly fixed appointments; both can be edited in place, with undo), Settings
+  template, pick the main course), Tasks (one-off tasks with due dates, weekly fixed appointments; both can be edited in place, with undo; tasks can also be pasted in bulk from any AI's answer in a fixed line format, with a preview and one undo), Settings
   (what is in use, import a settings file, reset to the example).
 - The schedule, subjects, category labels, course plan, rules text, time zone, prayer location and method, the
   day-version rule, and language all come from a settings object: the stored settings file if there is one,

@@ -201,6 +201,19 @@ button{font:inherit;color:inherit}
 .edit svg{width:18px;height:18px;flex:none}
 .edit:hover{color:var(--fg)}
 .tact{display:flex;align-items:center}
+.paste-open{margin-inline-start:var(--s2)}
+.paste{display:flex;flex-direction:column;gap:10px}
+.paste textarea{font-size:14px}
+.paste-row{display:grid;grid-template-columns:24px minmax(0,1fr);gap:var(--s2);align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.paste-row input{width:20px;height:20px;margin-top:2px}
+.paste-text{cursor:pointer}
+.paste-type{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px;max-width:100%;box-sizing:border-box;align-self:flex-start}
+.paste-rejected{border-top:1px solid var(--line);padding-top:8px}
+.paste-rejected ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.paste-rejected li{display:flex;flex-direction:column;gap:2px;min-width:0}
+.paste-raw{overflow-wrap:anywhere;font-size:14px}
+.paste-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.paste-text{overflow-wrap:anywhere}
 .titem-edit{padding:8px 0;border-top:1px solid var(--line)}
 .titem-edit:first-child{border-top:0}
 
@@ -1611,7 +1624,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const tag = f && f.tag;
     if (typeof tag !== 'string' || !Object.prototype.hasOwnProperty.call(tags, tag)) return {ok:false, error:'اختار النوع.'};
     const due = f && f.due ? String(f.due) : '';
-    if (due && (!/^\d{4}-\d{2}-\d{2}$/.test(due) || isNaN(Date.parse(due + 'T00:00:00Z')))) return {ok:false, error:'التاريخ مش مظبوط.'};
+    // A real calendar date: Date.parse alone accepts 2026-02-30 and rolls it over, so check that the parts round-trip.
+    const realDate = s => { const [y, m, d] = s.split('-').map(Number), t = new Date(Date.UTC(y, m - 1, d)); return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d; };
+    if (due && (!/^\d{4}-\d{2}-\d{2}$/.test(due) || !realDate(due))) return {ok:false, error:'التاريخ مش مظبوط.'};
     return {ok:true, value:{text, tag, due}};
   }
   function validateApptFields(f, days){
@@ -1637,6 +1652,75 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return applyEdit(list, id, before, allowedKeys);
   }
   // end of edit rules
+
+  /* ---------------- paste tasks from an AI (pure; tools/check-paste.js runs this block) ---------------- */
+  // start of task paste
+  // The fixed line format is  type | task text | due date  (due date optional). The AI is given buildAiPrompt's text;
+  // the user pastes the answer; parseTaskLines turns it into proposed tasks and a list of lines it could not use.
+  const PASTE_MAX_LINES = 50;
+  function parseTaskLines(text, tags, existingTexts){
+    const norm = s => String(s).trim().replace(/\s+/g, ' ').toLowerCase();
+    const seen = new Set((existingTexts || []).map(norm));
+    const ids = Object.keys(tags), probe = ids[0];
+    const marker = /^(?:[-*•]|[0-9٠-٩]+[.)])\s*/;
+    const items = [], rejected = [];
+    let skipped = 0, candidates = 0, leftOut = 0;
+    String(text == null ? '' : text).split(/\r\n|\r|\n/).forEach((raw, i) => {
+      const n = i + 1;
+      let line = raw.trim();
+      if (!line || /^```[\w-]*$/.test(line)) { skipped++; return; }
+      candidates++;
+      if (candidates > PASTE_MAX_LINES) { leftOut++; return; }
+      line = line.replace(marker, '');
+      const parts = line.split('|');
+      if (parts.length === 1) { rejected.push({n, raw, reason: 'no-separator'}); return; }
+      if (parts.length > 3) { rejected.push({n, raw, reason: 'too-many-separators'}); return; }
+      const typeRaw = parts[0].trim(), body = parts[1].trim(), due = (parts[2] || '').trim();
+      if (!body) { rejected.push({n, raw, reason: 'empty-text'}); return; }
+      if (body.length > 140) { rejected.push({n, raw, reason: 'too-long', length: body.length}); return; }
+      // The text and a valid type are known to pass here, so only the date can fail the by-hand rules.
+      if (due && probe !== undefined && !validateTaskFields({text: body, tag: probe, due}, tags).ok) { rejected.push({n, raw, reason: 'bad-date'}); return; }
+      const want = norm(typeRaw);
+      const tag = ids.find(k => k === want) || ids.find(k => norm(tags[k]) === want) || '';
+      const key = norm(body), dupe = seen.has(key);
+      seen.add(key);
+      items.push({n, text: body, tag, due, dupe, include: !dupe && tag !== ''});
+    });
+    return {items, rejected, skipped, leftOut};
+  }
+  // The instruction text the user copies into any AI: the format, the user's own types, today's date, two examples.
+  function buildAiPrompt(tags, todayIso){
+    const ids = Object.keys(tags);
+    const [y, m, d] = todayIso.split('-').map(Number), t = new Date(Date.UTC(y, m - 1, d + 7));
+    const plus7 = t.getUTCFullYear() + '-' + String(t.getUTCMonth() + 1).padStart(2, '0') + '-' + String(t.getUTCDate()).padStart(2, '0');
+    const a = ids[0] || 'work', b = ids[1] || a;
+    return [
+      'قسّم المهمة الكبيرة اللي تحت لمهام فرعية صغيرة، وردّ بالمهام بس في كتلة كود واحدة، مهمة في كل سطر بالشكل ده بالظبط:',
+      'النوع | نص المهمة | آخر ميعاد',
+      '',
+      '- النوع: واحد من دول بالظبط: ' + ids.map(k => k + ' (' + tags[k] + ')').join('، ') + '.',
+      '- نص المهمة: جملة قصيرة، أقل من 140 حرف، من غير الرمز | جواها، وبنفس لغة المهمة الكبيرة.',
+      '- آخر ميعاد: تاريخ بصيغة YYYY-MM-DD، أو سيبه فاضي لو مفيش. النهارده ' + todayIso + '.',
+      '- من غير ترقيم، ومن غير عناوين، ومن غير أي شرح قبل الكتلة أو بعدها.',
+      '',
+      'مثال:',
+      a + ' | حل شيت التمارين الأول | ' + plus7,
+      b + ' | مراجعة المسودة |',
+      '',
+      'المهمة الكبيرة:',
+      'اكتب مهمتك هنا'
+    ].join('\n');
+  }
+  // Undo of one pasted batch: removes a batch task only while it is exactly as added (open, same text, type, date).
+  // A task the user has ticked or edited since stays, and every other record is untouched. Returns a new list.
+  function undoBatch(list, batch){
+    const byId = new Map(batch.map(b => [b.id, b]));
+    return list.filter(t => {
+      const b = byId.get(t.id);
+      return !(b && t.done === false && t.text === b.text && t.tag === b.tag && t.due === b.due);
+    });
+  }
+  // end of task paste
 
   /* ---------------- one form for adding and editing a task or an appointment ---------------- */
   // initial: task {text, tag, due} or appt {label, day, time}. onSubmit gets the validated, trimmed value.
@@ -1676,11 +1760,93 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </form>`;
   }
 
+  /* ---------------- paste tasks from an AI ---------------- */
+  // The pasted text is kept in memory only: it survives switching tabs in one session and is gone when the app closes.
+  let PASTE_DRAFT = '';
+  const PASTE_MAX_CHARS = 20000;
+  const PASTE_REASONS = {
+    'no-separator': () => 'مفيش | في السطر ده',
+    'too-many-separators': () => 'فيه | أكتر من اللازم',
+    'empty-text': () => 'نص المهمة فاضي',
+    'too-long': x => 'النص أطول من 140 حرف (' + x.length + ')',
+    'bad-date': () => 'التاريخ مش مظبوط'
+  };
+  function PasteTasks({now, store, update, actEdit, onClose}){
+    const [text, setText] = useState(PASTE_DRAFT);
+    const [result, setResult] = useState(null);
+    const [sel, setSel] = useState({});
+    const [picked, setPicked] = useState({});
+    const [copied, setCopied] = useState('');
+    const promptRef = useRef(null), pasteRef = useRef(null);
+    const prompt = buildAiPrompt(TASK_TAGS, now.iso);
+    useEffect(() => { if (pasteRef.current) pasteRef.current.focus(); }, []);
+    const copy = async () => {
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('no clipboard');
+        await navigator.clipboard.writeText(prompt);
+        setCopied('ok');
+      } catch(e){
+        if (promptRef.current) { promptRef.current.focus(); promptRef.current.select(); }
+        setCopied('manual');
+      }
+    };
+    const onText = e => { PASTE_DRAFT = e.target.value; setText(e.target.value); setResult(null); };
+    const check = () => {
+      const r = parseTaskLines(text, TASK_TAGS, store.tasks.map(t => t.text));
+      const s = {}; r.items.forEach(i => { s[i.n] = i.include; });
+      setResult(r); setSel(s); setPicked({});
+    };
+    // A line with no valid type stays out until the user picks one; the app never chooses a type for them.
+    const tagOf = i => i.tag || picked[i.n] || '';
+    const pickType = (i, tag) => { setPicked(p => Object.assign({}, p, {[i.n]: tag})); setSel(p => Object.assign({}, p, {[i.n]: !!tag})); };
+    const ready = result ? result.items.filter(i => sel[i.n] && tagOf(i)) : [];
+    const confirm = () => {
+      if (!ready.length) return;
+      const made = ready.map(i => ({id: uid36(), text: i.text, tag: tagOf(i), due: i.due, done: false, created: now.iso}));
+      // One undo for the whole batch: it removes only the tasks that are still exactly as added (undoBatch).
+      const batch = made.map(t => ({id: t.id, text: t.text, tag: t.tag, due: t.due}));
+      actEdit('اتضافت ' + made.length + ' مهمة',
+        s => { made.forEach(t => s.tasks.push(t)); return s; },
+        s => { s.tasks = undoBatch(s.tasks, batch); return s; });
+      PASTE_DRAFT = '';
+      onClose();
+    };
+    const onKey = e => { if (e.key === 'Escape'){ e.preventDefault(); onClose(); } };
+    return html`<div class="paste" onKeyDown=${onKey}>
+      <p class="small"><b>١. انسخ التعليمات وادّيها لأي AI</b> مع المهمة الكبيرة. هو اللي هيقسّمها بالشكل اللي التطبيق فاهمه.</p>
+      <label class="field wide" for="paste-prompt">التعليمات<textarea id="paste-prompt" aria-label="التعليمات" dir="auto" readonly rows="9" ref=${promptRef} value=${prompt}></textarea></label>
+      <div class="form-row"><button type="button" class="btn" onClick=${copy}>انسخ التعليمات</button></div>
+      <p class="small muted" aria-live="polite">${copied === 'ok' ? 'اتنسخت. الصقها في الـ AI.' : copied === 'manual' ? 'المتصفح مش سامح بالنسخ. النص اتحدّد، انسخه بإيدك.' : ''}</p>
+      <p class="small"><b>٢. الصق رد الـ AI هنا</b> وبعدين دوس "افحص".</p>
+      <label class="field wide" for="paste-input">رد الـ AI<textarea id="paste-input" aria-label="رد الـ AI" dir="auto" rows="7" maxlength=${PASTE_MAX_CHARS} ref=${pasteRef} value=${text} onInput=${onText} placeholder=${'uni | Read chapter one | 2026-10-20\nwork | Review the draft'}></textarea></label>
+      ${text.length >= PASTE_MAX_CHARS ? html`<p class="small">النص وصل للحد (${PASTE_MAX_CHARS} حرف)، والباقي ما اتقراش.</p>` : null}
+      <div class="form-row"><button type="button" class="btn primary" disabled=${!text.trim()} onClick=${check}>افحص</button><button type="button" class="btn ghost" onClick=${onClose}>إلغاء</button></div>
+      ${result ? html`<div class="paste-preview">
+        <p class="small" role="status"><b>${result.items.length} مهمة في المعاينة، ${result.rejected.length} سطر مش مفهوم</b></p>
+        ${result.leftOut ? html`<p class="small">${'سيبت ' + result.leftOut + ' سطر زيادة عن الحد (' + PASTE_MAX_LINES + ')'}</p>` : null}
+        ${!result.items.length ? html`<div class="notice"><p><b>مفيش سطر اتفهم.</b><span class="small">التطبيق فاهم الصيغة دي بس، سطر لكل مهمة: <bdi>النوع | نص المهمة | آخر ميعاد</bdi></span></p></div>` : null}
+        ${result.items.map(i => html`<div class="paste-row" key=${i.n}>
+          <input type="checkbox" id=${'paste-i-' + i.n} checked=${!!sel[i.n]} disabled=${!tagOf(i)} onChange=${e => { const on = e.target.checked; setSel(p => Object.assign({}, p, {[i.n]: on})); }} />
+          <span class="paste-main"><label for=${'paste-i-' + i.n} class="paste-text"><bdi>${i.text}</bdi></label>
+            <span class="small muted">${tagOf(i) ? TASK_TAGS[tagOf(i)] : 'محتاج نوع'} · ${i.due ? dateLabel(i.due) : 'من غير ميعاد'}${i.dupe ? ' · ممكن يكون مكرر' : ''}</span>
+            ${!i.tag ? html`<select class="paste-type" aria-label=${'اختار نوع: ' + i.text} value=${picked[i.n] || ''} onChange=${e => pickType(i, e.target.value)}><option value="">اختار النوع</option>${Object.keys(TASK_TAGS).map(k => html`<option value=${k}>${TASK_TAGS[k]}</option>`)}</select>` : null}
+          </span>
+        </div>`)}
+        ${result.rejected.length ? html`<div class="paste-rejected"><p class="small"><b>سطور مش مفهومة (مش هتتضاف)</b></p>
+          <ul>${result.rejected.map(x => html`<li key=${x.n}><span class="small muted">سطر ${x.n}: ${PASTE_REASONS[x.reason](x)}</span><bdi class="paste-raw">${x.raw.trim()}</bdi></li>`)}</ul></div>` : null}
+        <div class="form-row"><button type="button" class="btn primary" disabled=${!ready.length} onClick=${confirm}>${'ضيف ' + ready.length + ' مهمة'}</button></div>
+      </div>` : null}
+    </div>`;
+  }
+
   /* ---------------- Tasks & appointments ---------------- */
   function TasksView({now, store, update, goDay, remove, actEdit}){
     const [filter, setFilter] = useState('open');
     const [taskForm, setTaskForm] = useState(false);
     const [apptForm, setApptForm] = useState(false);
+    const [pasteOpen, setPasteOpen] = useState(false);
+    const openPaste = () => { setEditing(null); setTaskForm(false); setPasteOpen(true); };
+    const closePaste = () => { setPasteOpen(false); setTimeout(() => { const b = document.getElementById('paste-open-btn'); if (b) b.focus(); }, 0); };
     // The one open edit form: null, or {kind: 'task' | 'appt', id}. Only one at a time; opening another drops the first unsaved.
     const [editing, setEditing] = useState(null);
     const lastEdited = useRef(null);
@@ -1690,7 +1856,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       lastEdited.current = null;
       if (el) el.focus();
     }, [editing]);
-    const openEdit = (kind, id) => { setTaskForm(false); setApptForm(false); lastEdited.current = null; setEditing({kind, id}); };
+    const openEdit = (kind, id) => { setTaskForm(false); setApptForm(false); setPasteOpen(false); lastEdited.current = null; setEditing({kind, id}); };
     const closeEdit = id => { lastEdited.current = id; setEditing(null); };
     const saveTask = (t, value) => {
       const before = {text: t.text, tag: t.tag, due: t.due || ''};
@@ -1733,7 +1899,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
         <div class="panel">
-          ${taskForm ? html`<div style="margin-bottom:10px"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button>`}
+          ${taskForm ? html`<div style="margin-bottom:10px"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : pasteOpen ? html`<${PasteTasks} now=${now} store=${store} update=${update} actEdit=${actEdit} onClose=${closePaste} />` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button><button type="button" id="paste-open-btn" class="btn add-task paste-open" onClick=${openPaste}>الصق مهام من AI</button>`}
           <div class="tlist" style="margin-top:6px">
             ${shown.length ? shown.map(t => editing && editing.kind === 'task' && editing.id === t.id
               ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`
