@@ -85,7 +85,8 @@ function runChecks(h) {
   });
   check('the due date is optional and must be a real date when given', () => {
     const ok = d => h.validateTaskFields({text: 'a', tag: 'uni', due: d}, TAGS).ok;
-    return ok('') && ok(undefined) && ok('2030-02-28') && !ok('2030-13-01') && !ok('tomorrow') && !ok('2030-1-1');
+    return ok('') && ok(undefined) && ok('2030-02-28') && !ok('2030-13-01') && !ok('tomorrow') && !ok('2030-1-1')
+      && !ok('2026-02-30') && !ok('2026-02-29') && ok('2028-02-29') && !ok('2026-04-31') && ok('2026-12-31');
   });
   check('a valid task passes with trimmed values', () => {
     const r = h.validateTaskFields({text: ' hi ', tag: 'work', due: '2030-05-05'}, TAGS);

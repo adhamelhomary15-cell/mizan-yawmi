@@ -117,3 +117,12 @@ removes only untouched batch tasks. A mutation self-test proves the checks have 
 ## R12. Independence
 
 No change to the settings format, the storage shape, or other tabs. The new code sits beside `TasksView`.
+
+## R13. Impossible dates (found while building Phase 2)
+
+`validateTaskFields` (feature 003) checked a date with `Date.parse(due + 'T00:00:00Z')`. In Chrome that accepts
+`2026-02-30` and rolls it over to March 2, so an impossible date passed. By hand the date input prevents it,
+but an AI can write one, and the spec says a date that does not exist is flagged (US2). Decision: the rule now
+checks that the year, month and day round-trip through `Date.UTC`, in the shared function, so adding by hand,
+editing, and pasting all agree. `tools/check-edit.js` and `tools/check-paste.js` cover `2026-02-30`,
+`2026-02-29`, `2026-04-31` (rejected) and `2028-02-29` (accepted).

@@ -1606,7 +1606,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const tag = f && f.tag;
     if (typeof tag !== 'string' || !Object.prototype.hasOwnProperty.call(tags, tag)) return {ok:false, error:'اختار النوع.'};
     const due = f && f.due ? String(f.due) : '';
-    if (due && (!/^\d{4}-\d{2}-\d{2}$/.test(due) || isNaN(Date.parse(due + 'T00:00:00Z')))) return {ok:false, error:'التاريخ مش مظبوط.'};
+    // A real calendar date: Date.parse alone accepts 2026-02-30 and rolls it over, so check that the parts round-trip.
+    const realDate = s => { const [y, m, d] = s.split('-').map(Number), t = new Date(Date.UTC(y, m - 1, d)); return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d; };
+    if (due && (!/^\d{4}-\d{2}-\d{2}$/.test(due) || !realDate(due))) return {ok:false, error:'التاريخ مش مظبوط.'};
     return {ok:true, value:{text, tag, due}};
   }
   function validateApptFields(f, days){
@@ -1632,6 +1634,75 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return applyEdit(list, id, before, allowedKeys);
   }
   // end of edit rules
+
+  /* ---------------- paste tasks from an AI (pure; tools/check-paste.js runs this block) ---------------- */
+  // start of task paste
+  // The fixed line format is  type | task text | due date  (due date optional). The AI is given buildAiPrompt's text;
+  // the user pastes the answer; parseTaskLines turns it into proposed tasks and a list of lines it could not use.
+  const PASTE_MAX_LINES = 50;
+  function parseTaskLines(text, tags, existingTexts){
+    const norm = s => String(s).trim().replace(/\s+/g, ' ').toLowerCase();
+    const seen = new Set((existingTexts || []).map(norm));
+    const ids = Object.keys(tags), probe = ids[0];
+    const marker = /^(?:[-*•]|[0-9٠-٩]+[.)])\s*/;
+    const items = [], rejected = [];
+    let skipped = 0, candidates = 0, leftOut = 0;
+    String(text == null ? '' : text).split(/\r\n|\r|\n/).forEach((raw, i) => {
+      const n = i + 1;
+      let line = raw.trim();
+      if (!line || /^```[\w-]*$/.test(line)) { skipped++; return; }
+      candidates++;
+      if (candidates > PASTE_MAX_LINES) { leftOut++; return; }
+      line = line.replace(marker, '');
+      const parts = line.split('|');
+      if (parts.length === 1) { rejected.push({n, raw, reason: 'no-separator'}); return; }
+      if (parts.length > 3) { rejected.push({n, raw, reason: 'too-many-separators'}); return; }
+      const typeRaw = parts[0].trim(), body = parts[1].trim(), due = (parts[2] || '').trim();
+      if (!body) { rejected.push({n, raw, reason: 'empty-text'}); return; }
+      if (body.length > 140) { rejected.push({n, raw, reason: 'too-long', length: body.length}); return; }
+      // The text and a valid type are known to pass here, so only the date can fail the by-hand rules.
+      if (due && probe !== undefined && !validateTaskFields({text: body, tag: probe, due}, tags).ok) { rejected.push({n, raw, reason: 'bad-date'}); return; }
+      const want = norm(typeRaw);
+      const tag = ids.find(k => k === want) || ids.find(k => norm(tags[k]) === want) || '';
+      const key = norm(body), dupe = seen.has(key);
+      seen.add(key);
+      items.push({n, text: body, tag, due, dupe, include: !dupe && tag !== ''});
+    });
+    return {items, rejected, skipped, leftOut};
+  }
+  // The instruction text the user copies into any AI: the format, the user's own types, today's date, two examples.
+  function buildAiPrompt(tags, todayIso){
+    const ids = Object.keys(tags);
+    const [y, m, d] = todayIso.split('-').map(Number), t = new Date(Date.UTC(y, m - 1, d + 7));
+    const plus7 = t.getUTCFullYear() + '-' + String(t.getUTCMonth() + 1).padStart(2, '0') + '-' + String(t.getUTCDate()).padStart(2, '0');
+    const a = ids[0] || 'work', b = ids[1] || a;
+    return [
+      'قسّم المهمة الكبيرة اللي تحت لمهام فرعية صغيرة، وردّ بالمهام بس في كتلة كود واحدة، مهمة في كل سطر بالشكل ده بالظبط:',
+      'النوع | نص المهمة | آخر ميعاد',
+      '',
+      '- النوع: واحد من دول بالظبط: ' + ids.map(k => k + ' (' + tags[k] + ')').join('، ') + '.',
+      '- نص المهمة: جملة قصيرة، أقل من 140 حرف، من غير الرمز | جواها، وبنفس لغة المهمة الكبيرة.',
+      '- آخر ميعاد: تاريخ بصيغة YYYY-MM-DD، أو سيبه فاضي لو مفيش. النهارده ' + todayIso + '.',
+      '- من غير ترقيم، ومن غير عناوين، ومن غير أي شرح قبل الكتلة أو بعدها.',
+      '',
+      'مثال:',
+      a + ' | حل شيت التمارين الأول | ' + plus7,
+      b + ' | مراجعة المسودة |',
+      '',
+      'المهمة الكبيرة:',
+      'اكتب مهمتك هنا'
+    ].join('\n');
+  }
+  // Undo of one pasted batch: removes a batch task only while it is exactly as added (open, same text, type, date).
+  // A task the user has ticked or edited since stays, and every other record is untouched. Returns a new list.
+  function undoBatch(list, batch){
+    const byId = new Map(batch.map(b => [b.id, b]));
+    return list.filter(t => {
+      const b = byId.get(t.id);
+      return !(b && t.done === false && t.text === b.text && t.tag === b.tag && t.due === b.due);
+    });
+  }
+  // end of task paste
 
   /* ---------------- one form for adding and editing a task or an appointment ---------------- */
   // initial: task {text, tag, due} or appt {label, day, time}. onSubmit gets the validated, trimmed value.
