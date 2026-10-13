@@ -1809,11 +1809,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const onKey = e => { if (e.key === 'Escape'){ e.preventDefault(); onClose(); } };
     return html`<div class="paste" onKeyDown=${onKey}>
       <p class="small"><b>١. انسخ التعليمات وادّيها لأي AI</b> مع المهمة الكبيرة. هو اللي هيقسّمها بالشكل اللي التطبيق فاهمه.</p>
-      <label class="field wide" for="paste-prompt">التعليمات<textarea id="paste-prompt" dir="auto" readonly rows="9" ref=${promptRef} value=${prompt}></textarea></label>
+      <label class="field wide" for="paste-prompt">التعليمات<textarea id="paste-prompt" aria-label="التعليمات" dir="auto" readonly rows="9" ref=${promptRef} value=${prompt}></textarea></label>
       <div class="form-row"><button type="button" class="btn" onClick=${copy}>انسخ التعليمات</button></div>
       <p class="small muted" aria-live="polite">${copied === 'ok' ? 'اتنسخت. الصقها في الـ AI.' : copied === 'manual' ? 'المتصفح مش سامح بالنسخ. النص اتحدّد، انسخه بإيدك.' : ''}</p>
       <p class="small"><b>٢. الصق رد الـ AI هنا</b> وبعدين دوس "افحص".</p>
-      <label class="field wide" for="paste-input">رد الـ AI<textarea id="paste-input" dir="auto" rows="7" maxlength=${PASTE_MAX_CHARS} ref=${pasteRef} value=${text} onInput=${onText} placeholder=${'uni | Read chapter one | 2026-10-20\nwork | Review the draft'}></textarea></label>
+      <label class="field wide" for="paste-input">رد الـ AI<textarea id="paste-input" aria-label="رد الـ AI" dir="auto" rows="7" maxlength=${PASTE_MAX_CHARS} ref=${pasteRef} value=${text} onInput=${onText} placeholder=${'uni | Read chapter one | 2026-10-20\nwork | Review the draft'}></textarea></label>
       ${text.length >= PASTE_MAX_CHARS ? html`<p class="small">النص وصل للحد (${PASTE_MAX_CHARS} حرف)، والباقي ما اتقراش.</p>` : null}
       <div class="form-row"><button type="button" class="btn primary" disabled=${!text.trim()} onClick=${check}>افحص</button><button type="button" class="btn ghost" onClick=${onClose}>إلغاء</button></div>
       ${result ? html`<div class="paste-preview">
