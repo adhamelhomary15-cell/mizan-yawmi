@@ -77,11 +77,11 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) sections 5 and 6.
 
-- [ ] T016 [US3] Wire the batch undo in `PasteTasks`: confirming calls `actEdit('اتضافت N مهمة', addFn, s => { s.tasks = undoBatch(s.tasks, batch); return s; })` with `batch` the list of `{id, text, tag, due}` that were created, so the toast's «رجّعها» removes only untouched batch tasks and never restores a snapshot. Do not change `act`, `remove` or `actEdit`.
-- [ ] T017 [US3] Show the limits in the preview: when `leftOut` is more than 0 a note «سيبت N سطر زيادة عن الحد (50)»; when the pasted text reaches the 20,000-character box limit a note that the rest was not read.
-- [ ] T018 [US3] Show duplicates: a proposed task with `dupe: true` carries the badge «ممكن يكون مكرر» and starts unchecked (as `parseTaskLines` returns it), and the user's tick adds it.
-- [ ] T019 [US3] Verify in the browser per quickstart sections 5 and 6: after a batch, ticking an older task and then «رجّعها» removes the batch and keeps the tick; editing one batch task before undoing keeps that task; 60 valid lines preview 50 and report 10 left out; duplicates and an over-long line behave as specified.
-- [ ] T020 [US3] Confirm that nothing in the added code writes done state: search `git diff main -- src/planner.html` for `done`, `checks`, `modules`, `fetch(`, `localStorage`, `clipboard.read` and list what you checked; the only `done` in added lines is `done: false` on new tasks and the untouched-check inside `undoBatch`.
+- [x] T016 [US3] Wire the batch undo in `PasteTasks`: confirming calls `actEdit('اتضافت N مهمة', addFn, s => { s.tasks = undoBatch(s.tasks, batch); return s; })` with `batch` the list of `{id, text, tag, due}` that were created, so the toast's «رجّعها» removes only untouched batch tasks and never restores a snapshot. Do not change `act`, `remove` or `actEdit`.
+- [x] T017 [US3] Show the limits in the preview: when `leftOut` is more than 0 a note «سيبت N سطر زيادة عن الحد (50)»; when the pasted text reaches the 20,000-character box limit a note that the rest was not read.
+- [x] T018 [US3] Show duplicates: a proposed task with `dupe: true` carries the badge «ممكن يكون مكرر» and starts unchecked (as `parseTaskLines` returns it), and the user's tick adds it.
+- [x] T019 [US3] Verify in the browser per quickstart sections 5 and 6: after a batch, ticking an older task and then «رجّعها» removes the batch and keeps the tick; editing one batch task before undoing keeps that task; 60 valid lines preview 50 and report 10 left out; duplicates and an over-long line behave as specified.
+- [x] T020 [US3] Confirm that nothing in the added code writes done state: search `git diff main -- src/planner.html` for `done`, `checks`, `modules`, `fetch(`, `localStorage`, `clipboard.read` and list what you checked; the only `done` in added lines is `done: false` on new tasks and the untouched-check inside `undoBatch`.
 
 **Checkpoint**: all three stories pass. Commit as `feat(paste): batch undo, limits and duplicate marks (005, US3)`.
 

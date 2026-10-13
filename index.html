@@ -1763,6 +1763,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   /* ---------------- paste tasks from an AI ---------------- */
   // The pasted text is kept in memory only: it survives switching tabs in one session and is gone when the app closes.
   let PASTE_DRAFT = '';
+  const PASTE_MAX_CHARS = 20000;
   const PASTE_REASONS = {
     'no-separator': () => 'مفيش | في السطر ده',
     'too-many-separators': () => 'فيه | أكتر من اللازم',
@@ -1770,7 +1771,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     'too-long': x => 'النص أطول من 140 حرف (' + x.length + ')',
     'bad-date': () => 'التاريخ مش مظبوط'
   };
-  function PasteTasks({now, store, update, onClose}){
+  function PasteTasks({now, store, update, actEdit, onClose}){
     const [text, setText] = useState(PASTE_DRAFT);
     const [result, setResult] = useState(null);
     const [sel, setSel] = useState({});
@@ -1802,7 +1803,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const confirm = () => {
       if (!ready.length) return;
       const made = ready.map(i => ({id: uid36(), text: i.text, tag: tagOf(i), due: i.due, done: false, created: now.iso}));
-      update(s => { made.forEach(t => s.tasks.push(t)); return s; });
+      // One undo for the whole batch: it removes only the tasks that are still exactly as added (undoBatch).
+      const batch = made.map(t => ({id: t.id, text: t.text, tag: t.tag, due: t.due}));
+      actEdit('اتضافت ' + made.length + ' مهمة',
+        s => { made.forEach(t => s.tasks.push(t)); return s; },
+        s => { s.tasks = undoBatch(s.tasks, batch); return s; });
       PASTE_DRAFT = '';
       onClose();
     };
@@ -1813,10 +1818,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       <div class="form-row"><button type="button" class="btn" onClick=${copy}>انسخ التعليمات</button></div>
       <p class="small muted" aria-live="polite">${copied === 'ok' ? 'اتنسخت. الصقها في الـ AI.' : copied === 'manual' ? 'المتصفح مش سامح بالنسخ. النص اتحدّد، انسخه بإيدك.' : ''}</p>
       <p class="small"><b>٢. الصق رد الـ AI هنا</b> وبعدين دوس "افحص".</p>
-      <label class="field wide" for="paste-input">رد الـ AI<textarea id="paste-input" dir="auto" rows="7" maxlength="20000" ref=${pasteRef} value=${text} onInput=${onText} placeholder=${'uni | Read chapter one | 2026-10-20\nwork | Review the draft'}></textarea></label>
+      <label class="field wide" for="paste-input">رد الـ AI<textarea id="paste-input" dir="auto" rows="7" maxlength=${PASTE_MAX_CHARS} ref=${pasteRef} value=${text} onInput=${onText} placeholder=${'uni | Read chapter one | 2026-10-20\nwork | Review the draft'}></textarea></label>
+      ${text.length >= PASTE_MAX_CHARS ? html`<p class="small">النص وصل للحد (${PASTE_MAX_CHARS} حرف)، والباقي ما اتقراش.</p>` : null}
       <div class="form-row"><button type="button" class="btn primary" disabled=${!text.trim()} onClick=${check}>افحص</button><button type="button" class="btn ghost" onClick=${onClose}>إلغاء</button></div>
       ${result ? html`<div class="paste-preview">
         <p class="small" role="status"><b>${result.items.length} مهمة في المعاينة، ${result.rejected.length} سطر مش مفهوم</b></p>
+        ${result.leftOut ? html`<p class="small">${'سيبت ' + result.leftOut + ' سطر زيادة عن الحد (' + PASTE_MAX_LINES + ')'}</p>` : null}
         ${!result.items.length ? html`<div class="notice"><p><b>مفيش سطر اتفهم.</b><span class="small">التطبيق فاهم الصيغة دي بس، سطر لكل مهمة: <bdi>النوع | نص المهمة | آخر ميعاد</bdi></span></p></div>` : null}
         ${result.items.map(i => html`<div class="paste-row" key=${i.n}>
           <input type="checkbox" id=${'paste-i-' + i.n} checked=${!!sel[i.n]} disabled=${!tagOf(i)} onChange=${e => { const on = e.target.checked; setSel(p => Object.assign({}, p, {[i.n]: on})); }} />
@@ -1892,7 +1899,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
         <div class="panel">
-          ${taskForm ? html`<div style="margin-bottom:10px"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : pasteOpen ? html`<${PasteTasks} now=${now} store=${store} update=${update} onClose=${closePaste} />` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button><button type="button" id="paste-open-btn" class="btn add-task paste-open" onClick=${openPaste}>الصق مهام من AI</button>`}
+          ${taskForm ? html`<div style="margin-bottom:10px"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : pasteOpen ? html`<${PasteTasks} now=${now} store=${store} update=${update} actEdit=${actEdit} onClose=${closePaste} />` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button><button type="button" id="paste-open-btn" class="btn add-task paste-open" onClick=${openPaste}>الصق مهام من AI</button>`}
           <div class="tlist" style="margin-top:6px">
             ${shown.length ? shown.map(t => editing && editing.kind === 'task' && editing.id === t.id
               ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`

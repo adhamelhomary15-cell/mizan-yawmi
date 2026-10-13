@@ -67,7 +67,9 @@ Expected preview:
 
 1. Right after adding, tick one older task, then tap «رجّعها». Expected: the added tasks disappear, the older
    task is still ticked.
-2. Repeat, but edit one of the added tasks before undoing. Expected: that edited task stays; the others go.
+2. Repeat, but also tick one of the added tasks before undoing. Expected: that ticked task stays (it is the
+   user's now) and the other added tasks go. (Editing a task replaces the undo message with the edit's own, so a
+   tick is how a batch task is changed while the batch undo is still on screen.)
 
 ## 6. Limits and duplicates (US3, FR-010, FR-011)
 
