@@ -1627,9 +1627,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const [day, setDay] = useState('5');
     const [time, setTime] = useState('');
     const [apptErr, setApptErr] = useState('');
-    const [text, setText] = useState('');
-    const [tag, setTag] = useState('uni');
-    const [due, setDue] = useState('');
     const [filter, setFilter] = useState('open');
     const [taskForm, setTaskForm] = useState(false);
     const [apptForm, setApptForm] = useState(false);
@@ -1660,11 +1657,10 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       update(s => { s.appts.push({id: uid36(), label: label.trim().slice(0, 60), day: Number(day), time}); return s; });
       setLabel(''); setTime(''); setApptForm(false);
     };
-    const addTask = e => {
-      e.preventDefault();
-      if (!text.trim()) return;
-      update(s => { s.tasks.push({id: uid36(), text: text.trim().slice(0, 140), tag, due: due || '', done: false, created: now.iso}); return s; });
-      setText(''); setDue(''); setTaskForm(false);
+    // value comes validated and trimmed from ItemForm (text up to 140 characters, a known type, an optional date).
+    const addTask = value => {
+      update(s => { s.tasks.push({id: uid36(), text: value.text, tag: value.tag, due: value.due, done: false, created: now.iso}); return s; });
+      setTaskForm(false);
     };
     const appts = store.appts.slice().sort((a, b) => WEEK_ORDER.indexOf(Number(a.day)) - WEEK_ORDER.indexOf(Number(b.day)) || a.time.localeCompare(b.time));
     const open = store.tasks.filter(t => !t.done).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
@@ -1682,15 +1678,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
         <div class="panel">
-          ${taskForm ? html`<form class="form" onSubmit=${addTask} style="margin-bottom:10px">
-            <div class="form-row">
-              <label class="field wide" for="task-text">مهمة جديدة<input id="task-text" value=${text} onInput=${e => setText(e.target.value)} placeholder="مثلاً: حل شيت 3" maxlength="140" /></label>
-              <label class="field" for="task-tag">النوع<select id="task-tag" value=${tag} onChange=${e => setTag(e.target.value)}>
-                ${Object.keys(TASK_TAGS).map(k => html`<option value=${k}>${TASK_TAGS[k]}</option>`)}</select></label>
-              <label class="field" for="task-due">آخر ميعاد (اختياري)<input id="task-due" type="date" value=${due} onInput=${e => setDue(e.target.value)} /></label>
-            </div>
-            <div class="form-row"><button type="submit" class="btn primary">ضيف المهمة</button><button type="button" class="btn ghost" onClick=${() => setTaskForm(false)}>إلغاء</button></div>
-          </form>` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button>`}
+          ${taskForm ? html`<div style="margin-bottom:10px"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button>`}
           <div class="tlist" style="margin-top:6px">
             ${shown.length ? shown.map(t => editing && editing.kind === 'task' && editing.id === t.id
               ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`

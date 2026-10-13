@@ -66,8 +66,8 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 3.
 
-- [ ] T012 [US2] Confirm in `src/planner.html` that the open list sort (about line 1567) and the late marker (about line 1595) read `t.due` at render, so a saved edit reorders and re-marks with no extra code; if anything caches order or lateness, remove the cache. Make sure a cleared date saves as `''` (not `undefined`) and a task with `''` sorts among tasks without dates.
-- [ ] T013 [US2] Verify in the browser per quickstart section 3: late task moved to a future date loses the marker and changes position; clearing a date moves it to the no-date group; adding a date back shows it; an edited done task stays in the "خلصت" list.
+- [x] T012 [US2] Confirm in `src/planner.html` that the open list sort (about line 1567) and the late marker (about line 1595) read `t.due` at render, so a saved edit reorders and re-marks with no extra code; if anything caches order or lateness, remove the cache. Make sure a cleared date saves as `''` (not `undefined`) and a task with `''` sorts among tasks without dates.
+- [x] T013 [US2] Verify in the browser per quickstart section 3: late task moved to a future date loses the marker and changes position; clearing a date moves it to the no-date group; adding a date back shows it; an edited done task stays in the "خلصت" list.
 
 **Checkpoint**: US1 and US2 pass together. Commit only if T012 changed code: `fix(tasks): re-sort and re-mark after due-date edit (003, US2)`.
 
@@ -79,9 +79,9 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 4.
 
-- [ ] T014 [US3] Wire the empty-text path: saving with empty or spaces-only text shows `اكتب نص المهمة.` in the form's `form-err` and leaves the stored task unchanged (FR-007). Use the same `ItemForm` for the existing add-task form (replace the inline add form in `TasksView`), so adding with empty text also shows the message instead of doing nothing (research R6).
-- [ ] T015 [US3] Handle a task type that no longer exists (research R5): when `t.tag` is not a key of `TASK_TAGS`, `ItemForm` opens the type select on an empty `اختار النوع` option, and saving is blocked with `اختار النوع.` until a valid type is chosen. Never silently change the stored type.
-- [ ] T016 [US3] Verify undo in the browser per quickstart section 4: undo restores the old values within 7 seconds; **tick a block or task between the edit and the undo and confirm the tick survives the undo** (Principle II); undo after the task was deleted is a no-op; editing the same task twice quickly keeps one record.
+- [x] T014 [US3] Wire the empty-text path: saving with empty or spaces-only text shows `اكتب نص المهمة.` in the form's `form-err` and leaves the stored task unchanged (FR-007). Use the same `ItemForm` for the existing add-task form (replace the inline add form in `TasksView`), so adding with empty text also shows the message instead of doing nothing (research R6).
+- [x] T015 [US3] Handle a task type that no longer exists (research R5): when `t.tag` is not a key of `TASK_TAGS`, `ItemForm` opens the type select on an empty `اختار النوع` option, and saving is blocked with `اختار النوع.` until a valid type is chosen. Never silently change the stored type.
+- [x] T016 [US3] Verify undo in the browser per quickstart section 4: undo restores the old values within 7 seconds; **tick a block or task between the edit and the undo and confirm the tick survives the undo** (Principle II); undo after the task was deleted is a no-op; editing the same task twice quickly keeps one record.
 
 **Checkpoint**: US1-US3 pass. Commit as `feat(tasks): refuse empty text and undo only the edited task (003, US3)`.
 
