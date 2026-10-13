@@ -195,7 +195,7 @@ function runChecks(h, source) {
     return newer.tooNew === true && eq(newer.root, h.EMPTY_WORKOUTS()) && !round.tooNew && eq(round.root, JSON.parse(text));
   });
   check('an open workout and its running rest survive loading exactly', () => {
-    const cur = {id: 'o', startedAt: 123, routineId: 'r', routineName: 'Push', rest: {startedAt: 200, seconds: 90, alerted: true}, exercises: [{exId: 'x', sets: [{w: '50', r: '', done: false}, {w: 60, r: 5, done: true}]}]};
+    const cur = {id: 'o', startedAt: 123, routineId: 'r', routineName: 'Push', rest: {startedAt: 200, seconds: 90, alerted: true, ei: 0, si: 1}, exercises: [{exId: 'x', sets: [{w: '50', r: '', done: false}, {w: 60, r: 5, done: true}]}]};
     const r = h.normalizeRoot({v: 1, current: cur});
     return eq(r.root.current, cur);
   });
@@ -234,6 +234,7 @@ if (process.argv.includes('--self-test')) {
     ['an exercise with history can be deleted', s => s.replace("if (workouts.some(w => w.exercises.some(e => e.exId === exId))) return {ok: false, reason: 'history'};", '')],
     ['the rest length is not clamped', s => s.replace('Math.min(600, Math.max(10, Math.round(p.restSeconds)))', 'Math.round(p.restSeconds)')],
     ['weight 1000 is accepted', s => s.replace('if (!(w >= 0 && w <= 999.9))', 'if (!(w >= 0))')],
+    ['the rest row loses the set it sits under', s => s.replace('root.current.rest.ei = r.ei; root.current.rest.si = r.si;', '')],
     ['a newer data version is read', s => s.replace('if (typeof v.v === \'number\' && v.v > 1) return {root, tooNew: true};', '')]
   ];
   let missed = 0;

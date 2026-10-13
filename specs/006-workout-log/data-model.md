@@ -41,7 +41,7 @@ In an open workout `w` and `r` hold what the inputs show (text, empty until type
 | `startedAt` | start time; the workout timer is `now - startedAt`, never below 0 |
 | `routineId` | optional; the routine it was started from |
 | `exercises` | ordered list of `{exId, sets: Set[]}` |
-| `rest` | `null` or `{startedAt, seconds, alerted}`; remaining = `startedAt + seconds*1000 - now`; `alerted` makes the alert fire once |
+| `rest` | `null` or `{startedAt, seconds, alerted, ei, si}` (`ei`, `si`: the exercise and set index the rest row sits under); remaining = `startedAt + seconds*1000 - now`; `alerted` makes the alert fire once |
 
 ## Workout (finished)
 

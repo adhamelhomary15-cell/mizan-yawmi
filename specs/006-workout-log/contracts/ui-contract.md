@@ -59,7 +59,8 @@ phone's Arabic-Indic digits; this app keeps Latin digits (as everywhere else in 
 
 - A thin row under the set just done: «راحة m:ss» counting down, «+15 ث», «تخطّي». The same remaining time shows
   small beside the workout timer in the header, so it stays visible when the set has scrolled away.
-- At zero: vibration where supported, a short beep if sound is on, and the row says «خلصت الراحة» and then
+- At zero, only while the page is visible and only if the rest ended less than 10 seconds ago (so reopening
+  the app long after never beeps): vibration where supported, a short beep if sound is on, and the row says «خلصت الراحة» and then
   counts the overrun as `+m:ss` until dismissed or the next set is done.
 - The stopwatch button in the header sets the default rest (10 to 600 seconds, steps of 15) and the sound
   switch; both are remembered.
@@ -69,6 +70,7 @@ phone's Arabic-Indic digits; this app keeps Latin digits (as everywhere else in 
 - «خلّص» opens a confirmation: «N مجموعة · M تمرين · المدة …»; if unfinished sets will be dropped it says how many.
   Disabled with a message if there is no done set. Confirming saves the workout and returns to Home.
 - «إلغاء التمرينة» always asks «متأكد؟» and nothing is saved if confirmed.
+- Every confirmation closes with Escape, which is the same as the safe choice.
 
 ## History
 
