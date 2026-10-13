@@ -300,7 +300,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 /* workouts */
 .wkv{display:flex;flex-direction:column;gap:var(--s4)}
 .wk-head{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:var(--s3);background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line)}
-.wk-title{flex:1 1 auto;min-width:0;font-size:20px;text-align:center;overflow-wrap:anywhere}
+.wk-title{flex:1 1 auto;min-width:0;text-align:center;overflow-wrap:anywhere}
+.wk-title h1{font-size:20px}
+.wk-meta{font-size:13px;color:var(--muted)}
+.wk-rest{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);font-size:14px;padding:2px 0;border-block:1px dashed var(--line)}
+.wk-rest.over{color:var(--danger);font-weight:600}
+.wk-rest-act{display:flex;gap:var(--s1)}
+.wk-rest-act .btn{min-height:44px}
+.wk-step{display:flex;align-items:center;justify-content:center;gap:var(--s4)}
+.wk-step .btn{min-width:64px;min-height:44px}
+.wk-step-v{font-size:22px;font-weight:600;min-width:4ch;text-align:center}
 .wk-home{display:flex;flex-direction:column;gap:var(--s3)}
 .wk-home .btn{min-height:52px;font-size:16px}
 .wk-ex{display:flex;flex-direction:column;gap:var(--s3)}
@@ -1880,7 +1889,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       if (typeof c.routineId === 'string') root.current.routineId = c.routineId;
       if (typeof c.routineName === 'string') root.current.routineName = c.routineName;
       const r = c.rest;
-      if (r && num(r.startedAt) && num(r.seconds) && r.seconds > 0) root.current.rest = {startedAt: r.startedAt, seconds: r.seconds, alerted: r.alerted === true};
+      if (r && num(r.startedAt) && num(r.seconds) && r.seconds > 0) {
+        root.current.rest = {startedAt: r.startedAt, seconds: r.seconds, alerted: r.alerted === true};
+        // which set the rest row sits under
+        if (Number.isInteger(r.ei) && Number.isInteger(r.si) && r.ei >= 0 && r.si >= 0) { root.current.rest.ei = r.ei; root.current.rest.si = r.si; }
+      }
     }
     const p = v.prefs;
     if (p && typeof p === 'object') {
@@ -2216,6 +2229,56 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const Dots = () => html`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>`;
   const BLANK_SET = () => ({w: '', r: '', done: false});
 
+  // Alerts are feature-detected and need no permission. The audio context is made on the tap that marks a set done.
+  let AUDIO = null;
+  function primeAudio(){ try { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; if (!AUDIO) AUDIO = new C(); if (AUDIO.state === 'suspended') AUDIO.resume(); } catch(e){} }
+  function beep(){ try { if (!AUDIO) return; const o = AUDIO.createOscillator(), g = AUDIO.createGain(); o.frequency.value = 880; g.gain.value = 0.15; o.connect(g); g.connect(AUDIO.destination); o.start(); o.stop(AUDIO.currentTime + 0.25); } catch(e){} }
+  function alertRestOver(sound){ try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(e){} if (sound) beep(); }
+  // One-second tick for the small parts that show a clock; refreshed when the page becomes visible again.
+  function useNow(){
+    const [n, setN] = useState(Date.now());
+    useEffect(() => {
+      const t = setInterval(() => setN(Date.now()), 1000), v = () => setN(Date.now());
+      document.addEventListener('visibilitychange', v);
+      return () => { clearInterval(t); document.removeEventListener('visibilitychange', v); };
+    }, []);
+    return n;
+  }
+  // Keeps the screen on while a workout is open, where the browser allows it; any failure is ignored.
+  function WakeLock(){
+    useEffect(() => {
+      let lock = null, dead = false;
+      const get = async () => {
+        try {
+          if (!navigator.wakeLock || document.visibilityState !== 'visible' || lock) return;
+          const l = await navigator.wakeLock.request('screen');
+          if (dead) { l.release().catch(() => {}); return; }
+          lock = l; l.addEventListener('release', () => { if (lock === l) lock = null; });
+        } catch(e){}
+      };
+      const vis = () => { if (document.visibilityState === 'visible') get(); };
+      get(); document.addEventListener('visibilitychange', vis);
+      return () => { dead = true; document.removeEventListener('visibilitychange', vis); try { if (lock) lock.release().catch(() => {}); } catch(e){} lock = null; };
+    }, []);
+    return null;
+  }
+  // The workout timer and the remaining rest, and the one-time alert when a rest ends.
+  function WorkoutClock({cur, onOver}){
+    useNow();
+    const now = Date.now(), left = restLeft(cur.rest, now);
+    useEffect(() => { if (cur.rest && !cur.rest.alerted && left <= 0) onOver(document.visibilityState === 'visible' && -left <= 10000); });
+    return html`<p class="wk-meta"><bdi dir="ltr" class="num">${formatClock(elapsedMs(cur.startedAt, now))}</bdi>${left === null ? null : html` · راحة <bdi dir="ltr" class="num">${restLabel(left)}</bdi>`}</p>`;
+  }
+  function RestRow({rest, onAdd, onSkip}){
+    useNow();
+    const left = restLeft(rest, Date.now()), over = left <= 0;
+    return html`<div class=${'wk-rest' + (over ? ' over' : '')} role="group" aria-label="مؤقّت الراحة">
+      <span>${over ? 'خلصت الراحة ' : 'راحة '}<bdi dir="ltr" class="num">${restLabel(left)}</bdi></span>
+      <span class="wk-rest-act"><button type="button" class="btn" onClick=${onAdd}>+15 ث</button><button type="button" class="btn ghost" onClick=${onSkip}>تخطّي</button></span>
+    </div>`;
+  }
+  const Stopwatch = () => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M9.5 3.5h5"/></svg>`;
+
   // A confirmation that stays in view at the bottom; focus starts on the safe choice.
   function Sheet({label, children}){
     const ref = useRef(null);
@@ -2291,15 +2354,21 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     // A set is done only by this tap, and only with valid numbers.
     const toggleDone = (ei, si) => {
       const s = cur.exercises[ei].sets[si];
-      if (s.done) { patch(c => { c.exercises[ei].sets[si].done = false; }); return; }
+      if (s.done) { patch(c => { c.exercises[ei].sets[si].done = false; if (c.rest && c.rest.ei === ei && c.rest.si === si) c.rest = null; }); return; }
       const v = validateSet(s);
       if (!v.ok) { setBad({ei, si, field: v.field, msg: v.error}); return; }
       setBad(null);
-      patch(c => { c.exercises[ei].sets[si].done = true; });
+      primeAudio();
+      patch(c => { c.exercises[ei].sets[si].done = true; c.rest = {startedAt: Date.now(), seconds: data.prefs.restSeconds, alerted: false, ei, si}; });
     };
     const addSet = ei => patch(c => { c.exercises[ei].sets.push(BLANK_SET()); });
-    const dropSet = ei => { setBad(null); patch(c => { if (c.exercises[ei].sets.length > 1) c.exercises[ei].sets.pop(); }); };
-    const dropExercise = ei => { setMenu(null); setBad(null); patch(c => { c.exercises.splice(ei, 1); }); };
+    const dropSet = ei => { setBad(null); patch(c => { if (c.exercises[ei].sets.length > 1) { c.exercises[ei].sets.pop(); c.rest = null; } }); };
+    const dropExercise = ei => { setMenu(null); setBad(null); patch(c => { c.exercises.splice(ei, 1); c.rest = null; }); };
+    const rest = cur.rest;
+    const addRest = () => patch(c => { if (c.rest) { c.rest.seconds += 15; if (restLeft(c.rest, Date.now()) > 0) c.rest.alerted = false; } });
+    const skipRest = () => patch(c => { c.rest = null; });
+    const onOver = fire => { patch(c => { if (c.rest) c.rest.alerted = true; }); if (fire) alertRestOver(data.prefs.sound); };
+    const setPrefs = fn => update(d => { fn(d.prefs); return d; });
     const discard = () => { setPanel(null); setMenu(null); setBad(null); update(d => { d.current = null; return d; }); top(); };
     const saveFinish = () => {
       update(d => { if (!d.current) return d; const r = finishWorkout(d.current, Date.now(), names); if (r.ok) { d.workouts.push(r.workout); d.current = null; } return d; });
@@ -2310,7 +2379,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return html`<div class="wkv">
       <div class="wk-head">
         <button type="button" class="btn primary" id="wk-finish" onClick=${() => { setMenu(null); setPanel('finish'); }}>خلّص</button>
-        <h1 class="wk-title">${cur.routineName || 'تمرينة'}</h1>
+        <div class="wk-title"><h1>${cur.routineName || 'تمرينة'}</h1><${WorkoutClock} cur=${cur} onOver=${onOver} /></div>
+        <button type="button" class="icon-btn" id="wk-rest-btn" aria-label="إعداد وقت الراحة" onClick=${() => { setMenu(null); setPanel('rest'); }}><${Stopwatch} /></button>
         <button type="button" class="icon-btn" aria-label="خيارات التمرينة" aria-expanded=${menu === 'w' ? 'true' : 'false'} onClick=${() => setMenu(menu === 'w' ? null : 'w')}><${Dots} /></button>
       </div>
       ${warn}
@@ -2336,12 +2406,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
                   <input class="wk-in" type="text" inputmode="numeric" dir="ltr" autocomplete="off" aria-label=${nm + '، مجموعة ' + (si + 1) + '، التكرارات'} aria-invalid=${err && err.field === 'r' ? 'true' : 'false'} value=${s.r} onInput=${ev => setField(ei, si, 'r', ev.target.value)} />
                   <button type="button" class="wk-done" aria-pressed=${s.done ? 'true' : 'false'} aria-label=${(s.done ? 'رجّع مجموعة ' : 'خلّصت مجموعة ') + (si + 1)} onClick=${() => toggleDone(ei, si)}><${CheckSvg} /></button>
                 </div>
+                ${rest && rest.ei === ei && rest.si === si ? html`<${RestRow} rest=${rest} onAdd=${addRest} onSkip=${skipRest} />` : null}
                 ${err ? html`<p class="form-err" role="alert">${err.msg}</p>` : null}
               </div>`;
             })}
           </div>
           <div class="wk-add">
-            <button type="button" class="btn" onClick=${() => addSet(ei)}><${Plus} />ضيف مجموعة</button>
+            <button type="button" class="btn" onClick=${() => addSet(ei)}><${Plus} />ضيف مجموعة (<bdi dir="ltr">${formatClock(data.prefs.restSeconds * 1000)}</bdi>)</button>
             ${e.sets.length > 1 ? html`<button type="button" class="btn ghost" onClick=${() => dropSet(ei)}>شيل آخر مجموعة</button>` : null}
           </div>
         </section>`;
@@ -2351,6 +2422,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         ${fin.ok ? html`<p><b>تخلّص التمرينة؟</b></p><p class="small"><bdi>${fin.workout.exercises.reduce((n, x) => n + x.sets.length, 0)}</bdi> مجموعة · <bdi>${fin.workout.exercises.length}</bdi> تمرين · المدة <bdi dir="ltr">${formatClock(elapsedMs(cur.startedAt, Date.now()))}</bdi>${fin.dropped ? html`<br /><bdi>${fin.dropped}</bdi> مجموعة مش معلّمة خلصانة، وهتتشال.` : null}</p>`
           : html`<p><b>${fin.error}</b></p><p class="small muted">علّم مجموعة بالأرقام وبعدين خلّص.</p>`}
         <div class="wk-sheet-actions"><button type="button" class="btn primary" disabled=${!fin.ok} onClick=${saveFinish}>احفظ التمرينة</button><button type="button" class="btn" data-first="1" onClick=${() => setPanel(null)}>كمّل</button></div>
+      <//>` : null}
+      <${WakeLock} />
+      ${panel === 'rest' ? html`<${Sheet} label="وقت الراحة">
+        <p><b>وقت الراحة بين المجموعات</b></p>
+        <div class="wk-step"><button type="button" class="btn" aria-label="قلّل 15 ثانية" onClick=${() => setPrefs(p => { p.restSeconds = Math.max(10, p.restSeconds - 15); })}>−15</button><bdi dir="ltr" class="num wk-step-v" aria-live="polite">${formatClock(data.prefs.restSeconds * 1000)}</bdi><button type="button" class="btn" aria-label="زوّد 15 ثانية" onClick=${() => setPrefs(p => { p.restSeconds = Math.min(600, p.restSeconds + 15); })}>+15</button></div>
+        <button type="button" class="btn" role="switch" aria-checked=${data.prefs.sound ? 'true' : 'false'} onClick=${() => setPrefs(p => { p.sound = !p.sound; })}>التنبيه الصوتي: ${data.prefs.sound ? 'شغّال' : 'مقفول'}</button>
+        <div class="wk-sheet-actions"><button type="button" class="btn primary" data-first="1" onClick=${() => setPanel(null)}>تمام</button></div>
       <//>` : null}
       ${panel === 'discard' ? html`<${Sheet} label="إلغاء التمرينة">
         <p><b>متأكد؟</b></p><p class="small">التمرينة مش هتتحفظ والأرقام اللي كتبتها هتروح.</p>
