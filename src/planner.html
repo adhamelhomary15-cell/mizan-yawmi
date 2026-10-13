@@ -1717,6 +1717,150 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   // end of task paste
 
+  /* ---------------- workout log rules (pure; tools/check-workout.js runs this block) ---------------- */
+  // start of workout rules
+  // The workout log is its own record, kept under its own key. Nothing here knows about the progress store,
+  // the schedule, tasks or settings, so nothing here can tick or change any of them.
+  const WORKOUTS_KEY = 'mizan-workouts-v1';
+  const STARTER_EXERCISES = [
+    'Bench Press', 'Incline Bench Press', 'Dumbbell Bench Press', 'Chest Fly', 'Push-Up', 'Dips',
+    'Overhead Press', 'Dumbbell Shoulder Press', 'Lateral Raise', 'Triceps Pushdown',
+    'Barbell Row', 'Pull-Up', 'Lat Pulldown', 'Seated Cable Row', 'Face Pull',
+    'Barbell Curl', 'Dumbbell Curl', 'Hammer Curl',
+    'Squat', 'Front Squat', 'Leg Press', 'Lunge', 'Romanian Deadlift', 'Deadlift', 'Leg Extension', 'Leg Curl', 'Hip Thrust', 'Calf Raise',
+    'Plank', 'Crunch'
+  ].map(name => ({id: 's-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name}));
+  const EMPTY_WORKOUTS = () => ({v: 1, custom: [], routines: [], workouts: [], current: null, prefs: {restSeconds: 90, sound: true}});
+  // Digits typed on an Arabic keyboard are accepted; "." "," and the Arabic decimal mark are the decimal mark.
+  function parseNumber(text){
+    let s = String(text == null ? '' : text).trim();
+    s = s.replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 0x0660)).replace(/[۰-۹]/g, c => String(c.charCodeAt(0) - 0x06F0));
+    s = s.replace(/[,٫]/g, '.');
+    return /^(\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : NaN;
+  }
+  // A set: weight in kilograms 0 to 999.9, repetitions a whole number 1 to 999. w and r may be typed text or numbers.
+  function validateSet(f){
+    const blank = v => v == null || (typeof v === 'string' && !v.trim());
+    if (!f || blank(f.w)) return {ok: false, field: 'w', error: 'اكتب الوزن'};
+    if (blank(f.r)) return {ok: false, field: 'r', error: 'اكتب التكرارات'};
+    const w = typeof f.w === 'number' ? f.w : parseNumber(f.w), r = typeof f.r === 'number' ? f.r : parseNumber(f.r);
+    if (!(w >= 0 && w <= 999.9)) return {ok: false, field: 'w', error: 'الوزن من 0 لـ 999.9'};
+    if (!Number.isInteger(r) || r < 1 || r > 999) return {ok: false, field: 'r', error: 'التكرارات من 1 لـ 999'};
+    return {ok: true, value: {w: Math.round(w * 100) / 100, r}};
+  }
+  const normName = n => String(n == null ? '' : n).trim().replace(/\s+/g, ' ').toLowerCase();
+  const isNameTaken = (name, list, exceptId) => list.some(x => x.id !== exceptId && normName(x.name) === normName(name));
+  const elapsedMs = (startedAt, now) => Math.max(0, now - startedAt) || 0;
+  // Milliseconds left in a rest (negative once it is over), or null when no rest is running.
+  const restLeft = (rest, now) => rest ? rest.startedAt + rest.seconds * 1000 - now : null;
+  function formatClock(ms){
+    const t = Math.floor(Math.abs(ms) / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+    const body = h ? h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0') : m + ':' + String(s).padStart(2, '0');
+    return (ms < 0 ? '+' : '') + body;
+  }
+  // A countdown shows the whole second that is still left (0:01 until it ends); once over it counts up with a plus.
+  const restLabel = left => left > 0 ? formatClock(Math.ceil(left / 1000) * 1000) : '+' + formatClock(-left);
+
+  // The sets of this exercise in the most recent finished workout that started before beforeTs, in set order.
+  function previousSets(workouts, exId, beforeTs){
+    let best = null;
+    workouts.forEach(w => { if (w.startedAt < beforeTs && w.exercises.some(e => e.exId === exId) && (!best || w.startedAt >= best.startedAt)) best = w; });
+    if (!best) return [];
+    const sets = [];
+    best.exercises.forEach(e => { if (e.exId === exId) e.sets.forEach(s => sets.push(s)); });
+    return sets.map(s => ({w: s.w, r: s.r}));
+  }
+  // Records over the whole history, never stored. A set is a record when it is strictly above every earlier set of
+  // that exercise (earlier workouts, and earlier sets of the same workout); an exercise's first workout has none.
+  // flags is keyed "workoutId:exerciseIndex:setIndex" and holds {weight, reps}.
+  function computeRecords(workouts){
+    const order = workouts.map((w, i) => ({w, i})).sort((a, b) => a.w.startedAt - b.w.startedAt || a.i - b.i).map(x => x.w);
+    const state = {}, perExercise = {}, flags = {};
+    order.forEach(wo => {
+      const touched = new Set();
+      wo.exercises.forEach((e, ei) => {
+        const st = state[e.exId] || (state[e.exId] = {seen: false, maxW: -Infinity, maxR: -Infinity});
+        const first = !st.seen, pe = perExercise[e.exId] || (perExercise[e.exId] = {bestWeight: null, bestReps: null});
+        e.sets.forEach((s, si) => {
+          if (!first) {
+            const weight = s.w > st.maxW, reps = s.r > st.maxR;
+            if (weight || reps) flags[wo.id + ':' + ei + ':' + si] = {weight, reps};
+          }
+          if (s.w > st.maxW) { st.maxW = s.w; pe.bestWeight = {value: s.w, date: wo.startedAt, workoutId: wo.id}; }
+          if (s.r > st.maxR) { st.maxR = s.r; pe.bestReps = {value: s.r, date: wo.startedAt, workoutId: wo.id}; }
+        });
+        touched.add(e.exId);
+      });
+      touched.forEach(id => { state[id].seen = true; });
+    });
+    return {perExercise, flags};
+  }
+  // Finishing keeps only done sets, drops exercises left with none, and needs at least one done set.
+  // names maps an exercise id to the name saved with the workout.
+  function finishWorkout(current, now, names){
+    let dropped = 0;
+    const exercises = [];
+    current.exercises.forEach(e => {
+      const sets = [];
+      e.sets.forEach(s => {
+        const v = s.done ? validateSet(s) : {ok: false};
+        if (v.ok) sets.push(v.value); else dropped++;
+      });
+      if (sets.length) exercises.push({exId: e.exId, name: (names && names[e.exId]) || e.exId, sets});
+    });
+    if (!exercises.length) return {ok: false, dropped, error: 'سجّل مجموعة واحدة على الأقل'};
+    const workout = {id: current.id, startedAt: current.startedAt, endedAt: Math.max(now, current.startedAt), exercises};
+    if (current.routineName) workout.routineName = current.routineName;
+    return {ok: true, workout, dropped};
+  }
+  // A new open workout holding the routine's exercises in order, each with one empty set; the routine is not changed.
+  function startFromRoutine(routine, exercisesById, now, uid){
+    return {id: uid(), startedAt: now, routineId: routine.id, routineName: routine.name, rest: null,
+      exercises: routine.exIds.filter(id => exercisesById[id]).map(exId => ({exId, sets: [{w: '', r: '', done: false}]}))};
+  }
+  // An exercise with history, or one used by a routine, can not be deleted; starter exercises never.
+  function canDeleteExercise(exId, workouts, routines){
+    if (String(exId).indexOf('s-') === 0) return {ok: false, reason: 'starter'};
+    if (workouts.some(w => w.exercises.some(e => e.exId === exId))) return {ok: false, reason: 'history'};
+    const r = routines.find(x => x.exIds.indexOf(exId) >= 0);
+    return r ? {ok: false, reason: 'routine', routineName: r.name} : {ok: true};
+  }
+  // Turns whatever was stored (text, parsed, missing, damaged) into a valid root; never throws.
+  // tooNew is true when the data was written by a newer app: the caller must then not overwrite it.
+  function normalizeRoot(raw){
+    let v = raw;
+    if (typeof v === 'string') { try { v = JSON.parse(v); } catch(e){ v = null; } }
+    const root = EMPTY_WORKOUTS();
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {root, tooNew: false};
+    if (typeof v.v === 'number' && v.v > 1) return {root, tooNew: true};
+    const str = (x, max) => typeof x === 'string' && x.trim().length >= 1 && x.trim().length <= max;
+    const num = x => typeof x === 'number' && Number.isFinite(x);
+    const sets = a => Array.isArray(a) ? a.filter(s => s && num(s.w) && num(s.r)).map(s => ({w: s.w, r: s.r})) : [];
+    if (Array.isArray(v.custom)) root.custom = v.custom.filter(x => x && str(x.id, 60) && str(x.name, 60)).map(x => ({id: x.id, name: x.name.trim()}));
+    if (Array.isArray(v.routines)) root.routines = v.routines.filter(x => x && str(x.id, 60) && str(x.name, 40) && Array.isArray(x.exIds)).map(x => ({id: x.id, name: x.name.trim(), exIds: x.exIds.filter(i => typeof i === 'string').slice(0, 40)}));
+    if (Array.isArray(v.workouts)) root.workouts = v.workouts.filter(w => w && str(w.id, 60) && num(w.startedAt) && num(w.endedAt) && Array.isArray(w.exercises)).map(w => {
+      const o = {id: w.id, startedAt: w.startedAt, endedAt: Math.max(w.endedAt, w.startedAt), exercises: w.exercises.filter(e => e && typeof e.exId === 'string').map(e => ({exId: e.exId, name: typeof e.name === 'string' ? e.name : e.exId, sets: sets(e.sets)})).filter(e => e.sets.length)};
+      if (typeof w.routineName === 'string') o.routineName = w.routineName;
+      return o;
+    }).filter(w => w.exercises.length);
+    const c = v.current;
+    if (c && typeof c === 'object' && str(c.id, 60) && num(c.startedAt) && Array.isArray(c.exercises)) {
+      root.current = {id: c.id, startedAt: c.startedAt, rest: null,
+        exercises: c.exercises.filter(e => e && typeof e.exId === 'string' && Array.isArray(e.sets)).map(e => ({exId: e.exId, sets: e.sets.filter(s => s && typeof s === 'object').map(s => ({w: num(s.w) || typeof s.w === 'string' ? s.w : '', r: num(s.r) || typeof s.r === 'string' ? s.r : '', done: s.done === true}))}))};
+      if (typeof c.routineId === 'string') root.current.routineId = c.routineId;
+      if (typeof c.routineName === 'string') root.current.routineName = c.routineName;
+      const r = c.rest;
+      if (r && num(r.startedAt) && num(r.seconds) && r.seconds > 0) root.current.rest = {startedAt: r.startedAt, seconds: r.seconds, alerted: r.alerted === true};
+    }
+    const p = v.prefs;
+    if (p && typeof p === 'object') {
+      if (num(p.restSeconds)) root.prefs.restSeconds = Math.min(600, Math.max(10, Math.round(p.restSeconds)));
+      if (typeof p.sound === 'boolean') root.prefs.sound = p.sound;
+    }
+    return {root, tooNew: false};
+  }
+  // end of workout rules
+
   /* ---------------- one form for adding and editing a task or an appointment ---------------- */
   // initial: task {text, tag, due} or appt {label, day, time}. onSubmit gets the validated, trimmed value.
   function ItemForm({kind, initial, idPrefix, textLabel, submitLabel, focusFirst, onSubmit, onCancel}){

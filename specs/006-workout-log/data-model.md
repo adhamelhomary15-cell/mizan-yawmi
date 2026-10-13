@@ -31,6 +31,8 @@ A missing, unparsable or wrong-shape stored value loads as the empty root; it ne
 | `r` | repetitions, whole number 1 to 999 |
 | `done` | boolean, only in an open workout; set only by the user's tap, and only when `w` and `r` are valid |
 
+In an open workout `w` and `r` hold what the inputs show (text, empty until typed); marking a set done checks them with `validateSet`, and finishing stores numbers.
+
 ## OpenWorkout (`current`)
 
 | Field | Rule |
@@ -77,11 +79,15 @@ A routine has no planned weights, sets or rest times (out of scope).
 - `normName(name)`: trimmed, spaces collapsed, lower-cased, for comparison.
 - `previousSets(workouts, exId, beforeTs)`.
 - `computeRecords(workouts)` returns `{perExercise, flags}`.
-- `finishWorkout(current, now)` returns `{ok, workout?, dropped, error?}`: keeps done sets, drops empty exercises,
-  needs at least one done set.
+- `finishWorkout(current, now, names)` returns `{ok, workout?, dropped, error?}`: keeps done valid sets, drops empty
+  exercises, needs at least one done set; `names` maps exercise ids to the names saved with the workout.
 - `startFromRoutine(routine, exercisesById, now, uid)` returns a new open workout.
 - `canDeleteExercise(exId, workouts, routines)` returns `{ok, reason?, routineName?}`.
-- `restLeft(rest, now)`, `elapsedMs(startedAt, now)`, `formatClock(ms)`.
+- `restLeft(rest, now)`, `elapsedMs(startedAt, now)`, `formatClock(ms)` and `restLabel(left)` (a countdown shows the whole
+  second still left, and counts up with a plus once over).
+- `isNameTaken(name, list, exceptId)`.
+- `normalizeRoot(raw)` returns `{root, tooNew}`: never throws; damaged parts are dropped; `tooNew` is true when the
+  data was written by a newer app, and the app must then not overwrite it.
 
 ## State transitions
 
