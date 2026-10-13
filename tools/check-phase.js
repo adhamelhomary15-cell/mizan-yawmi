@@ -1,102 +1,77 @@
 #!/usr/bin/env node
 /*
- * Dev-only check for the late/early schedule version (not shipped with the app).
+ * Dev-only check for the late/early day-version rule (not shipped with the app).
  *
- *   node tools/check-phase.js [--fallback=app|yearly|current] [--from=2026] [--to=2035]
+ *   node tools/check-phase.js [--settings <file>] [--from 2026] [--to 2035]
  *
- * For every date it computes the version two ways and compares them:
- *   primary  = Maghrib (Giza 30.0, 31.17, Egyptian method, Cairo time) at or after 17:45 -> 'A' (late), else 'B' (early)
- *   fallback = the date-only rule the app uses when prayer times are unavailable
+ * A day can have two versions chosen by a prayer-time threshold (settings: versions.prayer and
+ * versions.thresholdMinutes). When prayer times can't be computed, versions.fallback gives dates instead.
+ * This script runs the app's own phaseFor twice for every date, once with the prayer library (the computed rule)
+ * and once without it (the fallback rule), using the location, time zone and method from the settings file, and
+ * compares them. It reports, per year, the dates where the computed version switches and any dates where the
+ * fallback disagrees.
  *
- * --fallback=app      the code actually in src/planner.html (phaseFor with prayer times off) (default)
- * --fallback=yearly   a standalone copy of the yearly rule: late from 16 Feb through the last Thursday of October
- * --fallback=current  the old rule that used a fixed date (2026-10-30), kept for the baseline
+ * Pass condition: at most one disagreeing day per year. Default settings file: settings.example.json (which has
+ * no fallback, so there is nothing to compare). Use your own file to check your fallback dates.
  *
- * Exit code 0 when the chosen fallback agrees with the primary rule on every date, except at most
- * one day per year between 10 and 25 February. Otherwise 1.
+ * Exit codes: 0 ok (or nothing to check), 1 fallback disagrees too much, 2 usage or load error.
  */
 const fs = require('fs');
 const path = require('path');
 
-const args = Object.fromEntries(process.argv.slice(2).map(a => {
-  const [k, v] = a.replace(/^--/, '').split('=');
-  return [k, v === undefined ? true : v];
-}));
-const FALLBACK = args.fallback || 'app';
-const FROM = Number(args.from || 2026), TO = Number(args.to || 2035);
-if (!['current', 'yearly', 'app'].includes(FALLBACK)) { console.error('--fallback must be app, yearly or current'); process.exit(2); }
+const argv = process.argv.slice(2);
+const opt = n => { const i = argv.indexOf('--' + n); return i >= 0 ? argv[i + 1] : undefined; };
+const settingsFile = opt('settings') || path.join(__dirname, '..', 'settings.example.json');
+const FROM = Number(opt('from') || 2026), TO = Number(opt('to') || 2035);
 
-const src = fs.readFileSync(path.join(__dirname, 'vendor', 'adhan.umd.min.js'), 'utf8');
+let settingsText;
+try { settingsText = fs.readFileSync(settingsFile, 'utf8'); } catch (e) { console.error('cannot read ' + settingsFile); process.exit(2); }
+let cfg;
+try { cfg = JSON.parse(settingsText); } catch (e) { console.error('settings file is not valid JSON'); process.exit(2); }
+if (!cfg.versions) { console.log('no versions rule in the settings: nothing to check'); process.exit(0); }
+if (!cfg.versions.fallback) { console.log('no versions.fallback in the settings: days use version A when prayer times are unavailable; nothing to compare'); process.exit(0); }
+
+const adhanSrc = fs.readFileSync(path.join(__dirname, 'vendor', 'adhan.umd.min.js'), 'utf8');
 const mod = { exports: {} };
-new Function('module', 'exports', 'self', 'window', src)(mod, mod.exports, globalThis, globalThis);
+new Function('module', 'exports', 'self', 'window', adhanSrc)(mod, mod.exports, globalThis, globalThis);
 const adhan = mod.exports.Coordinates ? mod.exports : globalThis.adhan;
-if (!adhan || !adhan.Coordinates) { console.error('could not load adhan'); process.exit(2); }
 
-const coords = new adhan.Coordinates(30.0, 31.17);
-const params = adhan.CalculationMethod.Egyptian();
-const cairo = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: false });
+const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'planner.html'), 'utf8');
+const a = ['/* ---------------- settings: format check', '/* ---------------- settings: load'].map(m => html.indexOf(m)).filter(i => i >= 0).sort((x, y) => x - y)[0];
+const b = html.indexOf('/* ---------------- courses ---------------- */');
+if (a === undefined || b < 0) { console.error('cannot find the settings/data section in src/planner.html'); process.exit(2); }
+const code = html.slice(a, b);
+const example = html.match(/<script type="application\/json" id="example-settings">([\s\S]*?)<\/script>/);
+
+function load(useAdhan) {
+  const store = { 'mizan-settings-v1': settingsText };
+  const ls = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; } };
+  const doc = { getElementById: id => (id === 'example-settings' && example ? { textContent: example[1] } : null) };
+  const ad = useAdhan ? adhan : undefined;
+  const win = { adhan: ad, localStorage: ls, document: doc };
+  return new Function('window', 'document', 'localStorage', 'adhan', code + '\nreturn {phaseFor, LOADED};')(win, doc, ls, ad);
+}
+const computed = load(true), fallback = load(false);
+if (computed.LOADED.isExample) { console.error('the settings file did not validate, so the app fell back to the example; run tools/check-settings.js on it'); process.exit(2); }
+
 const pad = n => String(n).padStart(2, '0');
-const isoOf = (y, m, d) => y + '-' + pad(m) + '-' + pad(d);
-
-function maghribMinutes(iso) {
-  const [y, m, d] = iso.split('-').map(Number);
-  const t = new adhan.PrayerTimes(coords, new Date(y, m - 1, d), params);
-  const [h, mi] = cairo.format(t.maghrib).split(':').map(Number);
-  return (h % 24) * 60 + mi;
-}
-const primary = iso => maghribMinutes(iso) >= 17 * 60 + 45 ? 'A' : 'B';
-
-// last Thursday of October, by UTC date arithmetic on the ISO year
-function lastThursdayOfOctober(year) {
-  const d = new Date(Date.UTC(year, 9, 31));
-  while (d.getUTCDay() !== 4) d.setUTCDate(d.getUTCDate() - 1);
-  return isoOf(year, 10, d.getUTCDate());
-}
-const fallbackCurrent = iso => iso < '2026-10-30' ? 'A' : 'B';
-const fallbackYearly = iso => {
-  const y = Number(iso.slice(0, 4));
-  return iso >= y + '-02-16' && iso <= lastThursdayOfOctober(y) ? 'A' : 'B';
-};
-// The real thing: pull lastThursdayOfOctober and phaseFor out of src/planner.html and run them with
-// prayer times switched off, so this checks the code the app ships, not a copy of it.
-function fallbackFromApp() {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'planner.html'), 'utf8');
-  const grab = name => {
-    const start = html.indexOf('function ' + name + '(');
-    if (start < 0) throw new Error('function ' + name + ' not found in src/planner.html');
-    let depth = 0, i = html.indexOf('{', start);
-    for (let j = i; j < html.length; j++) {
-      if (html[j] === '{') depth++;
-      else if (html[j] === '}' && --depth === 0) return html.slice(start, j + 1);
-    }
-    throw new Error('unbalanced braces in ' + name);
-  };
-  const code = grab('lastThursdayOfOctober') + '\n' + grab('phaseFor') + '\nreturn phaseFor;';
-  return new Function('pad', 'prayers', code)(pad, () => null);
-}
-const fallback = FALLBACK === 'current' ? fallbackCurrent : FALLBACK === 'app' ? fallbackFromApp() : fallbackYearly;
-
 let failed = false;
-console.log('fallback rule: ' + FALLBACK + '\n');
+console.log('settings: ' + path.basename(settingsFile) + '\n');
 for (let y = FROM; y <= TO; y++) {
-  const transitions = [], mismatches = [];
+  const switches = [], mismatches = [];
   let prev = null;
   for (let t = Date.UTC(y, 0, 1); t < Date.UTC(y + 1, 0, 1); t += 86400000) {
-    const dt = new Date(t);
-    const iso = isoOf(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
-    const p = primary(iso), f = fallback(iso);
-    if (prev !== null && p !== prev) transitions.push(iso + ' -> ' + p + ' (Maghrib ' + pad(Math.floor(maghribMinutes(iso) / 60)) + ':' + pad(maghribMinutes(iso) % 60) + ')');
-    if (p !== f) mismatches.push(iso + ' (computed ' + p + ', fallback ' + f + ')');
+    const d = new Date(t), iso = d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+    const p = computed.phaseFor(iso), f = fallback.phaseFor(iso);
+    if (prev !== null && p !== prev) switches.push(iso + ' -> ' + p);
+    if (p !== f) mismatches.push(iso);
     prev = p;
   }
-  const okMismatch = mismatches.length === 0 ||
-    (mismatches.length === 1 && /-02-(1\d|2[0-5])/.test(mismatches[0]) && /-02-/.test(mismatches[0]));
-  const octMismatch = mismatches.some(m => /-10-/.test(m));
-  const ok = okMismatch && !octMismatch;
+  const ok = mismatches.length <= 1;
   if (!ok) failed = true;
   console.log(y + (ok ? '  ok' : '  FAIL'));
-  console.log('  switches : ' + (transitions.join('; ') || 'none'));
+  console.log('  switches : ' + (switches.join('; ') || 'none'));
   console.log('  disagree : ' + (mismatches.length ? mismatches.length + ' day(s): ' + mismatches.slice(0, 4).join('; ') + (mismatches.length > 4 ? '; ...' : '') : 'none'));
 }
-console.log('\n' + (failed ? 'RESULT: fallback disagrees with the computed rule beyond the allowed margin' : 'RESULT: fallback agrees with the computed rule within the allowed margin'));
+console.log('\n' + (failed ? 'RESULT: the fallback rule disagrees with the computed rule on more than one day in some year' : 'RESULT: the fallback agrees with the computed rule (at most one day per year differs)'));
 process.exit(failed ? 1 : 0);

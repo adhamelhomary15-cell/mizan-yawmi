@@ -194,3 +194,29 @@ Check design notes:
 - Bare clock times and dates are skipped because they match harmlessly everywhere (the first run flagged two clock
   times in a generic contract example).
 - Limit: exact string matches only; a paraphrase of personal data is not detected.
+
+## Removal and final privacy check (T025-T030, 2026-10-13)
+
+The owner approved the removal after a local backup copy was made (a full copy of the working tree, outside git, on
+the owner's device, plus a private archive of the removed documents).
+
+- **T025**: the first feature's spec artifacts and the planning doc were copied into the ignored private archive
+  and removed from the tracked tree. Git history is not rewritten.
+- **T026**: the product notes, readme, and agent rules were rewritten as general documents; the web manifest text
+  and the build script's manifest text no longer list a personal routine; two design-critique snapshots and one
+  design sample row were reworded to generic text.
+- **T027**: the old hard-coded data constants (schedule, day-head arrays, subjects, course and plan, rules text,
+  task tags, a note string) were deleted from the app source; only the weekday names and the embedded example
+  remain. Placeholders in two forms and the brand subtitle no longer name a subject or routine (the subtitle is
+  built from the category labels). Parity with the previous build still gives 0 differences with the owner's file.
+- **T028**: `tools/check-phase.js` no longer has a fixed city or fallback dates; it runs the app's own `phaseFor`
+  with the location, time zone, method and fallback from a settings file (default: the example, which has no
+  fallback, so nothing to compare). With the owner's file the fallback agrees with the computed rule in 2026-2035.
+- **T029-T030**: after the rebuild `node tools/check-private.js` exits 0: the settings file is ignored and
+  untracked, and none of 143 personal values appears in any of 128 tracked files or the built `index.html`. A
+  separate scan for obvious markers found only a base64 font fragment and the generic automation-tool name in the
+  constitution.
+- **Built app**: with empty storage it shows only the example (no personal strings in the page); with the owner's
+  file imported the owner's schedule shows and all five tabs render.
+- **Known**: published git history and the currently published pages still contain the old data until the new
+  build is deployed; history is not rewritten (owner's decision).
