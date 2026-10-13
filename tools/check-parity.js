@@ -3,7 +3,7 @@
  * Dev-only parity check (not shipped with the app): proves a new build, loaded with a settings file,
  * produces the same plans as an old build.
  *
- *   node tools/check-parity.js --old <html> --new <html> [--settings <file>] [--from YYYY-MM-DD] [--days N]
+ *   node tools/check-parity.js --old <html> --new <html> [--settings <file>] [--from YYYY-MM-DD] [--days N] [--no-adhan]
  *
  * For every date it compares the day plan (start, end, category, title, detail, subject, key), and it also
  * compares the per-weekday notes, category labels, subjects, course, course plan, rules text and task tags.
@@ -23,6 +23,7 @@ const opt = n => { const i = argv.indexOf('--' + n); return i >= 0 ? argv[i + 1]
 const oldFile = opt('old'), newFile = opt('new'), settingsFile = opt('settings');
 const from = opt('from') || '2026-10-01';
 const days = Number(opt('days') || 366);
+const NO_ADHAN = argv.includes('--no-adhan'); // run both builds without the prayer library, to exercise the fallback rule
 if (!oldFile || !newFile) { console.error('usage: node tools/check-parity.js --old <html> --new <html> [--settings <file>] [--from YYYY-MM-DD] [--days N]'); process.exit(2); }
 
 const adhanSrc = fs.readFileSync(path.join(__dirname, 'vendor', 'adhan.umd.min.js'), 'utf8');
@@ -30,7 +31,7 @@ const mod = { exports: {} };
 new Function('module', 'exports', 'self', 'window', adhanSrc)(mod, mod.exports, globalThis, globalThis);
 const adhan = mod.exports.Coordinates ? mod.exports : globalThis.adhan;
 
-const START_MARKERS = ['/* ---------------- settings: load', '/* ---------------- schedule data ---------------- */'];
+const START_MARKERS = ['/* ---------------- settings: format check', '/* ---------------- settings: load', '/* ---------------- schedule data ---------------- */'];
 const END_MARKER = '/* ---------------- courses ---------------- */';
 
 function load(file, settingsText) {
@@ -50,12 +51,13 @@ function load(file, settingsText) {
     removeItem: k => { delete store[k]; }
   };
   const fakeDocument = { getElementById: id => id === 'example-settings' && ex ? { textContent: ex[1] } : null };
-  const win = { adhan, localStorage: fakeStorage, document: fakeDocument };
+  const useAdhan = NO_ADHAN ? undefined : adhan;
+  const win = { adhan: useAdhan, localStorage: fakeStorage, document: fakeDocument };
   const names = ['blocksFor', 'phaseFor', 'SCHED', 'CATS', 'SUBJ', 'COURSE', 'PLAN', 'RULES', 'TASK_TAGS'];
   const present = names.filter(n => new RegExp('(?:function|const|let)\\s+' + n + '\\b').test(code));
   const fn = new Function('window', 'document', 'localStorage', 'adhan',
     code + '\nreturn {' + present.map(n => n + ':' + n).join(',') + '};');
-  return fn(win, fakeDocument, fakeStorage, adhan);
+  return fn(win, fakeDocument, fakeStorage, useAdhan);
 }
 
 const settingsText = settingsFile ? fs.readFileSync(settingsFile, 'utf8') : null;
@@ -67,7 +69,11 @@ const diffs = [];
 let comparisons = 0;
 const note = (what) => { if (diffs.length < 8) diffs.push(what); diffsCount++; };
 let diffsCount = 0;
-const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+// Order of object keys does not matter, only content does.
+const canon = v => Array.isArray(v) ? v.map(canon)
+  : v && typeof v === 'object' ? Object.keys(v).sort().reduce((o, k) => { o[k] = canon(v[k]); return o; }, {})
+  : v;
+const same = (x, y) => JSON.stringify(canon(x)) === JSON.stringify(canon(y));
 const FIELDS = ['s', 'e', 'cat', 'title', 'detail', 'subj', 'key'];
 
 const addDays = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return t.toISOString().slice(0, 10); };

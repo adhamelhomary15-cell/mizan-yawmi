@@ -121,3 +121,28 @@ mutated copies (a changed block time, an added subject): each exits 1, so the ha
 - `settings.example.json` was generated from the embedded example and reviewed: generic values only.
 - The owner's settings file was generated locally by a one-off script (kept in the private folder),
   validates with exit 0, and has not been printed or committed.
+
+## Verification notes (Phase 3, 2026-10-13)
+
+- **Parity (T016)**: `node tools/check-parity.js --old .private/old.html --new src/planner.html --settings .private/settings.json`
+  gives 0 differences over 366 dates, and also over 800 dates from 2026-01-01 on both paths: with the prayer
+  library, and with it switched off (`--no-adhan`, which exercises the day-version fallback). Negative control:
+  the same run with no settings file (the example) reports differences and exits 1. The comparison ignores
+  object key order.
+- **How the app is wired**: the old hard-coded constants are renamed with an `OLD_` prefix and are unused
+  (dead code until the removal phase). New constants (`CATS`, `SUBJ`, `SCHED`, `COURSE`, `PLAN`, `TASK_TAGS`,
+  `RULES`) come from the loaded settings; the time zone, prayer location and method, the day-version rule, and
+  `lang`/`dir` also come from settings.
+- **Browser (T017)**: with empty storage the example shows with a visible "example" label, every tab renders,
+  `lang`/`dir` are set. With the owner's file in storage the example label is gone and all four tabs render.
+  With the smallest valid file (3 categories, one day, no course, no subjects, no rules) all four tabs render
+  after one fix (a Today card assumed the course plan has a first week).
+- **Wording drift for the owner (accepted)**: UI sentences that used fixed category words now use the category
+  labels, so a few phrases read slightly differently (for example the balance card names are built from two
+  labels, and the weekly legend uses labels instead of words with an article). The data (blocks, times,
+  titles, notes, labels, course, rules) is identical per the parity check. A text override can be added to the
+  settings later if exact wording matters.
+- **Known limit**: a settings file without a `course` still shows a placeholder course card named "Course"
+  with 0 modules on Today and the Course tab; users can add their own course and make it the main one.
+- **Not done in this phase (by design)**: the old constants are still in the file; removing them is task T027
+  and needs approval.
