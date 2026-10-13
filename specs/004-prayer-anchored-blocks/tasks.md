@@ -63,9 +63,9 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 4.
 
-- [ ] T013 [US2] Extend the year sweep in `tools/check-anchors.js`: for every date over 3 years and every weekday, with the example's anchor and the test file's anchor, assert that blocks never overlap, only the block before each anchored block and the last block differ in length from the no-anchor layout, the first start and the last end are unchanged, and the lengths of the two absorbing blocks change by equal and opposite amounts when there is one anchor (SC-002, SC-003).
-- [ ] T014 [US2] Verify the earliest-prayer and latest-prayer dates (take them from the sweep) in the browser at 375 px: the Today list, the now/next card, the Week bars and the Week totals all show the same times, and the day ends at 01:00; also confirm the Week totals move between the two absorbing categories by equal amounts.
-- [ ] T015 [US2] Confirm no screen reads the old fixed start for an anchored block: search `src/planner.html` for uses of the tuple's `b[0]` outside `layoutDay`, the key, and the validator, and fix any that bypass the layout.
+- [x] T013 [US2] Extend the year sweep in `tools/check-anchors.js`: for every date over 3 years and every weekday, with the example's anchor and the test file's anchor, assert that blocks never overlap, only the block before each anchored block and the last block differ in length from the no-anchor layout, the first start and the last end are unchanged, and the lengths of the two absorbing blocks change by equal and opposite amounts when there is one anchor (SC-002, SC-003).
+- [x] T014 [US2] Verify the earliest-prayer and latest-prayer dates (take them from the sweep) in the browser at 375 px: the Today list, the now/next card, the Week bars and the Week totals all show the same times, and the day ends at 01:00; also confirm the Week totals move between the two absorbing categories by equal amounts.
+- [x] T015 [US2] Confirm no screen reads the old fixed start for an anchored block: search `src/planner.html` for uses of the tuple's `b[0]` outside `layoutDay`, the key, and the validator, and fix any that bypass the layout.
 
 **Checkpoint**: US1 and US2 pass together. Commit only if code changed: `fix(anchors): ... (004, US2)`; otherwise record the sweep result in the next commit message.
 
@@ -77,9 +77,9 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 5.
 
-- [ ] T016 [US3] Show the notice in the Today view in `src/planner.html` (below the day's note, about line 1313): when `dayNotice(iso)` is `'unavailable'` show «أوقات الصلاة مش متاحة، فالبلوكات المربوطة بالصلاة على مواعيدها الثابتة.»; when `'nofit'` show «اليوم ده مش بيسع ربط البلوكات بالصلاة، فهي على مواعيدها الثابتة.»; nothing when `null`. Use the existing day-note style (no new colour or component), as plain text, and make sure it wraps at 375 px.
-- [ ] T017 [US3] Verify in the browser per quickstart section 5: remove the location from a copy of the test file (the importer must still accept it or the check is done by temporarily deleting the library in the console); a file with a tiny last block (10 minutes) shows the `nofit` line on a late-Maghrib date; restoring a valid file applies the anchor again with no other action. Confirm the Week view shows no notice.
-- [ ] T018 [US3] Verify the tick safety per quickstart section 7: tick the anchored block, switch between anchored, `unavailable` and `nofit` layouts, and confirm the tick stays on the block and no other tick appears or disappears (compare `checks` before and after in the stored progress).
+- [x] T016 [US3] Show the notice in the Today view in `src/planner.html` (below the day's note, about line 1313): when `dayNotice(iso)` is `'unavailable'` show «أوقات الصلاة مش متاحة، فالبلوكات المربوطة بالصلاة على مواعيدها الثابتة.»; when `'nofit'` show «اليوم ده مش بيسع ربط البلوكات بالصلاة، فهي على مواعيدها الثابتة.»; nothing when `null`. Use the existing day-note style (no new colour or component), as plain text, and make sure it wraps at 375 px.
+- [x] T017 [US3] Verify in the browser per quickstart section 5: remove the location from a copy of the test file (the importer must still accept it or the check is done by temporarily deleting the library in the console); a file with a tiny last block (10 minutes) shows the `nofit` line on a late-Maghrib date; restoring a valid file applies the anchor again with no other action. Confirm the Week view shows no notice.
+- [x] T018 [US3] Verify the tick safety per quickstart section 7: tick the anchored block, switch between anchored, `unavailable` and `nofit` layouts, and confirm the tick stays on the block and no other tick appears or disappears (compare `checks` before and after in the stored progress).
 
 **Checkpoint**: all fallbacks work. Commit as `feat(anchors): notices and fixed-time fallback (004, US3)`.
 

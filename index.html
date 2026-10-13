@@ -912,6 +912,10 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   function blocksFor(iso){ return dayLayout(iso).blocks; }
   // null, 'unavailable' (no prayer times for this date) or 'nofit' (the day cannot hold the anchors): blocks are at their fixed times.
   function dayNotice(iso){ return dayLayout(iso).notice; }
+  const ANCHOR_NOTICES = {
+    unavailable: 'أوقات الصلاة مش متاحة، فالبلوكات المربوطة بالصلاة على مواعيدها الثابتة.',
+    nofit: 'اليوم ده مش بيسع ربط البلوكات بالصلاة، فهي على مواعيدها الثابتة.'
+  };
   function apptsFor(iso, store){
     const wd = weekday(iso);
     return (store.appts || []).filter(a => Number(a.day) === wd && a.time).map(a => {
@@ -1361,6 +1365,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           ${adding ? html`<${AddBlock} iso=${iso} update=${update} onDone=${() => setAdding(false)} />`
             : html`<button type="button" class="btn add-block" onClick=${() => setAdding(true)}><${Plus} />ضيف حاجة لليوم ده</button>`}
           ${(SCHED[wd] || {}).note ? html`<p class="note">${SCHED[wd].note}</p>` : null}
+          ${ANCHOR_NOTICES[dayNotice(iso)] ? html`<p class="note">${ANCHOR_NOTICES[dayNotice(iso)]}</p>` : null}
           <p class="small muted">دوس على أي بلوك عشان تلغيه النهارده. ${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
         </div>
       </div>

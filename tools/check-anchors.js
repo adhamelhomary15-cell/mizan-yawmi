@@ -2,9 +2,10 @@
 /*
  * Dev-only check for blocks tied to a prayer time (not shipped with the app).
  *
- *   node tools/check-anchors.js [--settings <file>] [--from 2026] [--to 2028] [--require-fit]
+ *   node tools/check-anchors.js [--settings <file>] [--from 2026] [--to 2028] [--require-fit] [--matrix]
  *                                            run the checks, then a year sweep with the real prayer times
- *                                            (default file: settings.example.json; --require-fit also fails if any day falls back)
+ *                                            (default file: settings.example.json; --require-fit also fails if any day falls back;
+ *                                             --matrix also anchors one block to every prayer, both directions, 0 and 45 minutes)
  *   node tools/check-anchors.js --self-test  break the layout rule on purpose and check that this script notices
  *
  * It runs the app's own layoutDay (the block between "start of anchor layout" and "end of anchor layout" in
@@ -150,10 +151,9 @@ function loadApp(settingsText, useAdhan) {
   return new Function('window', 'document', 'localStorage', 'adhan', html.slice(a, b) + '\nreturn {blocksFor, listFor, dayNotice, layoutDay, prayers, weekday, START, END, LOADED};')(win, doc, ls, adhan);
 }
 
-function sweep(settingsFile, fromYear, toYear, requireFit) {
-  const settingsText = fs.readFileSync(settingsFile, 'utf8');
+function sweepStats(settingsText, fromYear, toYear, label) {
   const app = loadApp(settingsText, true);
-  if (app.LOADED.isExample && settingsFile.indexOf('settings.example.json') < 0) throw new Error('the settings file did not validate, so the app fell back to the example; run tools/check-settings.js on it');
+  if (app.LOADED.isExample && label.indexOf('settings.example.json') < 0 && label.indexOf('variant') < 0) throw new Error('the settings file did not validate, so the app fell back to the example; run tools/check-settings.js on it');
   const pad = n => String(n).padStart(2, '0');
   const stats = {dates: 0, anchoredDays: 0, nofit: 0, unavailable: 0, bad: [], minDelta: Infinity, maxDelta: -Infinity, minAbsorb: Infinity};
   for (let y = fromYear; y <= toYear; y++) {
@@ -191,6 +191,11 @@ function sweep(settingsFile, fromYear, toYear, requireFit) {
       if (A.some((b, i) => b.key !== list[i][0] + '-' + list[i][1])) stats.bad.push(iso + ': key not at fixed start');
     }
   }
+  return stats;
+}
+
+function sweep(settingsFile, fromYear, toYear, requireFit) {
+  const stats = sweepStats(fs.readFileSync(settingsFile, 'utf8'), fromYear, toYear, path.basename(settingsFile));
   const fmt = v => Number.isFinite(v) ? v : 'n/a';
   console.log('sweep ' + fromYear + '-' + toYear + ' with ' + path.basename(settingsFile) + ': ' + stats.dates + ' dates, ' + stats.anchoredDays + ' with anchored blocks, ' + stats.nofit + ' not fitting, ' + stats.unavailable + ' without prayer times');
   if (stats.anchoredDays) console.log('  shift of anchored blocks vs fixed time: ' + fmt(stats.minDelta) + ' to ' + fmt(stats.maxDelta) + ' minutes; shortest absorbing block: ' + fmt(stats.minAbsorb) + ' minutes');
@@ -200,6 +205,28 @@ function sweep(settingsFile, fromYear, toYear, requireFit) {
   const ok = !stats.bad.length && (!requireFit || (stats.nofit === 0 && stats.unavailable === 0));
   if (requireFit && (stats.nofit || stats.unavailable)) console.log('  FAIL --require-fit: some anchored days fall back to fixed times');
   console.log('  ' + (ok ? 'ok    year sweep' : 'FAIL  year sweep'));
+  return ok;
+}
+
+function matrix(settingsFile, fromYear, toYear) {
+  const base = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+  const dayKey = Object.keys(base.week)[0];
+  const day = base.week[dayKey];
+  if (!Array.isArray(day.blocks)) { console.log('matrix: the first day has two versions; skipped'); return true; }
+  let at = day.blocks.findIndex(b => b[1] === 'gym');
+  if (at < 1 || at > day.blocks.length - 2) at = Math.floor(day.blocks.length / 2);
+  let ok = true;
+  console.log('matrix: anchoring block ' + at + ' of day ' + dayKey + ' in the file, over ' + fromYear + '-' + toYear);
+  ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(p => ['before', 'after'].forEach(dir => [0, 45].forEach(min => {
+    const o = JSON.parse(JSON.stringify(base)), b = o.week[dayKey].blocks[at];
+    while (b.length < 5) b.push('');
+    b[5] = {prayer: p, dir, min};
+    const st = sweepStats(JSON.stringify(o), fromYear, toYear, 'variant');
+    const good = !st.bad.length;
+    if (!good) ok = false;
+    console.log('  ' + (good ? 'ok    ' : 'FAIL  ') + p + ' ' + dir + ' ' + min + ': ' + (st.anchoredDays - st.nofit - st.unavailable) + ' days fit, ' + st.nofit + ' fall back, ' + st.bad.length + ' rule breaks');
+    st.bad.slice(0, 3).forEach(m => console.log('        ' + m));
+  })));
   return ok;
 }
 
@@ -247,5 +274,6 @@ try {
   const file = opt('settings') || path.join(__dirname, '..', 'settings.example.json');
   console.log('');
   sweepOk = sweep(file, Number(opt('from') || 2026), Number(opt('to') || 2028), argv.includes('--require-fit'));
+  if (argv.includes('--matrix')) { console.log(''); sweepOk = matrix(file, Number(opt('from') || 2026), Number(opt('to') || 2028)) && sweepOk; }
 } catch (e) { console.error(e.message); process.exit(2); }
 process.exit(failedChecks || !sweepOk ? 1 : 0);
