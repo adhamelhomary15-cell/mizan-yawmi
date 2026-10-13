@@ -104,11 +104,11 @@
 
 ## Phase 7: Polish and ship
 
-- [ ] T021 Run the full [quickstart.md](quickstart.md) at 375 px: keyboard-only pass (Tab to `عدّل`, Enter, focus on first field, Escape, focus returns), network panel shows 0 requests during edit, save and undo (SC-006), reload keeps the edit, airplane mode works.
-- [ ] T022 Search the diff for the done-state guarantee: `git diff main -- src/planner.html` MUST show no new write to `checks`, `modules`, or `done`; list what you checked in the commit message (Principle II).
-- [ ] T023 [P] If `README.md` or `PRODUCT.md` list the Tasks tab abilities, add one line saying tasks and weekly appointments can be edited; keep copy general (Principle VI).
-- [ ] T024 Rebuild with `PYTHONUTF8=1 python tools/build.py`, `git checkout` the icon files if Pillow re-rendered them, run `node tools/check-edit.js`, `node tools/check-settings.js --self-test`, `node tools/check-private.js`; report any skipped check honestly (offline cold start on a real phone cannot be tested in the browser pane).
-- [ ] T025 Tick completed tasks here, show the owner the final diff, and wait for explicit approval before any push or PR (AGENTS.md rule 5).
+- [x] T021 Run the full [quickstart.md](quickstart.md) at 375 px: keyboard-only pass (Tab to `عدّل`, Enter, focus on first field, Escape, focus returns), network panel shows 0 requests during edit, save and undo (SC-006), reload keeps the edit, airplane mode works.
+- [x] T022 Search the diff for the done-state guarantee: `git diff main -- src/planner.html` MUST show no new write to `checks`, `modules`, or `done`; list what you checked in the commit message (Principle II).
+- [x] T023 [P] If `README.md` or `PRODUCT.md` list the Tasks tab abilities, add one line saying tasks and weekly appointments can be edited; keep copy general (Principle VI).
+- [x] T024 Rebuild with `PYTHONUTF8=1 python tools/build.py`, `git checkout` the icon files if Pillow re-rendered them, run `node tools/check-edit.js`, `node tools/check-settings.js --self-test`, `node tools/check-private.js`; report any skipped check honestly (offline cold start on a real phone cannot be tested in the browser pane).
+- [x] T025 Tick completed tasks here, show the owner the final diff, and wait for explicit approval before any push or PR (AGENTS.md rule 5).
 
 ---
 
