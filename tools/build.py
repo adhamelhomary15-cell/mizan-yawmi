@@ -1,14 +1,19 @@
 """Build the installable app from src/planner.html.
 
-Run from the repo root:  python3 tools/build.py
-Writes index.html, manifest.webmanifest, sw.js and the icons at the repo root,
-which is what GitHub Pages serves. Needs Python 3 and Pillow (only for icons).
+Run from the repo root:  python3 tools/build.py [--icons]
+Writes index.html, manifest.webmanifest and sw.js at the repo root, which is what GitHub Pages serves.
+The output is the same on every OS (LF line endings), so CI can rebuild and compare.
+The icons are only redrawn with --icons, or when one is missing (needs Pillow): the drawing is not
+byte-identical across Pillow versions, so redrawing them on every build would change files for nothing.
 """
-import base64, hashlib, json, pathlib, re
+import base64, hashlib, json, pathlib, re, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 VENDOR = ROOT / 'tools' / 'vendor'
 src = (ROOT / 'src' / 'planner.html').read_text(encoding='utf-8')
+
+def write(name, text):
+    (ROOT / name).write_text(text, encoding='utf-8', newline='\n')
 
 # 1. Inline the CDN scripts so the app works offline.
 LIBS = {
@@ -54,7 +59,7 @@ head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
 sw_reg = ("<script>if('serviceWorker' in navigator){addEventListener('load',function(){"
           "navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){});});}</script>")
 page = head + title + '</head><body>' + src + sw_reg + '</body></html>'
-(ROOT / 'index.html').write_text(page, encoding='utf-8')
+write('index.html', page)
 
 # 4. Manifest.
 manifest = {
@@ -65,11 +70,11 @@ manifest = {
     "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
               {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
               {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]}
-(ROOT / 'manifest.webmanifest').write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
+write('manifest.webmanifest', json.dumps(manifest, ensure_ascii=False, indent=2))
 
 # 5. Service worker. The cache name changes with every build, so phones drop the old copy.
 version = hashlib.sha1(page.encode()).hexdigest()[:10]
-(ROOT / 'sw.js').write_text(f"""const CACHE = 'mizan-{version}';
+write('sw.js', f"""const CACHE = 'mizan-{version}';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {{ e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); }});
 self.addEventListener('activate', e => {{ e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); }});
@@ -81,13 +86,18 @@ self.addEventListener('fetch', e => {{
     .then(r => {{ if (r.ok) {{ const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }} return r; }})
     .catch(() => caches.match(req).then(r => r || caches.match('./index.html'))));
 }});
-""", encoding='utf-8')
+""")
 
 # 6. Icons: the guilloche rosette in paper ink on the oxblood shell colour.
+ICONS = ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png']
+want_icons = '--icons' in sys.argv[1:] or not all((ROOT / n).exists() for n in ICONS)
 try:
+    if not want_icons:
+        raise ImportError
     from PIL import Image, ImageDraw
 except ImportError:
-    print('Pillow not installed; icons left as they are')
+    if want_icons:
+        print('Pillow not installed; icons left as they are')
 else:
     import math
     SHELL, PAPER, OCHRE = (110, 26, 40), (250, 251, 246), (228, 197, 92)

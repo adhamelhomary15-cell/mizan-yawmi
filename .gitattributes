@@ -1,0 +1,8 @@
+# Text files are stored and checked out with LF on every OS, so scripts and diffs see the same bytes.
+* text=auto eol=lf
+
+# Binary assets: never converted.
+*.png binary
+*.woff2 binary
+*.woff binary
+*.ttf binary
