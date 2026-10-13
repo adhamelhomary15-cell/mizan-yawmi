@@ -65,8 +65,7 @@ fully withdrawn.
 - Plugins, skills, hooks, MCP servers, and automations used on this repo MUST NOT hold
   credentials or tokens in the repository, and MUST NOT be granted write or network access
   beyond the task at hand.
-- The deployed app MUST contain no secrets, API keys, or personal data (Principle VI), except as
-  allowed by the Transitional Exception in Governance.
+- The deployed app MUST contain no secrets, API keys, or personal data (Principle VI).
 - The local personal settings file MUST be listed in `.gitignore`, and a check MUST confirm it is
   untracked before any commit or push.
 - Brand commitments from `PRODUCT.md` are binding: name «ميزان يومي», no Islamic ornament as
@@ -95,11 +94,4 @@ PATCH for clarifications. Principles I and II are non-negotiable and can be rela
 MAJOR amendment. Every plan and review MUST verify compliance; any deviation MUST be justified
 in writing in the plan. Runtime guidance lives in `PRODUCT.md`, `DESIGN.md`, and `README.md`.
 
-**Transitional Exception (expires when the separation feature merges):** at version 1.1.0 some
-owner-specific data is still in the app's source files, in the product and planning documents, in
-the specs, and in the published app, and remains in git history. This is a known violation of
-Principle VI, not a precedent. No new personal data MAY be added to tracked files, and the next
-feature MUST remove what exists, by deleting it from tracked files only (no history rewrite, by
-the owner's decision of 2026-10-13).
-
-**Version**: 1.1.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-13
+**Version**: 1.1.1 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-13

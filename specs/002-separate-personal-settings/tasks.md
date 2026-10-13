@@ -136,7 +136,7 @@ description: "Task list for 002 separate personal settings from the public app"
 **Purpose**: Final verification and shipping.
 
 - [ ] T034 Run the whole quickstart.md against the rebuilt `index.html` on a phone-width viewport and, by the owner, on a real phone offline: import the owner's file on each device right after the deploy (FR-015). Record results in `specs/002-separate-personal-settings/research.md` under "Final verification"
-- [ ] T035 After this feature merges, run `/speckit-constitution` to strike the Transitional Exception from the constitution (a separate amendment; this task only reminds, it does not edit the constitution here)
+- [x] T035 After this feature merges, run `/speckit-constitution` to strike the Transitional Exception from the constitution (a separate amendment; this task only reminds, it does not edit the constitution here)
 - [ ] T036 Tick every finished task in this file, commit each phase with a clear message on branch `002-separate-personal-settings`, and report results to the owner. Open or update a PR only when the owner asks
 
 ---
