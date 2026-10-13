@@ -275,7 +275,7 @@
    "kind": "card",
    "refersTo": "card",
    "description": "Check, time, title with meta in category ink, denomination numeral.",
-   "html": "<div class=\"ds-row\"><i class=\"ds-chk\"></i><span class=\"ds-time\">8:30 ص</span><span class=\"ds-title\">Math-3 · محاضرة<small>كلية · C2-6</small></span><b class=\"ds-denom\">3<small>س</small></b></div>",
+   "html": "<div class=\"ds-row\"><i class=\"ds-chk\"></i><span class=\"ds-time\">8:30 ص</span><span class=\"ds-title\">Subject 1 · محاضرة<small>محاضرات · A1</small></span><b class=\"ds-denom\">3<small>س</small></b></div>",
    "css": ".ds-row{direction:rtl;display:grid;grid-template-columns:44px 82px 1fr auto;gap:8px;align-items:start;background:color-mix(in srgb,#7B1E2E 9%,#FAFBF6);border-radius:14px;padding:6px 10px;font:400 15px 'Readex Pro',system-ui,sans-serif;color:#1D1B17}.ds-chk{width:28px;height:28px;margin:8px;border-radius:50%;border:2px solid #7B1E2E}.ds-time{padding-top:10px;font-weight:600}.ds-title{padding-top:8px;font-weight:600;display:flex;flex-direction:column}.ds-title small{font-weight:400;font-size:13px;color:#7B1E2E}.ds-denom{direction:ltr;font:700 26px Spectral,Georgia,serif;color:#7B1E2E;padding-top:10px}.ds-denom small{font:500 11px 'Readex Pro',sans-serif}"
   },
   {

@@ -270,7 +270,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .notice .btn{flex:none}
 
 /* layout blocks */
-.today-view,.weekv,.coursev,.tasksv{display:flex;flex-direction:column;gap:var(--s5)}
+.today-view,.weekv,.coursev,.tasksv,.settingsv{display:flex;flex-direction:column;gap:var(--s5)}
 .today-main,.today-side{display:contents}
 .o-head{order:0} .o-now{order:1} .o-target{order:2} .o-tasks{order:3} .o-timeline{order:4} .o-prayers{order:5} .o-balance{order:6}
 .brand{display:none}
@@ -282,8 +282,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
 /* bottom nav */
 .nav{position:fixed;inset-inline:0;bottom:0;z-index:5;background:var(--shell);color:var(--shell-fg);padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px))}
-.nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
-.nav button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;min-height:52px;padding:6px 0;border-radius:12px;cursor:pointer;color:var(--shell-dim);font-size:12px}
+.nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.nav button .dot{position:absolute;top:8px;inset-inline-end:calc(50% - 20px);width:8px;height:8px;border-radius:50%;background:var(--shell-fg);box-shadow:0 0 0 2px var(--shell)}
+.nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;min-height:52px;padding:6px 0;border-radius:12px;cursor:pointer;color:var(--shell-dim);font-size:12px}
 .nav button:focus-visible{outline-color:var(--shell-fg)}
 .nav button svg{width:22px;height:22px}
 .nav button[aria-current="page"]{color:var(--shell-fg);font-weight:600;background:color-mix(in srgb,var(--shell-fg) 16%,transparent)}
@@ -326,6 +327,217 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 <script src="https://cdn.jsdelivr.net/npm/preact@10.26.4/hooks/dist/hooks.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/lib/bundles/adhan.umd.min.js"></script>
+<script type="application/json" id="example-settings">
+{
+ "format": "mizan-settings",
+ "version": 1,
+ "name": "Example (مثال عام)",
+ "language": "ar",
+ "timezone": "Africa/Cairo",
+ "location": {
+  "lat": 30.0444,
+  "lng": 31.2357,
+  "label": "Sample city"
+ },
+ "prayerMethod": "Egyptian",
+ "versions": {
+  "prayer": "maghrib",
+  "thresholdMinutes": 1065
+ },
+ "categories": {
+  "uni": {
+   "label": "محاضرات",
+   "long": "حضور المحاضرات",
+   "track": true
+  },
+  "study": {
+   "label": "مذاكرة",
+   "long": "مذاكرة",
+   "track": true
+  },
+  "course": {
+   "label": "كورس",
+   "long": "الكورس",
+   "track": true
+  },
+  "work": {
+   "label": "شغل",
+   "long": "الشغل",
+   "track": true
+  },
+  "gym": {
+   "label": "رياضة",
+   "long": "الرياضة",
+   "track": true
+  },
+  "quran": {
+   "label": "ورد",
+   "long": "الورد اليومي",
+   "track": true
+  },
+  "personal": {
+   "label": "وقتك",
+   "long": "وقتك الخاص",
+   "track": false
+  },
+  "move": {
+   "label": "مواصلات",
+   "long": "مواصلات",
+   "track": false
+  },
+  "rest": {
+   "label": "راحة",
+   "long": "راحة",
+   "track": false
+  }
+ },
+ "subjects": {
+  "S1": "Subject 1",
+  "S2": "Subject 2"
+ },
+ "week": {
+  "0": {
+   "note": "يوم مثال. عدّل الجدول ده في ملف الإعدادات بتاعك.",
+   "blocks": [
+   ["07:30", "rest", "صحيان وفطار"],
+   ["08:30", "study", "مثال: مذاكرة مادة 1", "S1 · اكتب هنا تفاصيل البلوك", "S1"],
+   ["10:30", "rest", "بريك"],
+   ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
+   ["13:30", "rest", "غدا وراحة"],
+   ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
+   ["16:30", "gym", "مثال: رياضة"],
+   ["18:00", "rest", "عشا"],
+   ["19:00", "course", "مثال: كورس", "جلسة كورس"],
+   ["21:00", "personal", "وقتك", "وقت حر"]
+  ]
+  },
+  "1": {
+   "note": "يوم مثال بنسختين: واحدة لو المغرب متأخر والتانية لو بدري.",
+   "blocks": {
+    "A": [
+   ["07:30", "rest", "صحيان وفطار"],
+   ["08:30", "study", "مثال: مذاكرة مادة 1", "S1 · اكتب هنا تفاصيل البلوك", "S1"],
+   ["10:30", "rest", "بريك"],
+   ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
+   ["13:30", "rest", "غدا وراحة"],
+   ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
+   ["16:30", "gym", "مثال: رياضة"],
+   ["18:00", "rest", "عشا"],
+   ["19:00", "course", "مثال: كورس", "جلسة كورس"],
+   ["21:00", "personal", "وقتك", "وقت حر"]
+  ],
+    "B": [
+   ["07:30", "rest", "صحيان وفطار"],
+   ["08:30", "study", "مثال: مذاكرة مادة 1", "S1 · اكتب هنا تفاصيل البلوك", "S1"],
+   ["10:30", "rest", "بريك"],
+   ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
+   ["13:30", "rest", "غدا وراحة"],
+   ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
+   ["15:45", "gym", "مثال: رياضة"],
+   ["17:30", "rest", "عشا"],
+   ["19:00", "course", "مثال: كورس", "جلسة كورس"],
+   ["21:00", "personal", "وقتك", "وقت حر"]
+  ]
+   }
+  },
+  "2": {
+   "blocks": [
+   ["07:30", "rest", "صحيان وفطار"],
+   ["08:30", "study", "مثال: مذاكرة مادة 1", "S1 · اكتب هنا تفاصيل البلوك", "S1"],
+   ["10:30", "rest", "بريك"],
+   ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
+   ["13:30", "rest", "غدا وراحة"],
+   ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
+   ["16:30", "gym", "مثال: رياضة"],
+   ["18:00", "rest", "عشا"],
+   ["19:00", "course", "مثال: كورس", "جلسة كورس"],
+   ["21:00", "personal", "وقتك", "وقت حر"]
+  ]
+  },
+  "3": {
+   "blocks": [
+   ["07:30", "rest", "صحيان وفطار"],
+   ["08:30", "study", "مثال: مذاكرة مادة 1", "S1 · اكتب هنا تفاصيل البلوك", "S1"],
+   ["10:30", "rest", "بريك"],
+   ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
+   ["13:30", "rest", "غدا وراحة"],
+   ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
+   ["16:30", "gym", "مثال: رياضة"],
+   ["18:00", "rest", "عشا"],
+   ["19:00", "course", "مثال: كورس", "جلسة كورس"],
+   ["21:00", "personal", "وقتك", "وقت حر"]
+  ]
+  },
+  "4": {
+   "blocks": [
+   ["07:30", "rest", "صحيان وفطار"],
+   ["08:30", "study", "مثال: مذاكرة مادة 1", "S1 · اكتب هنا تفاصيل البلوك", "S1"],
+   ["10:30", "rest", "بريك"],
+   ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
+   ["13:30", "rest", "غدا وراحة"],
+   ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
+   ["16:30", "gym", "مثال: رياضة"],
+   ["18:00", "rest", "عشا"],
+   ["19:00", "course", "مثال: كورس", "جلسة كورس"],
+   ["21:00", "personal", "وقتك", "وقت حر"]
+  ]
+  },
+  "5": {
+   "note": "يوم راحة مثال.",
+   "blocks": [
+   ["09:00", "rest", "صحيان وفطار"],
+   ["10:00", "study", "مثال: مراجعة الأسبوع", "S1", "S1"],
+   ["13:00", "rest", "غدا"],
+   ["15:00", "personal", "وقتك", "يوم حر"]
+  ]
+  },
+  "6": {
+   "blocks": [
+   ["07:30", "rest", "صحيان وفطار"],
+   ["08:30", "study", "مثال: مذاكرة مادة 1", "S1 · اكتب هنا تفاصيل البلوك", "S1"],
+   ["10:30", "rest", "بريك"],
+   ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
+   ["13:30", "rest", "غدا وراحة"],
+   ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
+   ["16:30", "gym", "مثال: رياضة"],
+   ["18:00", "rest", "عشا"],
+   ["19:00", "course", "مثال: كورس", "جلسة كورس"],
+   ["21:00", "personal", "وقتك", "وقت حر"]
+  ]
+  }
+ },
+ "rules": ["ده جدول مثال عام. استورد ملف الإعدادات بتاعك من زرار الإعدادات.", "كل بلوك ليه وقت حقيقي، ومفيش حاجة بتتحشر عشان الجدول يبان كامل."],
+ "taskTags": {
+  "uni": "محاضرات",
+  "course": "كورس",
+  "work": "شغل",
+  "personal": "شخصي"
+ },
+ "course": {
+  "name": "Example course",
+  "sub": "كورس مثال بخطة أسبوعية",
+  "plan": [
+   {
+    "from": "2026-10-12",
+    "to": "2026-10-18",
+    "label": "الأسبوع 1",
+    "items": [
+   ["01", "Module one"],
+   ["02", "Module two"]
+  ]
+   },
+   {
+    "from": "2026-10-19",
+    "to": "2026-10-25",
+    "label": "الأسبوع 2",
+    "items": [
+   ["03", "Module three"]
+  ]
+   }
+  ]
+ }
+}
+</script>
 <script>
 (function(){
   const root = document.getElementById('app');
@@ -337,227 +549,209 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const { useState, useEffect, useRef, useMemo } = preactHooks;
   const html = htm.bind(h);
 
-  /* ---------------- schedule data ---------------- */
-  const CATS = {
-    uni:{label:'كلية', long:'حضور الكلية', track:true},
+  /* ---------------- settings: format check (pure; used by the importer and tools/check-settings.js) ---------------- */
+  // Returns {ok, errors, warnings, settings}. Each error is {code, path, detail}; codes:
+  // not-settings, too-new, invalid, unknown-id. Rules follow specs/002-separate-personal-settings/data-model.md.
+  function validateSettings(obj){
+    const CATEGORY_IDS = ['uni','study','course','work','gym','quran','personal','move','rest'];
+    const METHODS = ['MuslimWorldLeague','Egyptian','Karachi','UmmAlQura','Dubai','MoonsightingCommittee','NorthAmerica','Kuwait','Qatar','Singapore','Tehran','Turkey','Other'];
+    const LANGS = ['ar'];
+    const PRAYER_IDS = ['fajr','dhuhr','asr','maghrib','isha'];
+    const KNOWN = ['format','version','name','language','timezone','location','prayerMethod','versions','categories','subjects','week','rules','taskTags','course'];
+    const errors = [], warnings = [];
+    const bad = (code, path, detail) => { if (errors.length < 50) errors.push({code, path, detail}); };
+    const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+    const isStr = (v, min, max) => typeof v === 'string' && v.length >= min && v.length <= max;
+    const isNum = v => typeof v === 'number' && isFinite(v);
+    const isInt = v => isNum(v) && Math.floor(v) === v;
+    const digits = (t, n) => t.length === n && t.split('').every(c => c >= '0' && c <= '9');
+    const isDate = v => {
+      if (typeof v !== 'string' || v.length !== 10 || v[4] !== '-' || v[7] !== '-') return false;
+      if (!digits(v.slice(0,4), 4) || !digits(v.slice(5,7), 2) || !digits(v.slice(8,10), 2)) return false;
+      const y = Number(v.slice(0,4)), m = Number(v.slice(5,7)), d = Number(v.slice(8,10));
+      const t = new Date(Date.UTC(y, m - 1, d));
+      return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
+    };
+    const isMonthDay = v => typeof v === 'string' && v.length === 5 && v[2] === '-' && digits(v.slice(0,2), 2) && digits(v.slice(3,5), 2) && isDate('2024-' + v);
+    const timeOk = v => {
+      if (typeof v !== 'string' || v.length !== 5 || v[2] !== ':' || !digits(v.slice(0,2), 2) || !digits(v.slice(3,5), 2)) return null;
+      const h = Number(v.slice(0,2)), m = Number(v.slice(3,5));
+      return h <= 24 && m <= 59 ? h * 60 + m : null;
+    };
+
+    if (!isObj(obj)) { bad('not-settings', 'file', 'the file is not a settings object'); return {ok:false, errors, warnings, settings:null}; }
+    if (obj.format !== 'mizan-settings') { bad('not-settings', 'format', 'format must be exactly "mizan-settings"'); return {ok:false, errors, warnings, settings:null}; }
+    if (isInt(obj.version) && obj.version > 1) { bad('too-new', 'version', 'made for a newer version of the app'); return {ok:false, errors, warnings, settings:null}; }
+    if (!isInt(obj.version) || obj.version < 1) bad('invalid', 'version', 'version must be the integer 1');
+
+    if (obj.name !== undefined && !isStr(obj.name, 1, 60)) bad('invalid', 'name', 'name must be 1 to 60 characters');
+    if (obj.language !== undefined && LANGS.indexOf(obj.language) < 0) bad('invalid', 'language', 'language must be one of: ' + LANGS.join(', '));
+    if (obj.prayerMethod !== undefined && METHODS.indexOf(obj.prayerMethod) < 0) bad('invalid', 'prayerMethod', 'prayerMethod must be one of: ' + METHODS.join(', '));
+
+    if (typeof obj.timezone !== 'string' || !obj.timezone) bad('invalid', 'timezone', 'timezone is required (an IANA name such as Africa/Cairo)');
+    else { try { new Intl.DateTimeFormat('en', {timeZone: obj.timezone}); } catch (e) { bad('invalid', 'timezone', 'not a valid IANA time zone name'); } }
+
+    const loc = obj.location;
+    if (!isObj(loc)) bad('invalid', 'location', 'location is required: lat, lng, and an optional label');
+    else {
+      if (!isNum(loc.lat) || loc.lat < -90 || loc.lat > 90) bad('invalid', 'location.lat', 'lat must be a number from -90 to 90');
+      if (!isNum(loc.lng) || loc.lng < -180 || loc.lng > 180) bad('invalid', 'location.lng', 'lng must be a number from -180 to 180');
+      if (loc.label !== undefined && !isStr(loc.label, 1, 60)) bad('invalid', 'location.label', 'label must be 1 to 60 characters');
+    }
+
+    if (obj.versions !== undefined) {
+      const v = obj.versions;
+      if (!isObj(v)) bad('invalid', 'versions', 'versions must be an object');
+      else {
+        if (PRAYER_IDS.indexOf(v.prayer) < 0) bad('invalid', 'versions.prayer', 'prayer must be one of: ' + PRAYER_IDS.join(', '));
+        if (!isInt(v.thresholdMinutes) || v.thresholdMinutes < 0 || v.thresholdMinutes > 1440) bad('invalid', 'versions.thresholdMinutes', 'thresholdMinutes must be a whole number from 0 to 1440');
+        if (v.fallback !== undefined) {
+          const f = v.fallback;
+          if (!isObj(f) || !isMonthDay(f.lateFrom) || !(isMonthDay(f.lateUntil) || f.lateUntil === 'last-thursday-october')) bad('invalid', 'versions.fallback', 'fallback needs lateFrom as MM-DD and lateUntil as MM-DD or last-thursday-october');
+        }
+      }
+    }
+
+    const cats = isObj(obj.categories) ? obj.categories : null;
+    if (!cats || !Object.keys(cats).length) bad('invalid', 'categories', 'categories is required with at least one category');
+    else Object.keys(cats).forEach(k => {
+      const c = cats[k];
+      if (CATEGORY_IDS.indexOf(k) < 0) bad('unknown-id', 'categories.' + k, 'unknown category id; allowed: ' + CATEGORY_IDS.join(', '));
+      else if (!isObj(c) || !isStr(c.label, 1, 30)) bad('invalid', 'categories.' + k + '.label', 'label must be 1 to 30 characters');
+      else {
+        if (c.long !== undefined && !isStr(c.long, 1, 60)) bad('invalid', 'categories.' + k + '.long', 'long must be 1 to 60 characters');
+        if (c.track !== undefined && typeof c.track !== 'boolean') bad('invalid', 'categories.' + k + '.track', 'track must be true or false');
+      }
+    });
+
+    let subs = null;
+    if (obj.subjects !== undefined) {
+      if (!isObj(obj.subjects)) bad('invalid', 'subjects', 'subjects must be an object');
+      else {
+        subs = obj.subjects;
+        Object.keys(subs).forEach(k => {
+          if (!isStr(k, 1, 8)) bad('invalid', 'subjects.' + k, 'subject id must be 1 to 8 characters');
+          if (!isStr(subs[k], 1, 60)) bad('invalid', 'subjects.' + k, 'subject name must be 1 to 60 characters');
+        });
+      }
+    }
+
+    const checkBlocks = (list, path) => {
+      if (!Array.isArray(list) || !list.length) { bad('invalid', path, 'blocks must be a non-empty list'); return; }
+      let prev = -1;
+      list.forEach((b, i) => {
+        const at = path + '[' + i + ']';
+        if (!Array.isArray(b) || b.length < 2 || b.length > 5) { bad('invalid', at, 'a block is [start, category, title, detail, subject] with 2 to 5 items'); return; }
+        const t = timeOk(b[0]);
+        if (t === null) bad('invalid', at + '.start', 'start must be HH:MM from 00:00 to 24:59');
+        else { if (t <= prev) bad('invalid', at + '.start', 'blocks must be in ascending time order'); prev = t; }
+        if (!cats || !Object.prototype.hasOwnProperty.call(cats, b[1])) bad('unknown-id', at + '.category', 'category is not defined in categories');
+        if (!isStr(b[2], 1, 120)) bad('invalid', at + '.title', 'title must be 1 to 120 characters');
+        if (b[3] !== undefined && !isStr(b[3], 0, 300)) bad('invalid', at + '.detail', 'detail must be at most 300 characters');
+        if (b[4] !== undefined && b[4] !== '' && !(subs && Object.prototype.hasOwnProperty.call(subs, b[4]))) bad('unknown-id', at + '.subject', 'subject is not defined in subjects');
+      });
+    };
+    const week = isObj(obj.week) ? obj.week : null;
+    if (!week || !Object.keys(week).length) bad('invalid', 'week', 'week is required with at least one day (keys 0 to 6)');
+    else Object.keys(week).forEach(k => {
+      const d = week[k], at = 'week.' + k;
+      if (['0','1','2','3','4','5','6'].indexOf(k) < 0) { bad('invalid', at, 'day keys are 0 to 6'); return; }
+      if (!isObj(d)) { bad('invalid', at, 'a day is an object with blocks'); return; }
+      if (d.note !== undefined && !isStr(d.note, 0, 500)) bad('invalid', at + '.note', 'note must be at most 500 characters');
+      if (Array.isArray(d.blocks)) checkBlocks(d.blocks, at + '.blocks');
+      else if (isObj(d.blocks)) {
+        Object.keys(d.blocks).forEach(v => { if (v !== 'A' && v !== 'B') bad('invalid', at + '.blocks.' + v, 'versions are named A and B'); else checkBlocks(d.blocks[v], at + '.blocks.' + v); });
+        if (!d.blocks.A) bad('invalid', at + '.blocks.A', 'version A is required when using two versions');
+      } else bad('invalid', at + '.blocks', 'blocks must be a list, or an object with A and B');
+    });
+
+    if (obj.rules !== undefined) {
+      if (!Array.isArray(obj.rules) || obj.rules.length > 20) bad('invalid', 'rules', 'rules must be a list of at most 20 texts');
+      else obj.rules.forEach((r, i) => { if (!isStr(r, 1, 300)) bad('invalid', 'rules[' + i + ']', 'each rule must be 1 to 300 characters'); });
+    }
+    if (obj.taskTags !== undefined) {
+      if (!isObj(obj.taskTags)) bad('invalid', 'taskTags', 'taskTags must be an object');
+      else Object.keys(obj.taskTags).forEach(k => {
+        if (CATEGORY_IDS.indexOf(k) < 0) bad('unknown-id', 'taskTags.' + k, 'unknown category id');
+        else if (!isStr(obj.taskTags[k], 1, 20)) bad('invalid', 'taskTags.' + k, 'tag must be 1 to 20 characters');
+      });
+    }
+    if (obj.course !== undefined) {
+      const c = obj.course;
+      if (!isObj(c)) bad('invalid', 'course', 'course must be an object');
+      else {
+        if (!isStr(c.name, 1, 80)) bad('invalid', 'course.name', 'name must be 1 to 80 characters');
+        if (c.sub !== undefined && !isStr(c.sub, 0, 160)) bad('invalid', 'course.sub', 'sub must be at most 160 characters');
+        if (!Array.isArray(c.plan)) bad('invalid', 'course.plan', 'plan must be a list of weeks');
+        else c.plan.forEach((w, i) => {
+          const at = 'course.plan[' + i + ']';
+          if (!isObj(w) || !isDate(w.from) || !isDate(w.to) || w.from > w.to) { bad('invalid', at, 'a week needs from and to as YYYY-MM-DD, with from not after to'); return; }
+          if (!isStr(w.label, 1, 60)) bad('invalid', at + '.label', 'label must be 1 to 60 characters');
+          if (w.note !== undefined && !isStr(w.note, 0, 300)) bad('invalid', at + '.note', 'note must be at most 300 characters');
+          if (!Array.isArray(w.items) || !w.items.length) bad('invalid', at + '.items', 'items must be a non-empty list');
+          else w.items.forEach((it, j) => {
+            if (!Array.isArray(it) || it.length < 2 || it.length > 3 || !isStr(it[0], 1, 8) || !isStr(it[1], 1, 120) || (it[2] !== undefined && !isStr(it[2], 0, 60))) bad('invalid', at + '.items[' + j + ']', 'an item is [id, title, detail] with an id up to 8 characters');
+          });
+        });
+      }
+    }
+    Object.keys(obj).forEach(k => { if (KNOWN.indexOf(k) < 0) warnings.push({code:'unknown-field', path:k, detail:'ignored'}); });
+
+    if (errors.length) return {ok:false, errors, warnings, settings:null};
+    const settings = JSON.parse(JSON.stringify(obj));
+    if (settings.language === undefined) settings.language = 'ar';
+    if (settings.prayerMethod === undefined) settings.prayerMethod = 'Egyptian';
+    return {ok:true, errors, warnings, settings};
+  }
+
+  /* ---------------- settings: load (stored file, else the embedded example) ---------------- */
+  const SETTINGS_KEY = 'mizan-settings-v1';
+  const LOADED = (() => {
+    let example = null;
+    try { example = validateSettings(JSON.parse(document.getElementById('example-settings').textContent)).settings; } catch(e){}
+    if (!example) example = {format:'mizan-settings', version:1, language:'ar', prayerMethod:'Egyptian', timezone:'Africa/Cairo', location:{lat:30.0444, lng:31.2357, label:'Sample city'}, categories:{rest:{label:'راحة', track:false}}, week:{0:{blocks:[['08:00','rest','مثال']]}}};
+    let raw = null;
+    try { raw = localStorage.getItem(SETTINGS_KEY); } catch(e){}
+    if (!raw) return {settings: example, isExample: true, problem: false};
+    try {
+      const res = validateSettings(JSON.parse(raw));
+      if (res.ok) return {settings: res.settings, isExample: false, problem: false};
+    } catch(e){}
+    return {settings: example, isExample: true, problem: true};
+  })();
+  const CFG = LOADED.settings;
+
+  /* ---------------- fixed names (weekdays) ---------------- */
+  const DAY_NAMES = {6:'السبت',0:'الحد',1:'الاتنين',2:'التلات',3:'الأربع',4:'الخميس',5:'الجمعة'};
+  const DAY_SHORT = {6:'سبت',0:'حد',1:'اتنين',2:'تلات',3:'أربع',4:'خميس',5:'جمعة'};
+  const WEEK_ORDER = [6,0,1,2,3,4,5];
+
+  // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
+  // Each block ends where the next starts; the last ends at the end of the day.
+
+  /* ---------------- data derived from settings ---------------- */
+  // Missing categories fall back to these generic labels so every category id always has a label.
+  const DEFAULT_CATS = {
+    uni:{label:'محاضرات', long:'حضور المحاضرات', track:true},
     study:{label:'مذاكرة', long:'مذاكرة', track:true},
     course:{label:'كورس', long:'الكورس', track:true},
     work:{label:'شغل', long:'الشغل', track:true},
-    gym:{label:'جيم', long:'الجيم', track:true},
-    quran:{label:'قرآن', long:'القرآن', track:true},
+    gym:{label:'رياضة', long:'الرياضة', track:true},
+    quran:{label:'ورد', long:'الورد اليومي', track:true},
     personal:{label:'وقتك', long:'وقتك الخاص', track:false},
     move:{label:'مواصلات', long:'مواصلات', track:false},
     rest:{label:'راحة', long:'راحة', track:false}
   };
-  const SUBJ = {MATH:'Math-3', OOP:'OOP', OR:'Operations Research', NET:'Networks', HU:'Economics + Social Issues'};
-  const DAY_NAMES = {6:'السبت',0:'الحد',1:'الاتنين',2:'التلات',3:'الأربع',4:'الخميس',5:'الجمعة'};
-  const DAY_SHORT = {6:'سبت',0:'حد',1:'اتنين',2:'تلات',3:'أربع',4:'خميس',5:'جمعة'};
-  const WEEK_ORDER = [6,0,1,2,3,4,5];
-  const GYM_NOTE = 'صلّي المغرب وروح، وارجع على العشا';
-
-  // [start, category, title ("Subject|action" splits), detail, subject]. Each block ends where the next starts; the last ends at 1:00.
-  const SAT_HEAD = [
-    ['07:30','rest','صحيان وفطار'],
-    ['08:00','quran','حفظ قرآن','والدماغ لسه فاضية'],
-    ['08:45','rest','جهّز للمحاضرة'],
-    ['09:00','course','Arab Automators|محاضرة لايف','أونلاين · من ساعتين لـ 3. لو خلصت بدري، ابدأ تطبيق'],
-    ['12:00','rest','بريك'],
-    ['12:15','study','Operations Research|تحضير سكشن الحد','DS211 · راجع آخر محاضرة وحل مسائلها','OR']
-  ];
-  const MON_HEAD = [
-    ['07:00','rest','صحيان وفطار','بدري عشان محاضرة 8:30'],
-    ['07:45','move','مواصلات للكلية'],
-    ['08:30','uni','Math-3|محاضرة','MA214 · C2-6 · أ.د. طارق أبو العينين'],
-    ['11:30','uni','Math-3|سكشن','MA214 · H2-12'],
-    ['13:00','uni','OOP|سكشن','CS213 · من 1 لـ 2:30'],
-    ['14:30','move','مواصلات للبيت']
-  ];
-  const WED_HEAD = [
-    ['07:30','rest','صحيان وفطار'],
-    ['08:00','quran','حفظ قرآن','قبل تسميع الليلة'],
-    ['08:30','study','Economics + Social Issues|مراجعة','HU121 · HU117 · لخّص محاضرات الأسبوع','HU'],
-    ['09:15','move','مواصلات للكلية'],
-    ['10:00','uni','Operations Research|محاضرة','DS211 · C2-7 · د. سالي'],
-    ['13:00','move','مواصلات للبيت']
-  ];
-  const THU_HEAD = [
-    ['07:00','rest','صحيان وفطار','بدري عشان محاضرة 8:30'],
-    ['07:45','move','مواصلات للكلية'],
-    ['08:30','uni','OOP|محاضرة','CS213 · H1-1 · د. صباح'],
-    ['11:30','move','مواصلات للبيت']
-  ];
-  const SCHED = {
-    6:{note:'محاضرة الكورس لايف 9 الصبح (من ساعتين لـ 3). يوم جيم بين المغرب والعشا، والشغل متقسم عشان يخلص قبل المغرب.', blocks:{
-      A: SAT_HEAD.concat([
-        ['13:15','rest','غدا وراحة'],
-        ['14:00','study','Networks|تحضير سكشن الحد','IT223 · راجع آخر محاضرة','NET'],
-        ['15:00','work','شغل','الجزء الأول: 3 ساعات، يخلص قبل المغرب'],
-        ['18:00','gym','جيم',GYM_NOTE],
-        ['19:45','rest','العشا وعشا'],
-        ['20:30','work','شغل','ساعتين بالليل'],
-        ['22:30','study','Math-3|حل مسائل','MA214 · قبل محاضرة الاتنين','MATH'],
-        ['23:30','personal','وقتك','بكرة محاضرة 8:30']
-      ]),
-      B: SAT_HEAD.concat([
-        ['13:15','rest','غدا وراحة'],
-        ['14:15','work','شغل','الجزء الأول: ساعتين ونص، يخلص قبل المغرب'],
-        ['16:45','gym','جيم',GYM_NOTE],
-        ['18:30','rest','العشا وعشا'],
-        ['19:15','study','Networks|تحضير سكشن الحد','IT223 · راجع آخر محاضرة','NET'],
-        ['20:15','work','شغل','ساعتين ونص بالليل'],
-        ['22:45','study','Math-3|حل مسائل','MA214 · قبل محاضرة الاتنين','MATH'],
-        ['23:45','personal','وقتك','بكرة محاضرة 8:30']
-      ])
-    }},
-    0:{note:'أتقل يوم: كلية من 8:30 لـ 2:30، ومحاضرة Economics أونلاين من 8:30 لـ 10 بالليل، فالشغل متقسم حواليها. صحيان 7:00.', blocks:[
-      ['07:00','rest','صحيان وفطار','بدري عشان محاضرة 8:30'],
-      ['07:45','move','مواصلات للكلية'],
-      ['08:30','uni','Operations Research|سكشن','DS211 · H2-6'],
-      ['10:00','uni','Networks|سكشن','IT223 · H2-9'],
-      ['11:30','uni','Networks|محاضرة','IT223 · C2-6 · د. محمد حامد'],
-      ['14:30','move','مواصلات للبيت'],
-      ['15:15','rest','غدا'],
-      ['15:45','work','شغل','الجزء الأول: 4 ساعات'],
-      ['19:45','rest','عشا وراحة'],
-      ['20:30','uni','Economics|محاضرة أونلاين','HU121 · من 8:30 لـ 10'],
-      ['22:00','work','شغل','آخر ساعة'],
-      ['23:00','study','Networks|ملخص سريع لمحاضرة النهارده','صفحة واحدة، والمراجعة الكاملة الجمعة','NET'],
-      ['23:30','quran','حفظ قرآن'],
-      ['24:00','personal','وقتك','بكرة محاضرة 8:30']
-    ]},
-    1:{note:'يوم طويل في الكلية: Math-3 من 8:30 وسكشن OOP لحد 2:30، ومذاكرتهم التلات الصبح. يوم جيم بين المغرب والعشا، والشغل متقسم عشان يخلص قبل المغرب. صحيان 7:00.', blocks:{
-      A: MON_HEAD.concat([
-        ['15:15','rest','غدا'],
-        ['15:45','work','شغل','الجزء الأول: ساعتين وربع، يخلص قبل المغرب'],
-        ['18:00','gym','جيم',GYM_NOTE],
-        ['19:45','rest','العشا وعشا'],
-        ['20:30','work','شغل','ساعتين وتلت ارباع بالليل'],
-        ['23:15','quran','حفظ قرآن'],
-        ['23:45','personal','وقتك']
-      ]),
-      B: MON_HEAD.concat([
-        ['15:15','rest','غدا'],
-        ['15:30','work','شغل','الجزء الأول: ساعة وربع، يخلص قبل المغرب'],
-        ['16:45','gym','جيم',GYM_NOTE],
-        ['18:30','rest','العشا وعشا'],
-        ['19:15','work','شغل','3 ساعات وتلت ارباع بالليل'],
-        ['23:00','quran','حفظ قرآن'],
-        ['23:30','personal','وقتك']
-      ])
-    }},
-    2:{note:'مفيش كلية حضوري. الصبح لمذاكرة Math-3 وOOP بتوع امبارح وجلسة كورس. Social Issues أونلاين من 6 لـ 8، ومحاضرة الكورس لايف من 9 (من ساعتين لـ 3).', blocks:[
-      ['07:30','rest','صحيان وفطار'],
-      ['08:00','quran','حفظ قرآن'],
-      ['08:30','study','Math-3|مراجعة محاضرة امبارح وحل مسائل السكشن','حلها تاني من غير ما تبص على الحل','MATH'],
-      ['10:00','study','OOP|تمارين سكشن امبارح بالكود','اكتب الكود بإيدك، متكتفيش بالقراية','OOP'],
-      ['11:15','rest','بريك'],
-      ['11:30','course','Arab Automators|كمّل الموديول','تحضير لمحاضرة الليلة'],
-      ['13:00','rest','غدا وراحة'],
-      ['13:45','work','شغل','الجزء الأول: 4 ساعات وربع'],
-      ['18:00','uni','Social Issues|محاضرة أونلاين','HU117 · من 6 لـ 8'],
-      ['20:00','work','شغل','آخر 45 دقيقة'],
-      ['20:45','rest','عشا وجهّز للمحاضرة'],
-      ['21:00','course','Arab Automators|محاضرة لايف','أونلاين · من ساعتين لـ 3. لو خلصت بدري، الباقي وقتك'],
-      ['24:00','personal','وقتك']
-    ]},
-    3:{note:'محاضرة OR من 10 لـ 1، والتسميع مع الشيخ بعد العشا، فالشغل لازم يخلص قبل العشا. لو التسميع وصل لـ 11، مراجعة OR تتنقل للجمعة.', blocks:{
-      A: WED_HEAD.concat([
-        ['13:45','rest','غدا'],
-        ['14:15','work','شغل','5 ساعات، تخلص قبل العشا'],
-        ['19:15','rest','العشا وأكل خفيف'],
-        ['19:45','quran','تسميع مع الشيخ','بعد صلاة العشا لحد 10، وساعات بيوصل لـ 11'],
-        ['22:00','rest','بريك'],
-        ['22:15','study','Operations Research|مراجعة المحاضرة ومسائل','DS211 · حل مسائل بنفس الطريقة اللي اتشرحت','OR'],
-        ['23:30','personal','وقتك','بكرة محاضرة 8:30']
-      ]),
-      B: WED_HEAD.concat([
-        ['13:45','rest','غدا'],
-        ['14:00','work','شغل','الجزء الأول: 4 ساعات وربع، يخلص قبل العشا'],
-        ['18:15','rest','العشا وأكل خفيف'],
-        ['18:45','quran','تسميع مع الشيخ','بعد صلاة العشا لحد 10، وساعات بيوصل لـ 11'],
-        ['22:00','work','شغل','آخر 45 دقيقة'],
-        ['22:45','study','Operations Research|مراجعة المحاضرة ومسائل','DS211 · حل مسائل بنفس الطريقة اللي اتشرحت','OR'],
-        ['23:45','personal','وقتك','بكرة محاضرة 8:30']
-      ])
-    }},
-    4:{note:'يوم جيم بين المغرب والعشا. محاضرة OOP الصبح وتذاكرها بعدها على طول، والشغل متقسم عشان يخلص قبل المغرب.', blocks:{
-      A: THU_HEAD.concat([
-        ['12:15','rest','غدا'],
-        ['13:00','study','OOP|مراجعة المحاضرة وكتابة الكود','نفّذ كل مثال اتشرح','OOP'],
-        ['14:45','rest','بريك'],
-        ['15:00','work','شغل','الجزء الأول: 3 ساعات، يخلص قبل المغرب'],
-        ['18:00','gym','جيم',GYM_NOTE],
-        ['19:45','rest','العشا وعشا'],
-        ['20:30','work','شغل','ساعتين بالليل'],
-        ['22:30','quran','حفظ قرآن'],
-        ['23:00','course','Arab Automators|تطبيق على محاضرات الأسبوع','خلّص واجب الموديول'],
-        ['24:00','personal','وقتك','آخر الأسبوع']
-      ]),
-      B: THU_HEAD.concat([
-        ['12:15','rest','غدا'],
-        ['12:45','study','OOP|مراجعة المحاضرة وكتابة الكود','نفّذ كل مثال اتشرح','OOP'],
-        ['14:15','work','شغل','الجزء الأول: ساعتين ونص، يخلص قبل المغرب'],
-        ['16:45','gym','جيم',GYM_NOTE],
-        ['18:30','rest','العشا وعشا'],
-        ['19:15','quran','حفظ قرآن'],
-        ['19:45','work','شغل','ساعتين ونص بالليل'],
-        ['22:15','course','Arab Automators|تطبيق على محاضرات الأسبوع','خلّص واجب الموديول'],
-        ['23:30','personal','وقتك','آخر الأسبوع']
-      ])
-    }},
-    5:{note:'أجازة من الشغل. أكبر جلسة للكورس في الأسبوع، والتسميع مع الشيخ من المغرب للعشا، والليل كله ليك.', blocks:{
-      A: [
-        ['09:00','rest','صحيان وفطار','أجازة الشغل'],
-        ['09:30','course','Arab Automators|جلسة البناء','أطول جلسة: خلّص مشروع الموديول أو الـ workflow الكبير'],
-        ['12:00','rest','صلاة الجمعة وغدا'],
-        ['14:00','course','Arab Automators|كمّل البناء','واللي اتأجل من الأسبوع'],
-        ['15:30','study','Math-3|حل شيت كامل','MA214','MATH'],
-        ['17:30','quran','مراجعة قبل التسميع','راجع اللي هتسمّعه'],
-        ['18:15','quran','تسميع مع الشيخ','من المغرب للعشا'],
-        ['19:45','rest','العشا وعشا'],
-        ['20:30','study','Operations Research|مسائل الأسبوع','DS211','OR'],
-        ['21:15','study','Networks|مراجعة الأسبوع','IT223','NET'],
-        ['22:00','rest','خطّط للأسبوع الجاي','علّم الموديولات اللي خلصت وضيف المهام الجديدة'],
-        ['22:15','personal','وقتك','الليلة دي كلها ليك']
-      ],
-      B: [
-        ['09:00','rest','صحيان وفطار','أجازة الشغل'],
-        ['09:30','course','Arab Automators|جلسة البناء','خلّص مشروع الموديول أو الـ workflow الكبير'],
-        ['11:15','rest','صلاة الجمعة وغدا'],
-        ['13:15','course','Arab Automators|كمّل البناء','واللي اتأجل من الأسبوع'],
-        ['14:45','study','Math-3|حل شيت كامل','MA214','MATH'],
-        ['16:30','quran','مراجعة قبل التسميع','راجع اللي هتسمّعه'],
-        ['17:00','quran','تسميع مع الشيخ','من المغرب للعشا'],
-        ['18:30','rest','العشا وعشا'],
-        ['19:15','study','Operations Research|مسائل الأسبوع','DS211','OR'],
-        ['20:00','study','Networks|مراجعة الأسبوع','IT223','NET'],
-        ['20:45','rest','خطّط للأسبوع الجاي','علّم الموديولات اللي خلصت وضيف المهام الجديدة'],
-        ['21:00','personal','وقتك','الليلة دي كلها ليك']
-      ]
-    }}
-  };
-
-  const COURSE = {name:'Arab Automators', sub:'أتمتة بـ n8n والذكاء الاصطناعي · لايف السبت 9ص والتلات 9م'};
-
-  const PLAN = [
-    {from:'2026-10-12', to:'2026-10-16', label:'12 – 16 أكتوبر', note:'أسبوع ناقص (بادئ من الاتنين)، وجلسة الجمعة تخلّص موديول 02.', items:[
-      ['01','n8n Foundations: Automation & Workflows'],
-      ['02','APIs, Webhooks & Data']]},
-    {from:'2026-10-17', to:'2026-10-23', label:'17 – 23 أكتوبر', items:[
-      ['03','Databases & Supabase'],
-      ['04','WhatsApp Automation & Integrations']]},
-    {from:'2026-10-24', to:'2026-10-30', label:'24 – 30 أكتوبر', note:'موديول 05 مشاريع حقيقية وتقيل، اديله جلسة الجمعة كلها.', items:[
-      ['05','Production Projects: Real-World Automation'],
-      ['06','Your First AI Agent']]},
-    {from:'2026-10-31', to:'2026-11-06', label:'31 أكتوبر – 6 نوفمبر', items:[
-      ['07','RAG & Sub-Agents'],
-      ['08','Agentic System']]},
-    {from:'2026-11-07', to:'2026-11-13', label:'7 – 13 نوفمبر', note:'المشروع في جلسات الصبح، والبونص في جلسات الليل.', items:[
-      ['09','Final Graduation Project: From Idea to Production'],
-      ['B1','Claude Code: AI-Powered Development','3 محاضرات'],
-      ['B2','Tips to Get Clients & Handle Them','محاضرتين']]}
-  ];
-  const TASK_TAGS = {uni:'كلية', course:'كورس', quran:'قرآن', work:'شغل', personal:'شخصي'};
+  const CATS = {};
+  Object.keys(DEFAULT_CATS).forEach(k => { CATS[k] = Object.assign({}, DEFAULT_CATS[k], (CFG.categories || {})[k]); });
+  const SUBJ = CFG.subjects || {};
+  const SCHED = CFG.week || {};
+  const COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : {name:'Course', sub:''};
+  const PLAN = CFG.course ? CFG.course.plan : [];
+  const TASK_TAGS = Object.assign({uni:CATS.uni.label, course:CATS.course.label, work:CATS.work.label, personal:CATS.personal.label}, CFG.taskTags || {});
+  const RULES = CFG.rules || [];
+  // Names of the two sides of the balance card, built from the category labels.
+  const BAL_A = CATS.uni.label + ' و' + CATS.course.label, BAL_B = CATS.work.label + ' و' + CATS.personal.label;
 
   /* ---------------- time helpers ---------------- */
   const START = 420, END = 1500, SPAN = END - START;
@@ -585,7 +779,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return mm ? hh + ' س و ' + mm + ' د' : hh + ' س';
   }
 
-  const cairoFmt = new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+  const cairoFmt = new Intl.DateTimeFormat('en-CA',{timeZone:CFG.timezone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
   function cairoParts(d){
     const o = {}; cairoFmt.formatToParts(d).forEach(p => { o[p.type] = p.value; });
     return {iso: o.year + '-' + o.month + '-' + o.day, min: (Number(o.hour) % 24)*60 + Number(o.minute)};
@@ -606,14 +800,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return p;
   }
 
-  /* ---------------- prayer times (Giza) ---------------- */
+  /* ---------------- prayer times (location and method come from the settings) ---------------- */
   const PRAYERS = [['fajr','الفجر'],['dhuhr','الضهر'],['asr','العصر'],['maghrib','المغرب'],['isha','العشا']];
   const ptCache = {};
   let adhanCoords = null, adhanParams = null;
   try {
     if (window.adhan){
-      adhanCoords = new adhan.Coordinates(30.0, 31.17);
-      adhanParams = adhan.CalculationMethod.Egyptian();
+      adhanCoords = new adhan.Coordinates(CFG.location.lat, CFG.location.lng);
+      adhanParams = adhan.CalculationMethod[CFG.prayerMethod]();
     }
   } catch(e){ adhanCoords = null; }
   function prayers(iso){
@@ -636,18 +830,24 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     while (d.getUTCDay() !== 4) d.setUTCDate(d.getUTCDate() - 1);
     return year + '-10-' + pad(d.getUTCDate());
   }
-  // Maghrib at or after 5:45pm = "late" variant (A), otherwise the early variant (B).
-  // If prayer times can't be computed, fall back to the dates that line up with that rule every year:
-  // late from 16 February through the last Thursday of October.
+  // Which of a day's two versions applies: "late" (A) when the chosen prayer time is at or after the threshold
+  // from the settings (versions.prayer, versions.thresholdMinutes), otherwise "early" (B). Without a versions
+  // setting every day uses A. If prayer times can't be computed, versions.fallback gives the dates for A:
+  // from lateFrom (MM-DD) through lateUntil (MM-DD, or the last Thursday of October).
   function phaseFor(iso){
+    const v = CFG.versions;
+    if (!v) return 'A';
     const p = prayers(iso);
-    if (p) return p.maghrib >= 17*60 + 45 ? 'A' : 'B';
+    if (p) return p[v.prayer] >= v.thresholdMinutes ? 'A' : 'B';
+    const f = v.fallback;
+    if (!f) return 'A';
     const y = Number(iso.slice(0, 4));
-    return iso >= y + '-02-16' && iso <= lastThursdayOfOctober(y) ? 'A' : 'B';
+    const until = f.lateUntil === 'last-thursday-october' ? lastThursdayOfOctober(y) : y + '-' + f.lateUntil;
+    return iso >= y + '-' + f.lateFrom && iso <= until ? 'A' : 'B';
   }
   function blocksFor(iso){
-    const day = SCHED[weekday(iso)];
-    const list = Array.isArray(day.blocks) ? day.blocks : day.blocks[phaseFor(iso)];
+    const day = SCHED[weekday(iso)] || {blocks: []};
+    const list = Array.isArray(day.blocks) ? day.blocks : (day.blocks[phaseFor(iso)] || day.blocks.A);
     return list.map((b, i) => {
       const s = toMin(b[0]), e = i + 1 < list.length ? toMin(list[i+1][0]) : END;
       return {s, e, cat:b[1], title:b[2], detail:b[3] || '', subj:b[4] || '', key:b[0] + '-' + b[1]};
@@ -661,20 +861,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     });
   }
 
-  const RULES = [
-    'أيام محاضرة 8:30 (الحد والاتنين والخميس): اصحى 7:00 مش 7:30.',
-    'الجيم السبت والاتنين والخميس بين المغرب والعشا، والشغل في الأيام دي بيتقسم عشان يخلص قبل المغرب. لو مرحتش، دوس على البلوك واختار "اتلغى النهارده".',
-    'محاضرات الكورس اللايف السبت 9 الصبح والتلات 9 بالليل (من ساعتين لـ 3). محاضرات الكلية الأونلاين: Economics الحد من 8:30 لـ 10 بالليل، وSocial Issues التلات من 6 لـ 8.',
-    'الأربع: التسميع بعد العشا، فالشغل كله قبل العشا. لو التسميع وصل لـ 11، مراجعة OR تتنقل للجمعة.',
-    'آخر أكتوبر الساعة بترجع ساعة، والجدول بيظبط مواعيده لوحده عشان الجيم والتسميع يفضلوا في مكانهم من الصلاة.',
-    'لو الشغل بالليل اتمد: بلوك الكورس يتنقل لجلسة الجمعة أو السبت الصبح.',
-    'ذاكر كل مادة في يوم المحاضرة أو اليوم اللي بعده.',
-    'الميدترم غالباً آخر نوفمبر أو ديسمبر، يعني بعد ما خطة الكورس تخلص. أسبوع الميدترم: الكورس جلسة الجمعة بس، والباقي للمادة اللي عليها امتحان.'
-  ];
-
   /* ---------------- courses ---------------- */
   const BUILTIN_ID = 'aa';
-  const builtinCourse = () => ({id: BUILTIN_ID, name: COURSE.name, sub: COURSE.sub, builtin: true, from: PLAN[0].from, to: PLAN[PLAN.length - 1].to});
+  const builtinCourse = () => ({id: BUILTIN_ID, name: COURSE.name, sub: COURSE.sub, builtin: true, from: PLAN.length ? PLAN[0].from : '2000-01-01', to: PLAN.length ? PLAN[PLAN.length - 1].to : '2000-01-01'});
   const allCourses = store => [builtinCourse()].concat(store.courses);
   const courseById = (store, id) => allCourses(store).find(c => c.id === id) || builtinCourse();
   const mainCourse = store => courseById(store, store.mainCourse);
@@ -825,8 +1014,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const Star = () => html`<svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.2l2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.6l-5.3 2.9 1.1-5.9-4.4-4.1 6-.8z"/></svg>`;
   const Chevron = ({dir}) => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d=${dir === 'next' ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'}/></svg>`;
   const Time = ({min}) => { const f = fmt(min); return html`<bdi class="t">${f.t}</bdi><span class="suf">${f.s}</span>`; };
-  // Course study slots follow whichever course is main; the live lectures stay Arab Automators.
-  const showTitle = text => text.indexOf('محاضرة لايف') > -1 ? text : text.replace(/^Arab Automators\|/, MAIN_NAME + '|').replace(/^Arab Automators$/, MAIN_NAME);
+  // Course study slots follow whichever course is main; the live lectures keep the built-in course's name.
+  // The built-in course's name in a block title ("Name|action" or just "Name") is swapped for whichever course is main.
+  const showTitle = text => {
+    if (text.indexOf('محاضرة لايف') > -1 || !COURSE.name) return text;
+    if (text === COURSE.name) return MAIN_NAME;
+    return text.indexOf(COURSE.name + '|') === 0 ? MAIN_NAME + '|' + text.slice(COURSE.name.length + 1) : text;
+  };
   function Title({text}){
     const t = showTitle(text);
     if (t.indexOf('|') > -1){ const [s, a] = t.split('|'); return html`<bdi class="subj">${s}</bdi> · ${a}`; }
@@ -852,8 +1046,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     let note;
     if (!a.done && !b.done) note = 'لسه مفيش حاجة متعلّمة ' + label + '.';
     else if (Math.abs(pa - pb) < 0.12) note = 'الميزان متوازن ' + label + '.';
-    else if (pa > pb) note = 'الكلية والكورس واخدين أكتر من حقهم، والشغل والحياة متأخرين.';
-    else note = 'الشغل والحياة واخدين أكتر من حقهم، والكلية والكورس متأخرين.';
+    else if (pa > pb) note = BAL_A + ' واخدين أكتر من حقهم، و' + BAL_B + ' متأخرين.';
+    else note = BAL_B + ' واخدين أكتر من حقهم، و' + BAL_A + ' متأخرين.';
     const pct = v => Math.round(v * 100) + '%';
     const total = a.done + b.done;
     return html`<div class="balance">
@@ -868,8 +1062,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         <text class="core-lbl" x=${cx} y=${cy + 22} text-anchor="middle">ساعة</text>
       </svg>
       <div class="balance-legend">
-        <div class="a"><span>الكلية والكورس</span><b>${pct(pa)}</b><span class="small muted"><bdi class="num">${hoursText(a.done)}</bdi> من <bdi class="num">${hoursText(a.plan)}</bdi> س</span></div>
-        <div class="b"><span>الشغل والحياة</span><b>${pct(pb)}</b><span class="small muted"><bdi class="num">${hoursText(b.done)}</bdi> من <bdi class="num">${hoursText(b.plan)}</bdi> س</span></div>
+        <div class="a"><span>${BAL_A}</span><b>${pct(pa)}</b><span class="small muted"><bdi class="num">${hoursText(a.done)}</bdi> من <bdi class="num">${hoursText(a.plan)}</bdi> س</span></div>
+        <div class="b"><span>${BAL_B}</span><b>${pct(pb)}</b><span class="small muted"><bdi class="num">${hoursText(b.done)}</bdi> من <bdi class="num">${hoursText(b.plan)}</bdi> س</span></div>
       </div>
       <p class="balance-note">${note}</p>
     </div>`;
@@ -924,7 +1118,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const plan = planOf(c), dm = doneMap(store, c);
     const all = plan.reduce((a, w) => a.concat(w.items), []);
     const n = all.filter(it => dm[it[3]]).length;
-    const wk = plan.find(w => iso >= w.from && iso <= w.to) || (iso < plan[0].from ? plan[0] : null);
+    const wk = plan.find(w => iso >= w.from && iso <= w.to) || (plan.length && iso < plan[0].from ? plan[0] : null);
     const next = all.find(it => !dm[it[3]]);
     const behind = wk ? wk.items.filter(it => !dm[it[3]]).length : 0;
     return html`<button type="button" class="target c-course" onClick=${() => goTab('course')}>
@@ -1025,7 +1219,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return html`<form class="panel add-form" onSubmit=${submit}>
       <div class="sec-head"><h2>حاجة زيادة لليوم ده</h2><button type="button" class="btn ghost small" onClick=${onDone}>إلغاء</button></div>
       <div class="form-row">
-        <label class="field wide" for="ab-title">إيه هي<input id="ab-title" value=${title} onInput=${x => setTitle(x.target.value)} placeholder="مثلاً: محاضرة تعويضية Networks" maxlength="80" /></label>
+        <label class="field wide" for="ab-title">إيه هي<input id="ab-title" value=${title} onInput=${x => setTitle(x.target.value)} placeholder="مثلاً: محاضرة تعويضية" maxlength="80" /></label>
         <label class="field" for="ab-s">من<input id="ab-s" type="time" value=${s} onInput=${x => setS(x.target.value)} /></label>
         <label class="field" for="ab-e">لحد<input id="ab-e" type="time" value=${e} onInput=${x => setE(x.target.value)} /></label>
         <label class="field" for="ab-cat">النوع<select id="ab-cat" value=${cat} onChange=${x => setCat(x.target.value)}>
@@ -1106,8 +1300,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </ol>
           ${adding ? html`<${AddBlock} iso=${iso} update=${update} onDone=${() => setAdding(false)} />`
             : html`<button type="button" class="btn add-block" onClick=${() => setAdding(true)}><${Plus} />ضيف حاجة لليوم ده</button>`}
-          <p class="note">${SCHED[wd].note}</p>
-          <p class="small muted">دوس على أي بلوك عشان تلغيه النهارده. ${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة للجيزة بطريقة الهيئة المصرية العامة للمساحة.' : ''}</p>
+          ${(SCHED[wd] || {}).note ? html`<p class="note">${SCHED[wd].note}</p>` : null}
+          <p class="small muted">دوس على أي بلوك عشان تلغيه النهارده. ${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
         </div>
       </div>
 
@@ -1197,11 +1391,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
             </div>
           </div>
           <div class="legend">
-            <span class="c-uni"><i></i>الكلية</span>
-            <span class="c-course"><i></i>الكورس</span>
-            <span class="c-work"><i></i>الشغل</span>
-            <span class="c-life"><i></i>جيم وقرآن ووقتك</span>
-            <span class="c-rest"><i></i>راحة ومواصلات</span>
+            <span class="c-uni"><i></i>${CATS.uni.label}</span>
+            <span class="c-course"><i></i>${CATS.course.label}</span>
+            <span class="c-work"><i></i>${CATS.work.label}</span>
+            <span class="c-life"><i></i>${CATS.gym.label + ' و' + CATS.quran.label + ' و' + CATS.personal.label}</span>
+            <span class="c-rest"><i></i>${CATS.rest.label + ' و' + CATS.move.label}</span>
             <span><i class="tk"></i>صلاة</span>
           </div>
         </div>
@@ -1210,17 +1404,17 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       <div class="sec a-stats">
         <h2>اللي اتعمل من الجدول</h2>
         <div class="panel stats">
-          ${statRow('uni', 'حضور الكلية', plan.uni || 0, got.uni || 0, skipNote('uni'))}
-          ${statRow('study', 'مذاكرة الكلية', plan.study || 0, got.study || 0, skipNote('study'))}
-          ${statRow('course', 'الكورس', plan.course || 0, got.course || 0, skipNote('course'))}
-          ${statRow('work', 'الشغل', plan.work || 0, got.work || 0, skipNote('work'))}
-          ${statRow('gym', 'الجيم', plan.gym || 0, got.gym || 0, join('رحت ' + gym + ' من ' + gymPlan + ' مرات', skipNote('gym')))}
-          ${statRow('quran', 'القرآن', plan.quran || 0, got.quran || 0, join('حفظت في ' + quranDays + ' من 7 أيام', skipNote('quran')))}
+          ${statRow('uni', CATS.uni.long, plan.uni || 0, got.uni || 0, skipNote('uni'))}
+          ${statRow('study', CATS.study.long, plan.study || 0, got.study || 0, skipNote('study'))}
+          ${statRow('course', CATS.course.long, plan.course || 0, got.course || 0, skipNote('course'))}
+          ${statRow('work', CATS.work.long, plan.work || 0, got.work || 0, skipNote('work'))}
+          ${statRow('gym', CATS.gym.long, plan.gym || 0, got.gym || 0, join('رحت ' + gym + ' من ' + gymPlan + ' مرات', skipNote('gym')))}
+          ${statRow('quran', CATS.quran.long, plan.quran || 0, got.quran || 0, join(CATS.quran.label + ' في ' + quranDays + ' من 7 أيام', skipNote('quran')))}
         </div>
       </div>
 
       <div class="sec a-subjects">
-        <h2>مذاكرة الكلية بالمادة</h2>
+        <h2>${CATS.study.long} بالمادة</h2>
         <div class="panel stats">
           ${Object.keys(SUBJ).sort((a, b) => (subjPlan[b] || 0) - (subjPlan[a] || 0)).map(k => statRow('study', html`<bdi class="subj" title=${SUBJ[k]}>${k}</bdi>`, subjPlan[k] || 0, subjGot[k] || 0))}
         </div>
@@ -1387,7 +1581,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         <div class="panel">
           ${taskForm ? html`<form class="form" onSubmit=${addTask} style="margin-bottom:10px">
             <div class="form-row">
-              <label class="field wide" for="task-text">مهمة جديدة<input id="task-text" value=${text} onInput=${e => setText(e.target.value)} placeholder="مثلاً: حل شيت 3 في Math-3" maxlength="140" /></label>
+              <label class="field wide" for="task-text">مهمة جديدة<input id="task-text" value=${text} onInput=${e => setText(e.target.value)} placeholder="مثلاً: حل شيت 3" maxlength="140" /></label>
               <label class="field" for="task-tag">النوع<select id="task-tag" value=${tag} onChange=${e => setTag(e.target.value)}>
                 ${Object.keys(TASK_TAGS).map(k => html`<option value=${k}>${TASK_TAGS[k]}</option>`)}</select></label>
               <label class="field" for="task-due">آخر ميعاد (اختياري)<input id="task-due" type="date" value=${due} onInput=${e => setDue(e.target.value)} /></label>
@@ -1412,7 +1606,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
               <button type="button" class="btn ghost small" onClick=${() => goDay(addDays(weekStart(now.iso), WEEK_ORDER.indexOf(Number(a.day))))}>افتح اليوم</button>
               <button type="button" class="del" aria-label=${'امسح ' + a.label} onClick=${() => remove('اتمسح ميعاد "' + a.label + '"', s => { s.appts = s.appts.filter(x => x.id !== a.id); return s; })}>امسح</button>
             </div>`)}</div>`
-            : html`<p class="empty">التسميع والجيم والكلية متحطين في الجدول خلاص. أي ميعاد ثابت تاني، زي ميتنج شغل أسبوعي، ضيفه من "+ ميعاد" وهيظهر جوه يومه.</p>`}
+            : html`<p class="empty">المواعيد الأساسية متحطة في الجدول خلاص. أي ميعاد ثابت تاني، زي ميتنج شغل أسبوعي، ضيفه من "+ ميعاد" وهيظهر جوه يومه.</p>`}
           ${apptForm ? html`<form class="form" style="margin-top:12px" onSubmit=${addAppt}>
             <div class="form-row">
               <label class="field wide" for="appt-label">الميعاد<input id="appt-label" value=${label} onInput=${e => setLabel(e.target.value)} placeholder="مثلاً: ميتنج الفريق" maxlength="60" /></label>
@@ -1429,12 +1623,101 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
+  /* ---------------- Settings (import, status, reset) ---------------- */
+  const MAX_SETTINGS_BYTES = 1024 * 1024;
+  // Same order as tools/check-settings.js: size, empty, JSON, then the format rules.
+  function checkSettingsText(text){
+    if (text.length > MAX_SETTINGS_BYTES) return {ok:false, errors:[{code:'too-large', path:'file', detail:'file over 1 MB'}], warnings:[], settings:null};
+    if (!text.trim()) return {ok:false, errors:[{code:'not-settings', path:'file', detail:'the file is empty'}], warnings:[], settings:null};
+    let obj;
+    try { obj = JSON.parse(text); } catch(e){ return {ok:false, errors:[{code:'not-settings', path:'file', detail:'not valid JSON'}], warnings:[], settings:null}; }
+    return validateSettings(obj);
+  }
+  // Plain-language messages for the importer; only the first few problems are shown.
+  function settingsMessages(res){
+    const e = res.errors, has = c => e.some(x => x.code === c);
+    if (has('too-large')) return ['الملف كبير أوي (أكتر من 1 ميجا).'];
+    if (has('not-settings')) return ['ده مش ملف إعدادات للتطبيق (فاضي، أو مش JSON، أو الصيغة غلط).'];
+    if (has('too-new')) return ['الملف ده معمول لنسخة أحدث من التطبيق.'];
+    return e.slice(0, 5).map(x => x.path + ': ' + x.detail).concat(e.length > 5 ? ['وفيه ' + (e.length - 5) + ' مشاكل تانية.'] : []);
+  }
+  function summaryOf(s){
+    const days = Object.keys(s.week), blocks = days.reduce((n, k) => { const b = s.week[k].blocks; return n + (Array.isArray(b) ? b.length : Object.keys(b).reduce((m, v) => m + b[v].length, 0)); }, 0);
+    return {days: days.length, blocks, course: s.course ? s.course.name : '', language: s.language, place: s.location.label || ''};
+  }
+  function SettingsView(){
+    const [pending, setPending] = useState(null);
+    const [msgs, setMsgs] = useState([]);
+    const [done, setDone] = useState('');
+    const [askReset, setAskReset] = useState(false);
+    const msgRef = useRef(null);
+    useEffect(() => { if (msgs.length && msgRef.current) { try { msgRef.current.focus(); } catch(e){} } }, [msgs]);
+    const onFile = e => {
+      const f = e.target.files && e.target.files[0];
+      setPending(null); setMsgs([]); setDone('');
+      if (!f) return;
+      if (f.size > MAX_SETTINGS_BYTES) { setMsgs(['الملف كبير أوي (أكتر من 1 ميجا).']); return; }
+      const r = new FileReader();
+      r.onload = () => {
+        const res = checkSettingsText(String(r.result || ''));
+        if (!res.ok) { setMsgs(settingsMessages(res)); return; }
+        setPending({settings: res.settings, warnings: res.warnings.length});
+      };
+      r.onerror = () => setMsgs(['مقدرتش أقرا الملف.']);
+      r.readAsText(f);
+    };
+    const apply = () => {
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(pending.settings)); }
+      catch(err){ setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
+      location.reload();
+    };
+    const reset = () => {
+      try { localStorage.removeItem(SETTINGS_KEY); } catch(err){}
+      location.reload();
+    };
+    const sm = pending ? summaryOf(pending.settings) : null;
+    return html`<div class="settingsv">
+      <div class="top a-head"><div class="top-meta"><h1>الإعدادات</h1><p class="sub">جدولك ومواقيت الصلاة واللغة، بتتخزن على الجهاز ده بس</p></div></div>
+      <div class="sec">
+        <div class="sec-head"><h2>المستخدم دلوقتي</h2></div>
+        <div class="panel">
+          <p><b>${LOADED.isExample ? 'جدول مثال عام' : (CFG.name || 'إعداداتي')}</b></p>
+          <p class="small muted">${LOADED.isExample ? 'مفيش ملف إعدادات متخزن. استورد ملفك عشان التطبيق يبقى بتاعك.' : 'الإعدادات دي متخزنة على الجهاز ده وبتشتغل من غير نت.'}${LOADED.problem ? ' (الإعدادات المتخزنة مكنتش صالحة فبنعرض المثال.)' : ''}</p>
+          <p class="small muted">الموقع: <bdi>${CFG.location.label || '—'}</bdi> · الطريقة: <bdi>${CFG.prayerMethod}</bdi> · اللغة: <bdi>${CFG.language}</bdi></p>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-head"><h2>استيراد ملف إعدادات</h2></div>
+        <div class="panel form">
+          <label class="field wide" for="settings-file">اختار ملف الإعدادات (JSON)<input id="settings-file" type="file" accept=".json,application/json" onChange=${onFile} /></label>
+          <p class="small muted">الملف بيتقرا على جهازك بس ومبيتبعتش لأي مكان. التقدم والعلامات والمهام مش بتتأثر.</p>
+          <div aria-live="polite">
+            ${msgs.length ? html`<div class="notice" role="alert" tabindex="-1" ref=${msgRef}><p><b>مقدرتش أستورد الملف</b>${msgs.map(m => html`<span class="small"><bdi>${m}</bdi></span>`)}</p></div>` : null}
+            ${sm ? html`<div class="notice"><p><b>جاهز للاستيراد: ${pending.settings.name || 'من غير اسم'}</b>
+              <span class="small">${sm.days} أيام · ${sm.blocks} بلوك${sm.course ? ' · كورس: ' : ''}${sm.course ? html`<bdi>${sm.course}</bdi>` : null} · الموقع: <bdi>${sm.place || '—'}</bdi> · اللغة: <bdi>${sm.language}</bdi>${pending.warnings ? ' · فيه ' + pending.warnings + ' حقول مش معروفة هتتجاهل' : ''}</span>
+              <span class="small muted">${LOADED.isExample ? 'هيحل محل المثال.' : 'هيحل محل الإعدادات الحالية (' + (CFG.name || 'من غير اسم') + ').'}</span></p>
+              <span><button type="button" class="btn primary" onClick=${apply}>استبدل</button> <button type="button" class="btn ghost" onClick=${() => setPending(null)}>إلغاء</button></span></div>` : null}
+          </div>
+        </div>
+      </div>
+      ${LOADED.isExample ? null : html`<div class="sec">
+        <div class="sec-head"><h2>رجوع للمثال</h2></div>
+        <div class="panel">
+          <p class="small muted">بيمسح الإعدادات المتخزنة بس. علاماتك ومهامك وتقدمك بيفضلوا زي ما هم.</p>
+          ${askReset ? html`<div class="notice"><p><b>تأكيد: ترجع للجدول المثال؟</b></p><span><button type="button" class="btn danger" onClick=${reset}>أيوه، ارجع للمثال</button> <button type="button" class="btn ghost" onClick=${() => setAskReset(false)}>لأ</button></span></div>`
+            : html`<button type="button" class="btn" onClick=${() => setAskReset(true)}>رجّع المثال</button>`}
+        </div>
+      </div>`}
+    </div>`;
+  }
+
   /* ---------------- shell ---------------- */
   const TABS = [
     ['today','اليوم','<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.8"/>'],
     ['week','الأسبوع','<path d="M4 6.5h16M4 12h10M4 17.5h13"/>'],
     ['course','الكورس','<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>'],
-    ['tasks','المهام','<path d="M10 6.5h10M10 12h10M10 17.5h10"/><path d="M3.8 6.5l1.4 1.4L7.8 5.3M3.8 12l1.4 1.4 2.6-2.6M3.8 17.5l1.4 1.4 2.6-2.6"/>']
+    ['tasks','المهام','<path d="M10 6.5h10M10 12h10M10 17.5h10"/><path d="M3.8 6.5l1.4 1.4L7.8 5.3M3.8 12l1.4 1.4 2.6-2.6M3.8 17.5l1.4 1.4 2.6-2.6"/>'],
+    ['settings','الإعدادات','<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>']
   ];
   function Icon({paths}){
     return h('svg', {viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', 'stroke-width':'1.8', 'stroke-linecap':'round', 'stroke-linejoin':'round', 'aria-hidden':'true', dangerouslySetInnerHTML:{__html: paths}});
@@ -1444,7 +1727,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const [store, update, sync] = useStore();
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
-    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','tasks'].includes(hsh) ? hsh : 'today'; });
+    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','tasks','settings'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
     // One-time notice after the day version (A late / B early) switches. phaseSeen is the last version the owner saw:
@@ -1452,7 +1735,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const phaseNow = phaseFor(now.iso);
     useEffect(() => { if (store.phaseSeen === null) update(s => { s.phaseSeen = phaseNow; return s; }); }, [store.phaseSeen]);
     const ackPhase = () => update(s => { s.phaseSeen = phaseNow; return s; });
-    const phaseNotice = store.phaseSeen !== null && store.phaseSeen !== phaseNow;
+    const phaseNotice = !!CFG.versions && store.phaseSeen !== null && store.phaseSeen !== phaseNow;
     useEffect(() => { const t = setInterval(() => setNow(effectiveNow()), 30000); return () => clearInterval(t); }, []);
     // Installable copy (hosted with its manifest): offer "add to home screen" when the browser allows it.
     const [installEvt, setInstallEvt] = useState(null);
@@ -1481,18 +1764,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} />`;
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
+    else if (tab === 'settings') view = html`<${SettingsView} />`;
     else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} />`;
 
     return html`<div class="shell">
       <nav class="nav" aria-label="أقسام">
-        <p class="brand">ميزان يومي<small>كلية · كورس · شغل · جيم · قرآن</small></p>
+        <p class="brand">ميزان يومي<small>${CATS.uni.label} · ${CATS.course.label} · ${CATS.work.label} · ${CATS.gym.label} · ${CATS.quran.label}</small></p>
         <div class="nav-in">
-          ${TABS.map(([k, label, paths]) => html`<button type="button" aria-current=${tab === k ? 'page' : null} onClick=${() => goTab(k)}><${Icon} paths=${paths} /><span>${label}</span></button>`)}
+          ${TABS.map(([k, label, paths]) => html`<button type="button" aria-current=${tab === k ? 'page' : null} onClick=${() => goTab(k)}><${Icon} paths=${paths} /><span>${label}</span>${k === 'settings' && LOADED.isExample ? html`<i class="dot" aria-hidden="true"></i>` : null}</button>`)}
         </div>
       </nav>
       <main class="wrap">
         ${installEvt ? html`<div class="install"><p><b>ثبّت ميزان يومي</b><span class="small muted">أيقونة على الشاشة الرئيسية، ويشتغل من غير نت</span></p><button type="button" class="btn primary" onClick=${install}>ثبّت</button></div>` : null}
-        <div aria-live="polite">${phaseNotice ? html`<div class="notice"><p>${phaseNow === 'A' ? 'المغرب بقى بعد 5:45، فمواعيد الشغل والجيم اتغيرت.' : 'المغرب بقى قبل 5:45، فمواعيد الشغل والجيم اتغيرت.'}</p><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></div>` : null}</div>
+        ${LOADED.isExample ? html`<div class="notice"><p><b>${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'}</b><span class="small muted">${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات' : 'لما يبقى عندك ملف إعداداتك هتستورده من الإعدادات'}</span></p></div>` : null}
+        <div aria-live="polite">${phaseNotice ? html`<div class="notice"><p>${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}</p><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></div>` : null}</div>
         ${view}
         <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
       </main>
@@ -1502,6 +1787,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
 
   root.innerHTML = '';
+  root.setAttribute('lang', CFG.language);
+  root.setAttribute('dir', CFG.language === 'ar' ? 'rtl' : 'ltr');
   render(html`<${App} />`, root);
 })();
 </script>

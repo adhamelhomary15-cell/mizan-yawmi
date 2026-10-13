@@ -40,4 +40,4 @@ Deterministic scan: CLI 1 finding, the known false positive (dark-theme muted to
 1. [P2] At day end the now card says "دوس راجع يومك فوق" while the button sits in another element. Fix: put the review button inside the card when blocks are unmarked. Command: layout.
 2. [P2] Night review costs one tap per block; a typical day is 7. Fix: "علّمهم كلهم خلصوا" with one undo. Command: shape.
 3. [P3] Laptop: "راجع يومك" floats alone under the day picker. Fix: move it into the header actions. Command: layout.
-4. [P3] Week per-subject labels wrap ("Operations Research"). Fix: wider label column or short codes (OR, NET). Command: typeset.
+4. [P3] Week per-subject labels wrap (a long subject name). Fix: wider label column or short codes (short codes). Command: typeset.

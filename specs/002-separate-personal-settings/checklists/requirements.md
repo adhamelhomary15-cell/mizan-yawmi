@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Automatic Schedule Switch at Maghrib 5:45pm
+# Specification Quality Checklist: Separate Personal Settings from the Public App
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-13
@@ -31,11 +31,9 @@
 
 ## Notes
 
-- Clarifications resolved 2026-10-13: Q1 short notice on the first day of a new version (A);
-  Q2 yearly repeating fallback rule (B); Q3 verify and close both gaps (B).
-- Finding: the current app already switches versions per date (see Assumptions). The work is to
-  verify that behavior and close the two gaps (notice, yearly fallback).
-- Clarify session 2026-10-13: fallback now follows the real 5:45pm Maghrib line (16 February to the
-  last Thursday of October); the earlier summer-time-based fallback disagreed with FR-001 from
-  February to April. The clock-change date should be checked against the official announcement each
-  year.
+- Clarified 2026-10-13: no automatic carry-over of the old schedule; the owner imports the file
+  right after the update (keeps the app free of personal data).
+- This spec is written to be general on purpose (constitution Principle VI): it names no person,
+  institution, employer, subject, or private routine, so it can be committed to the public repo.
+- Implements the constitution's transitional exception: it ends when this feature merges and the
+  privacy check passes.

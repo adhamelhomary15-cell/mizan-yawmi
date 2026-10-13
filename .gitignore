@@ -2,3 +2,7 @@
 .impeccable/questions/
 .impeccable/live/
 .claude/settings.local.json
+
+# private / personal files, never tracked
+.private/
+*.settings.local.json

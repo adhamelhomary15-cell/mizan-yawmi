@@ -59,7 +59,7 @@ page = head + title + '</head><body>' + src + sw_reg + '</body></html>'
 # 4. Manifest.
 manifest = {
     "name": "ميزان يومي", "short_name": "ميزان",
-    "description": "يومك موزون بين الكلية والكورس والشغل والجيم والقرآن",
+    "description": "يومك موزون بين مذاكرتك وشغلك والتزاماتك",
     "lang": "ar", "dir": "rtl", "start_url": "./", "scope": "./", "display": "standalone",
     "orientation": "any", "background_color": "#E7ECE3", "theme_color": "#6E1A28",
     "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},

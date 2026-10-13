@@ -54,18 +54,25 @@ If any of these is missing or unreadable, stop and tell the owner. Do not guess.
 
 ## Project facts that constrain edits
 
-- The app is one self-contained HTML file. Edit **`src/planner.html`** only. The schedule is the
-  `SCHED` data in that file, with two variants that switch when Maghrib crosses 5:45pm.
+- The app is one self-contained HTML file. Edit **`src/planner.html`** only. The schedule and all
+  user data come from a **settings object**: the stored settings file if the user imported one, else
+  the generic example embedded in that file. A day can have two versions chosen by a prayer-time
+  threshold from the settings.
+- **This is a public, general app.** Never put a real person's schedule, routine, institution,
+  employer, location, or course in any tracked file, specs and docs included (constitution
+  Principle VI). Personal data lives in a local git-ignored file (`.private/` or
+  `*.settings.local.json`). Run `node tools/check-private.js` before any commit or push; it must
+  pass. Ask the owner before adding any owner-specific value to a tracked file.
 - `index.html`, `sw.js`, `manifest.webmanifest`, and the icons are **generated** by
   `tools/build.py`. Never edit them by hand.
 - Libraries and fonts are vendored in `tools/vendor` and inlined at build time. Do not add CDN
   links or runtime network requests. The app must work offline as a PWA.
-- Language: **Egyptian colloquial Arabic, right-to-left** for all UI copy. Course and subject
-  names stay in English as the university writes them. Keep bidi correct.
-- The name «ميزان يومي» is binding. Brand commitments in `PRODUCT.md` apply: no Islamic ornament
-  as decoration, no neon or glow, nothing that reads as a corporate app.
-- Prayer times use the Egyptian General Authority of Survey method for Giza. Do not change the
-  method or location.
+- Language: **Egyptian colloquial Arabic, right-to-left** is the default for UI copy; the language
+  is a setting. Course and subject names stay as the user writes them. Keep bidi correct.
+- The name «ميزان يومي» is binding. Brand commitments in `PRODUCT.md` apply: no religious
+  ornament as decoration, no neon or glow, nothing that reads as a corporate app.
+- Prayer times use the Egyptian General Authority of Survey method by default; the method and
+  the location come from the user's settings. Never hard-code a city.
 - Do not invent users, testimonials, usage data, or midterm dates.
 
 ## Security checklist for plugins, skills, hooks, MCP servers, automations
