@@ -24,7 +24,7 @@ function block(source) {
   return source.slice(a, b);
 }
 function load(source) {
-  return new Function(block(source) + '\nreturn {WORKOUTS_KEY, STARTER_EXERCISES, EMPTY_WORKOUTS, parseNumber, validateSet, normName, isNameTaken, elapsedMs, restLeft, formatClock, restLabel, previousSets, computeRecords, finishWorkout, startFromRoutine, canDeleteExercise, normalizeRoot};')();
+  return new Function(block(source) + '\nreturn {WORKOUTS_KEY, STARTER_EXERCISES, EMPTY_WORKOUTS, parseNumber, validateSet, normName, isNameTaken, elapsedMs, restLeft, formatClock, restLabel, previousSets, computeRecords, bestSet, volumeOf, recordCount, finishWorkout, startFromRoutine, canDeleteExercise, normalizeRoot};')();
 }
 
 const clone = x => JSON.parse(JSON.stringify(x));
@@ -208,6 +208,19 @@ function runChecks(h, source) {
       workouts: [{id: 'w', startedAt: 1, endedAt: 0, exercises: [{exId: 'a', sets: [{w: 1, r: 1}, {w: 'x', r: 1}]}, {exId: 'b', sets: []}]}, {id: 'v'}]});
     return eq(r.root.custom, [{id: 'a', name: 'Ok'}]) && eq(r.root.routines, [{id: 'r', name: 'R', exIds: ['a']}]) && r.root.workouts.length === 1 && r.root.workouts[0].endedAt === 1 && eq(r.root.workouts[0].exercises, [{exId: 'a', name: 'a', sets: [{w: 1, r: 1}]}]);
   });
+  check('the best set is the heaviest, a tie goes to more repetitions, and no sets gives none', () => {
+    return eq(h.bestSet([{w: 20, r: 15}, {w: 20, r: 12}, {w: 15, r: 20}]), {w: 20, r: 15}) && eq(h.bestSet([{w: 20, r: 8}, {w: 20, r: 12}]), {w: 20, r: 12})
+      && eq(h.bestSet([{w: 0, r: 9}, {w: 0, r: 3}]), {w: 0, r: 9}) && h.bestSet([]) === null;
+  });
+  check('volume is the sum of weight times repetitions, exact for decimals, zero for nothing', () => {
+    return h.volumeOf([{w: 20, r: 15}, {w: 20, r: 15}, {w: 10, r: 8}]) === 680 && h.volumeOf([{w: 62.5, r: 8}]) === 500 && h.volumeOf([{w: 7.7, r: 3}]) === 23.1 && h.volumeOf([]) === 0;
+  });
+  check('the record count of a workout counts each flagged set once and agrees with the flags', () => {
+    const ws = [{id: 'a', startedAt: 1, endedAt: 2, exercises: [{exId: 'x', name: 'x', sets: [{w: 50, r: 5}, {w: 55, r: 5}]}]},
+      {id: 'b', startedAt: 3, endedAt: 4, exercises: [{exId: 'x', name: 'x', sets: [{w: 60, r: 6}, {w: 50, r: 5}, {w: 60, r: 6}]}, {exId: 'y', name: 'y', sets: [{w: 10, r: 10}]}]}];
+    const rec = h.computeRecords(ws);
+    return h.recordCount(ws[0], rec.flags) === 0 && h.recordCount(ws[1], rec.flags) === 1 && Object.keys(rec.flags).filter(k => k.indexOf('b:') === 0).length === 1;
+  });
   check('the rules block knows nothing about the progress store, the schedule, tasks, settings or the network', () => {
     const b = block(source).split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');   // comments may name what the code must not touch
     return !/\bchecks\b|\bmodules\b|fall26-planner-v1|useStore|loadLocal|saveLocal|\bappts\b|\btasks\b|fetch\(|XMLHttp|sendBeacon|WebSocket|navigator\.|Notification/.test(b);
@@ -235,6 +248,9 @@ if (process.argv.includes('--self-test')) {
     ['the rest length is not clamped', s => s.replace('Math.min(600, Math.max(10, Math.round(p.restSeconds)))', 'Math.round(p.restSeconds)')],
     ['weight 1000 is accepted', s => s.replace('if (!(w >= 0 && w <= 999.9))', 'if (!(w >= 0))')],
     ['the rest row loses the set it sits under', s => s.replace('root.current.rest.ei = r.ei; root.current.rest.si = r.si;', '')],
+    ['a tie for best set goes to fewer repetitions', s => s.replace('(s.w === b.w && s.r > b.r)', '(s.w === b.w && s.r < b.r)')],
+    ['volume adds weight and repetitions instead of multiplying', s => s.replace('n + s.w * s.r', 'n + s.w + s.r')],
+    ['a record set that is both weight and reps is counted twice', s => s.replace('if (f && (f.weight || f.reps)) n++;', 'if (f) { if (f.weight) n++; if (f.reps) n++; }')],
     ['a newer data version is read', s => s.replace('if (typeof v.v === \'number\' && v.v > 1) return {root, tooNew: true};', '')]
   ];
   let missed = 0;

@@ -336,6 +336,17 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .wk-sheet-actions .btn{flex:1 1 8rem;min-height:44px}
 .wk-sheet-actions .btn:disabled{opacity:.45;cursor:default}
 
+.wk-switch .btn{flex:1;min-height:44px}
+.wk-hist{display:flex;flex-direction:column;gap:var(--s5)}
+.wk-card{display:flex;flex-direction:column;gap:6px;width:100%;text-align:start;cursor:pointer;font:inherit;color:inherit}
+.wk-card:hover{border-color:var(--muted)}
+.wk-card-head{display:flex;flex-direction:column}
+.wk-card-row{display:grid;grid-template-columns:minmax(0,8.5rem) minmax(0,1fr);gap:var(--s3);font-size:14px}
+.wk-card-foot{display:flex;justify-content:space-between;gap:var(--s3);border-top:1px solid var(--line);padding-top:8px;margin-top:2px}
+.wk-hrow{display:flex;align-items:center;gap:var(--s3);padding:4px 0}
+.wk-link{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:start;min-height:44px;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
+.wk-best{display:flex;flex-direction:column;gap:var(--s1)}
+
 /* toast with undo */
 .toast{position:fixed;inset-inline:var(--s4);bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:6;max-width:520px;margin-inline:auto;display:flex;align-items:center;justify-content:space-between;gap:var(--s3);background:var(--fg);color:var(--bg);border-radius:14px;padding:6px 6px 6px 16px;box-shadow:0 8px 24px rgba(10,16,22,.22)}
 .toast p{padding-inline-start:10px;font-size:14px}
@@ -1834,6 +1845,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     });
     return {perExercise, flags};
   }
+  // The best set of an exercise in one workout: the highest weight, and on a tie the higher repetitions.
+  function bestSet(sets){
+    let b = null;
+    sets.forEach(s => { if (!b || s.w > b.w || (s.w === b.w && s.r > b.r)) b = s; });
+    return b ? {w: b.w, r: b.r} : null;
+  }
+  // Total weight lifted: the sum of weight times repetitions (kept to two decimals).
+  const volumeOf = sets => Math.round(sets.reduce((n, s) => n + s.w * s.r, 0) * 100) / 100;
+  // How many sets of this workout are records (by weight, by repetitions, or both count once).
+  function recordCount(workout, flags){
+    let n = 0;
+    workout.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { const f = flags[workout.id + ':' + ei + ':' + si]; if (f && (f.weight || f.reps)) n++; }));
+    return n;
+  }
   // Finishing keeps only done sets, drops exercises left with none, and needs at least one done set.
   // names maps an exercise id to the name saved with the workout.
   function finishWorkout(current, now, names){
@@ -2311,6 +2336,73 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
+  /* history, workout detail and exercise page: read-only views over the finished workouts */
+  const monthFmt = new Intl.DateTimeFormat('ar-EG-u-nu-latn', {month: 'long', year: 'numeric', timeZone: 'UTC'});
+  const wkWhen = w => { const c = cairoParts(new Date(w.startedAt)); return DAY_NAMES[weekday(c.iso)] + '، ' + dateLabel(c.iso) + ' · ' + fmtStr(c.min); };
+  const wkDay = ts => dateLabel(cairoParts(new Date(ts)).iso);
+  const wkTitle = w => w.routineName || 'تمرينة';
+  const allSets = w => w.exercises.reduce((a, e) => a.concat(e.sets), []);
+  const recWords = f => f.weight && f.reps ? 'وزن وتكرارات' : f.weight ? 'وزن' : 'تكرارات';
+  const Kg = ({s}) => html`<bdi dir="ltr" class="num">${s.w} × ${s.r}</bdi>`;
+  const byNewest = list => list.slice().sort((a, b) => b.startedAt - a.startedAt);
+
+  function WkSwitch({cur, go}){
+    return html`<div class="filters wk-switch" role="group" aria-label="أقسام التمارين">
+      <button type="button" class="btn" aria-pressed=${cur === 'home' ? 'true' : 'false'} onClick=${() => go({n: 'home'})}>تمرين</button>
+      <button type="button" class="btn" aria-pressed=${cur === 'history' ? 'true' : 'false'} onClick=${() => go({n: 'history'})}>السجل</button>
+    </div>`;
+  }
+
+  function HistoryScreen({workouts, rec, onOpen}){
+    const groups = useMemo(() => {
+      const g = [];
+      byNewest(workouts).forEach(w => {
+        const key = cairoParts(new Date(w.startedAt)).iso.slice(0, 7);
+        let x = g[g.length - 1];
+        if (!x || x.key !== key) { x = {key, items: []}; g.push(x); }
+        x.items.push(w);
+      });
+      return g;
+    }, [workouts]);
+    if (!groups.length) return html`<p class="empty">لسه مفيش تمرينات محفوظة. خلّص تمرينة وهتظهر هنا.</p>`;
+    return html`<div class="wk-hist">${groups.map(g => { const [y, m] = g.key.split('-').map(Number); return html`<section class="sec" key=${g.key}>
+      <div class="sec-head"><h2>${monthFmt.format(new Date(Date.UTC(y, m - 1, 1)))}</h2><span class="small muted"><bdi>${g.items.length}</bdi> تمرينة</span></div>
+      ${g.items.map(w => { const rc = recordCount(w, rec.flags); return html`<button type="button" class="panel wk-card" key=${w.id} onClick=${() => onOpen(w.id)}>
+        <span class="wk-card-head"><b>${wkTitle(w)}</b><span class="small muted">${wkWhen(w)}</span></span>
+        <span class="wk-card-row small muted"><span>أفضل مجموعة</span><span>المجموعات</span></span>
+        ${w.exercises.map((e, i) => html`<span class="wk-card-row" key=${i}><${Kg} s=${bestSet(e.sets)} /><span><bdi>${e.sets.length}</bdi> × <bdi>${e.name}</bdi></span></span>`)}
+        <span class="wk-card-foot small">${rc ? html`<span><bdi>${rc}</bdi> رقم قياسي</span>` : null}<span><bdi class="num">${Math.round(volumeOf(allSets(w)))}</bdi> كجم</span><bdi dir="ltr" class="num">${formatClock(w.endedAt - w.startedAt)}</bdi></span>
+      </button>`; })}
+    </section>`; })}</div>`;
+  }
+
+  function WorkoutDetail({w, rec, onExercise, onBack}){
+    const rc = recordCount(w, rec.flags);
+    return html`<div class="wkv">
+      <div class="wk-head"><button type="button" class="btn" onClick=${onBack}>رجوع</button><div class="wk-title"><h1>${wkTitle(w)}</h1><p class="wk-meta">${wkWhen(w)}</p></div></div>
+      <p class="small muted">المدة <bdi dir="ltr" class="num">${formatClock(w.endedAt - w.startedAt)}</bdi> · <bdi class="num">${Math.round(volumeOf(allSets(w)))}</bdi> كجم${rc ? html` · <bdi>${rc}</bdi> رقم قياسي` : null}</p>
+      ${w.exercises.map((e, ei) => html`<section class="panel wk-ex" key=${ei + ':' + e.exId}>
+        <h2><button type="button" class="wk-link" onClick=${() => onExercise(e.exId)}><bdi>${e.name}</bdi></button></h2>
+        ${e.sets.map((s, si) => { const f = rec.flags[w.id + ':' + ei + ':' + si]; return html`<div class="wk-hrow" key=${si}><span class="wk-no num">${si + 1}</span><${Kg} s=${s} />${f ? html`<span class="mk"><${Star} />رقم قياسي · ${recWords(f)}</span>` : null}</div>`; })}
+      </section>`)}
+    </div>`;
+  }
+
+  function ExerciseScreen({exId, name, rec, workouts, onOpen, onBack}){
+    const pe = rec.perExercise[exId], list = byNewest(workouts.filter(w => w.exercises.some(e => e.exId === exId)));
+    return html`<div class="wkv">
+      <div class="wk-head"><button type="button" class="btn" onClick=${onBack}>رجوع</button><div class="wk-title"><h1><bdi>${name}</bdi></h1></div></div>
+      ${pe ? html`<div class="panel wk-best">
+        <p>أعلى وزن: <b><bdi class="num">${pe.bestWeight.value}</bdi> كجم</b> <span class="small muted">· ${wkDay(pe.bestWeight.date)}</span></p>
+        <p>أكتر تكرارات: <b><bdi class="num">${pe.bestReps.value}</bdi></b> <span class="small muted">· ${wkDay(pe.bestReps.date)}</span></p>
+      </div>` : html`<p class="empty">لسه مفيش تمرينات متسجلة للتمرين ده.</p>`}
+      ${list.map(w => html`<button type="button" class="panel wk-card" key=${w.id} onClick=${() => onOpen(w.id)}>
+        <span class="wk-card-head"><b>${wkTitle(w)}</b><span class="small muted">${wkWhen(w)}</span></span>
+        <span class="small">${w.exercises.filter(e => e.exId === exId).reduce((a, e) => a.concat(e.sets), []).map((x, i) => html`${i ? '، ' : ''}<${Kg} s=${x} />`)}</span>
+      </button>`)}
+    </div>`;
+  }
+
   function WorkoutView({wk}){
     const {data, update, tooNew, saveFailed} = wk;
     const cur = data.current;
@@ -2319,23 +2411,32 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const [panel, setPanel] = useState(null);   // null | 'pick' | 'finish' | 'discard'
     const [menu, setMenu] = useState(null);     // null | 'w' | an exercise's index
     const [bad, setBad] = useState(null);       // {ei, si, field, msg}
+    const [screen, setScreen] = useState({n: 'home'});   // outside a workout: home | history | detail | exercise
+    const rec = useMemo(() => computeRecords(data.workouts), [data.workouts]);
     const top = () => { try { window.scrollTo(0, 0); } catch(e){} };
 
     if (tooNew) return html`<div class="wkv"><div class="notice"><p><b>بيانات التمارين دي اتحفظت بنسخة أحدث من التطبيق</b><span class="small muted">مش هنفتحها ولا نعدّل عليها هنا عشان ما نبوّظهاش. حدّث التطبيق.</span></p></div></div>`;
 
     const warn = (!LOCAL_OK || saveFailed) ? html`<div class="notice"><p><b>المتصفح ده مش بيسمح بالحفظ</b><span class="small muted">التمرينات هتتمسح لما تقفل الصفحة.</span></p></div>` : null;
-    const startEmpty = () => update(d => { if (!d.current) d.current = {id: uid36(), startedAt: Date.now(), exercises: [], rest: null}; return d; });
+    const startEmpty = () => { setScreen({n: 'home'}); update(d => { if (!d.current) d.current = {id: uid36(), startedAt: Date.now(), exercises: [], rest: null}; return d; }); };
     const patch = fn => update(d => { if (d.current) fn(d.current); return d; });
 
     if (!cur) {
       const n = data.workouts.length;
+      const go = sc => { setScreen(sc); top(); };
+      const nameOf = id => names[id] || ((data.workouts.map(w => w.exercises.find(e => e.exId === id)).filter(Boolean)[0] || {}).name) || id;
+      const found = screen.id && data.workouts.find(x => x.id === screen.id);
+      if (screen.n === 'detail' && found) return html`<${WorkoutDetail} w=${found} rec=${rec} onExercise=${id => go({n: 'exercise', id, back: screen})} onBack=${() => go({n: 'history'})} />`;
+      if (screen.n === 'exercise') return html`<${ExerciseScreen} exId=${screen.id} name=${nameOf(screen.id)} rec=${rec} workouts=${data.workouts} onOpen=${id => go({n: 'detail', id})} onBack=${() => go(screen.back || {n: 'history'})} />`;
+      const inHistory = screen.n === 'history';
       return html`<div class="wkv">
         <div class="top"><div class="top-meta"><h1>تمارين</h1><p class="sub">سجّل الأوزان والتكرارات، وكله على جهازك بس.</p></div></div>
+        <${WkSwitch} cur=${inHistory ? 'history' : 'home'} go=${go} />
         ${warn}
-        <div class="panel wk-home">
+        ${inHistory ? html`<${HistoryScreen} workouts=${data.workouts} rec=${rec} onOpen=${id => go({n: 'detail', id})} />` : html`<div class="panel wk-home">
           <button type="button" class="btn primary" id="wk-start" onClick=${startEmpty}>ابدأ تمرينة فاضية</button>
           <p class="small muted">${n ? html`تمرينات محفوظة: <bdi>${n}</bdi>` : 'لسه مفيش تمرينات محفوظة.'}</p>
-        </div>
+        </div>`}
       </div>`;
     }
 
