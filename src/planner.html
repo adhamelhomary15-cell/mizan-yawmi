@@ -203,6 +203,13 @@ button{font:inherit;color:inherit}
 .edit svg{width:18px;height:18px;flex:none}
 .edit:hover{color:var(--fg)}
 .tact{display:flex;align-items:center}
+.paste-open{margin-inline-start:var(--s2)}
+.paste{display:flex;flex-direction:column;gap:10px}
+.paste textarea{font-size:14px}
+.paste-row{display:grid;grid-template-columns:24px minmax(0,1fr);gap:var(--s2);align-items:start;padding:8px 0;border-top:1px solid var(--line);cursor:pointer}
+.paste-row input{width:20px;height:20px;margin-top:2px}
+.paste-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.paste-text{overflow-wrap:anywhere}
 .titem-edit{padding:8px 0;border-top:1px solid var(--line)}
 .titem-edit:first-child{border-top:0}
 
@@ -1742,11 +1749,69 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </form>`;
   }
 
+  /* ---------------- paste tasks from an AI ---------------- */
+  // The pasted text is kept in memory only: it survives switching tabs in one session and is gone when the app closes.
+  let PASTE_DRAFT = '';
+  function PasteTasks({now, store, update, onClose}){
+    const [text, setText] = useState(PASTE_DRAFT);
+    const [result, setResult] = useState(null);
+    const [sel, setSel] = useState({});
+    const [copied, setCopied] = useState('');
+    const promptRef = useRef(null), pasteRef = useRef(null);
+    const prompt = buildAiPrompt(TASK_TAGS, now.iso);
+    useEffect(() => { if (pasteRef.current) pasteRef.current.focus(); }, []);
+    const copy = async () => {
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('no clipboard');
+        await navigator.clipboard.writeText(prompt);
+        setCopied('ok');
+      } catch(e){
+        if (promptRef.current) { promptRef.current.focus(); promptRef.current.select(); }
+        setCopied('manual');
+      }
+    };
+    const onText = e => { PASTE_DRAFT = e.target.value; setText(e.target.value); setResult(null); };
+    const check = () => {
+      const r = parseTaskLines(text, TASK_TAGS, store.tasks.map(t => t.text));
+      const s = {}; r.items.forEach(i => { s[i.n] = i.include; });
+      setResult(r); setSel(s);
+    };
+    const ready = result ? result.items.filter(i => sel[i.n] && i.tag) : [];
+    const confirm = () => {
+      if (!ready.length) return;
+      const made = ready.map(i => ({id: uid36(), text: i.text, tag: i.tag, due: i.due, done: false, created: now.iso}));
+      update(s => { made.forEach(t => s.tasks.push(t)); return s; });
+      PASTE_DRAFT = '';
+      onClose();
+    };
+    const onKey = e => { if (e.key === 'Escape'){ e.preventDefault(); onClose(); } };
+    return html`<div class="paste" onKeyDown=${onKey}>
+      <p class="small"><b>١. انسخ التعليمات وادّيها لأي AI</b> مع المهمة الكبيرة. هو اللي هيقسّمها بالشكل اللي التطبيق فاهمه.</p>
+      <label class="field wide" for="paste-prompt">التعليمات<textarea id="paste-prompt" dir="auto" readonly rows="9" ref=${promptRef} value=${prompt}></textarea></label>
+      <div class="form-row"><button type="button" class="btn" onClick=${copy}>انسخ التعليمات</button></div>
+      <p class="small muted" aria-live="polite">${copied === 'ok' ? 'اتنسخت. الصقها في الـ AI.' : copied === 'manual' ? 'المتصفح مش سامح بالنسخ. النص اتحدّد، انسخه بإيدك.' : ''}</p>
+      <p class="small"><b>٢. الصق رد الـ AI هنا</b> وبعدين دوس "افحص".</p>
+      <label class="field wide" for="paste-input">رد الـ AI<textarea id="paste-input" dir="auto" rows="7" maxlength="20000" ref=${pasteRef} value=${text} onInput=${onText} placeholder=${'uni | Read chapter one | 2026-10-20\nwork | Review the draft'}></textarea></label>
+      <div class="form-row"><button type="button" class="btn primary" disabled=${!text.trim()} onClick=${check}>افحص</button><button type="button" class="btn ghost" onClick=${onClose}>إلغاء</button></div>
+      ${result ? html`<div class="paste-preview">
+        <p class="small" role="status"><b>${result.items.length} مهمة في المعاينة، ${result.rejected.length} سطر مش مفهوم</b></p>
+        ${result.items.map(i => html`<label class="paste-row" key=${i.n}>
+          <input type="checkbox" checked=${!!sel[i.n]} disabled=${!i.tag} onChange=${e => { const on = e.target.checked; setSel(p => Object.assign({}, p, {[i.n]: on})); }} />
+          <span class="paste-main"><bdi class="paste-text">${i.text}</bdi><span class="small muted">${TASK_TAGS[i.tag] || 'محتاج نوع'} · ${i.due ? dateLabel(i.due) : 'من غير ميعاد'}${i.dupe ? ' · ممكن يكون مكرر' : ''}</span></span>
+        </label>`)}
+        <div class="form-row"><button type="button" class="btn primary" disabled=${!ready.length} onClick=${confirm}>${'ضيف ' + ready.length + ' مهمة'}</button></div>
+      </div>` : null}
+    </div>`;
+  }
+
   /* ---------------- Tasks & appointments ---------------- */
   function TasksView({now, store, update, goDay, remove, actEdit}){
     const [filter, setFilter] = useState('open');
     const [taskForm, setTaskForm] = useState(false);
     const [apptForm, setApptForm] = useState(false);
+    const [pasteOpen, setPasteOpen] = useState(false);
+    const openPaste = () => { setEditing(null); setTaskForm(false); setPasteOpen(true); };
+    const closePaste = () => { setPasteOpen(false); setTimeout(() => { const b = document.getElementById('paste-open-btn'); if (b) b.focus(); }, 0); };
     // The one open edit form: null, or {kind: 'task' | 'appt', id}. Only one at a time; opening another drops the first unsaved.
     const [editing, setEditing] = useState(null);
     const lastEdited = useRef(null);
@@ -1756,7 +1821,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       lastEdited.current = null;
       if (el) el.focus();
     }, [editing]);
-    const openEdit = (kind, id) => { setTaskForm(false); setApptForm(false); lastEdited.current = null; setEditing({kind, id}); };
+    const openEdit = (kind, id) => { setTaskForm(false); setApptForm(false); setPasteOpen(false); lastEdited.current = null; setEditing({kind, id}); };
     const closeEdit = id => { lastEdited.current = id; setEditing(null); };
     const saveTask = (t, value) => {
       const before = {text: t.text, tag: t.tag, due: t.due || ''};
@@ -1799,7 +1864,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
         <div class="panel">
-          ${taskForm ? html`<div style="margin-bottom:10px"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button>`}
+          ${taskForm ? html`<div style="margin-bottom:10px"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : pasteOpen ? html`<${PasteTasks} now=${now} store=${store} update=${update} onClose=${closePaste} />` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button><button type="button" id="paste-open-btn" class="btn add-task paste-open" onClick=${openPaste}>الصق مهام من AI</button>`}
           <div class="tlist" style="margin-top:6px">
             ${shown.length ? shown.map(t => editing && editing.kind === 'task' && editing.id === t.id
               ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`
