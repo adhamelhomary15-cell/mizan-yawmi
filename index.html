@@ -204,8 +204,14 @@ button{font:inherit;color:inherit}
 .paste-open{margin-inline-start:var(--s2)}
 .paste{display:flex;flex-direction:column;gap:10px}
 .paste textarea{font-size:14px}
-.paste-row{display:grid;grid-template-columns:24px minmax(0,1fr);gap:var(--s2);align-items:start;padding:8px 0;border-top:1px solid var(--line);cursor:pointer}
+.paste-row{display:grid;grid-template-columns:24px minmax(0,1fr);gap:var(--s2);align-items:start;padding:8px 0;border-top:1px solid var(--line)}
 .paste-row input{width:20px;height:20px;margin-top:2px}
+.paste-text{cursor:pointer}
+.paste-type{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px;max-width:100%;box-sizing:border-box;align-self:flex-start}
+.paste-rejected{border-top:1px solid var(--line);padding-top:8px}
+.paste-rejected ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.paste-rejected li{display:flex;flex-direction:column;gap:2px;min-width:0}
+.paste-raw{overflow-wrap:anywhere;font-size:14px}
 .paste-main{display:flex;flex-direction:column;gap:2px;min-width:0}
 .paste-text{overflow-wrap:anywhere}
 .titem-edit{padding:8px 0;border-top:1px solid var(--line)}
@@ -1757,10 +1763,18 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   /* ---------------- paste tasks from an AI ---------------- */
   // The pasted text is kept in memory only: it survives switching tabs in one session and is gone when the app closes.
   let PASTE_DRAFT = '';
+  const PASTE_REASONS = {
+    'no-separator': () => 'مفيش | في السطر ده',
+    'too-many-separators': () => 'فيه | أكتر من اللازم',
+    'empty-text': () => 'نص المهمة فاضي',
+    'too-long': x => 'النص أطول من 140 حرف (' + x.length + ')',
+    'bad-date': () => 'التاريخ مش مظبوط'
+  };
   function PasteTasks({now, store, update, onClose}){
     const [text, setText] = useState(PASTE_DRAFT);
     const [result, setResult] = useState(null);
     const [sel, setSel] = useState({});
+    const [picked, setPicked] = useState({});
     const [copied, setCopied] = useState('');
     const promptRef = useRef(null), pasteRef = useRef(null);
     const prompt = buildAiPrompt(TASK_TAGS, now.iso);
@@ -1779,12 +1793,15 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const check = () => {
       const r = parseTaskLines(text, TASK_TAGS, store.tasks.map(t => t.text));
       const s = {}; r.items.forEach(i => { s[i.n] = i.include; });
-      setResult(r); setSel(s);
+      setResult(r); setSel(s); setPicked({});
     };
-    const ready = result ? result.items.filter(i => sel[i.n] && i.tag) : [];
+    // A line with no valid type stays out until the user picks one; the app never chooses a type for them.
+    const tagOf = i => i.tag || picked[i.n] || '';
+    const pickType = (i, tag) => { setPicked(p => Object.assign({}, p, {[i.n]: tag})); setSel(p => Object.assign({}, p, {[i.n]: !!tag})); };
+    const ready = result ? result.items.filter(i => sel[i.n] && tagOf(i)) : [];
     const confirm = () => {
       if (!ready.length) return;
-      const made = ready.map(i => ({id: uid36(), text: i.text, tag: i.tag, due: i.due, done: false, created: now.iso}));
+      const made = ready.map(i => ({id: uid36(), text: i.text, tag: tagOf(i), due: i.due, done: false, created: now.iso}));
       update(s => { made.forEach(t => s.tasks.push(t)); return s; });
       PASTE_DRAFT = '';
       onClose();
@@ -1800,10 +1817,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       <div class="form-row"><button type="button" class="btn primary" disabled=${!text.trim()} onClick=${check}>افحص</button><button type="button" class="btn ghost" onClick=${onClose}>إلغاء</button></div>
       ${result ? html`<div class="paste-preview">
         <p class="small" role="status"><b>${result.items.length} مهمة في المعاينة، ${result.rejected.length} سطر مش مفهوم</b></p>
-        ${result.items.map(i => html`<label class="paste-row" key=${i.n}>
-          <input type="checkbox" checked=${!!sel[i.n]} disabled=${!i.tag} onChange=${e => { const on = e.target.checked; setSel(p => Object.assign({}, p, {[i.n]: on})); }} />
-          <span class="paste-main"><bdi class="paste-text">${i.text}</bdi><span class="small muted">${TASK_TAGS[i.tag] || 'محتاج نوع'} · ${i.due ? dateLabel(i.due) : 'من غير ميعاد'}${i.dupe ? ' · ممكن يكون مكرر' : ''}</span></span>
-        </label>`)}
+        ${!result.items.length ? html`<div class="notice"><p><b>مفيش سطر اتفهم.</b><span class="small">التطبيق فاهم الصيغة دي بس، سطر لكل مهمة: <bdi>النوع | نص المهمة | آخر ميعاد</bdi></span></p></div>` : null}
+        ${result.items.map(i => html`<div class="paste-row" key=${i.n}>
+          <input type="checkbox" id=${'paste-i-' + i.n} checked=${!!sel[i.n]} disabled=${!tagOf(i)} onChange=${e => { const on = e.target.checked; setSel(p => Object.assign({}, p, {[i.n]: on})); }} />
+          <span class="paste-main"><label for=${'paste-i-' + i.n} class="paste-text"><bdi>${i.text}</bdi></label>
+            <span class="small muted">${tagOf(i) ? TASK_TAGS[tagOf(i)] : 'محتاج نوع'} · ${i.due ? dateLabel(i.due) : 'من غير ميعاد'}${i.dupe ? ' · ممكن يكون مكرر' : ''}</span>
+            ${!i.tag ? html`<select class="paste-type" aria-label=${'اختار نوع: ' + i.text} value=${picked[i.n] || ''} onChange=${e => pickType(i, e.target.value)}><option value="">اختار النوع</option>${Object.keys(TASK_TAGS).map(k => html`<option value=${k}>${TASK_TAGS[k]}</option>`)}</select>` : null}
+          </span>
+        </div>`)}
+        ${result.rejected.length ? html`<div class="paste-rejected"><p class="small"><b>سطور مش مفهومة (مش هتتضاف)</b></p>
+          <ul>${result.rejected.map(x => html`<li key=${x.n}><span class="small muted">سطر ${x.n}: ${PASTE_REASONS[x.reason](x)}</span><bdi class="paste-raw">${x.raw.trim()}</bdi></li>`)}</ul></div>` : null}
         <div class="form-row"><button type="button" class="btn primary" disabled=${!ready.length} onClick=${confirm}>${'ضيف ' + ready.length + ' مهمة'}</button></div>
       </div>` : null}
     </div>`;
