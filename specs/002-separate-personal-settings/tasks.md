@@ -84,11 +84,11 @@ description: "Task list for 002 separate personal settings from the public app"
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] In `src/planner.html` add a settings button reachable from every tab (header area) and a `SettingsView` showing the active settings: "Example" or the file's `name`, and its `version`, per contracts/tools-and-ui.md; use existing design tokens and Egyptian Arabic copy
-- [ ] T019 [US2] In `src/planner.html` add import: a file picker (`.json`), reject files over 1 MB before reading, read with the browser file reader, run `validateSettings`, show a summary (number of days and blocks, course name if any, language, location label) and ask to confirm replacing; on confirm write only the key `mizan-settings-v1` and reload. Render all file text as text, never as HTML. No network call
-- [ ] T020 [US2] In `src/planner.html` add reset: after confirmation remove only the key `mizan-settings-v1`, then reload to the example. It must not touch the progress key
-- [ ] T021 [US2] In `src/planner.html` highlight the settings button with a short hint while the example is active (FR-015), and remove the hint once a file is imported
-- [ ] T022 [US2] Run quickstart.md sections 4 and 7: import `.private/settings.json` in the browser, reload, switch the browser offline and reload; confirm the imported schedule persists, no file is asked for again, no network request is made, and the progress object is byte-identical before and after import, replace, and reset
+- [x] T018 [US2] In `src/planner.html` add a settings button reachable from every tab (header area) and a `SettingsView` showing the active settings: "Example" or the file's `name`, and its `version`, per contracts/tools-and-ui.md; use existing design tokens and Egyptian Arabic copy
+- [x] T019 [US2] In `src/planner.html` add import: a file picker (`.json`), reject files over 1 MB before reading, read with the browser file reader, run `validateSettings`, show a summary (number of days and blocks, course name if any, language, location label) and ask to confirm replacing; on confirm write only the key `mizan-settings-v1` and reload. Render all file text as text, never as HTML. No network call
+- [x] T020 [US2] In `src/planner.html` add reset: after confirmation remove only the key `mizan-settings-v1`, then reload to the example. It must not touch the progress key
+- [x] T021 [US2] In `src/planner.html` highlight the settings button with a short hint while the example is active (FR-015), and remove the hint once a file is imported
+- [x] T022 [US2] Run quickstart.md sections 4 and 7: import `.private/settings.json` in the browser, reload, switch the browser offline and reload; confirm the imported schedule persists, no file is asked for again, no network request is made, and the progress object is byte-identical before and after import, replace, and reset
 
 **Checkpoint**: US2 works on its own. This is a safe release point: the app can run the example or the imported file, and nothing has been removed yet.
 

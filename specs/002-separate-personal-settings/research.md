@@ -146,3 +146,22 @@ mutated copies (a changed block time, an added subject): each exits 1, so the ha
   with 0 modules on Today and the Course tab; users can add their own course and make it the main one.
 - **Not done in this phase (by design)**: the old constants are still in the file; removing them is task T027
   and needs approval.
+
+## Verification notes (Phase 4, 2026-10-13)
+
+- **Where the settings area lives**: a fifth tab (Settings) in the same bottom/side navigation, reachable from
+  every tab. While the example is in use, a small dot on that tab points to it; the dot goes away after an
+  import.
+- **Import (browser, file picker simulated with a real `File` object)**: empty file, non-JSON, wrong `format`,
+  newer `version`, an invalid time zone plus out-of-range latitude, and a file over 1 MB are each rejected with a
+  plain message (the newer-version one reads "made for a newer version of the app"; field problems list the
+  path and the rule). After all of them the settings key stayed empty and the stored progress was byte-identical.
+- **Valid file**: a summary appears (days, blocks, course name, location, language) with Replace and Cancel;
+  Replace stores only the settings key and reloads. After it: example banner and dot gone, today's plan from the
+  imported settings, stored progress byte-identical, 0 network calls during the import.
+- **Reset**: asks for confirmation; Cancel keeps the settings; Confirm removes only the settings key, the example
+  returns, and the stored progress is byte-identical.
+- **Layout**: at phone width the Settings tab has no horizontal overflow (a missing flex-gap rule was added for
+  the new view). The native file input is used on purpose for keyboard and screen-reader access.
+- **Not covered here**: offline cold start of the built page (service workers are not available in the browser
+  pane used for testing); the Arabic wording of the messages is a first pass, refined in the error-handling story.
