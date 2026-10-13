@@ -22,7 +22,10 @@ If any of these is missing or unreadable, stop and tell the owner. Do not guess.
    whether something needs approval, it does.
 2. **Never check anything off.** Only the owner marks a block, task, or course module done, by
    tapping in the app. Do not add code, imports, sync, or automation that sets, bulk-sets, or
-   clears done state. Suggesting is allowed; committing the check is not.
+   clears done state. Suggesting is allowed; committing the check is not. Two exceptions carry only
+   marks the owner already made (constitution Principle II): restoring the owner's own backup after
+   they confirm a preview (exact marks only, all or nothing), and the owner's chosen synced copy
+   carrying marks unchanged.
 3. **Private progress stays on the device.** No analytics, trackers, telemetry, outside calls
    carrying user data, or tools that read stored progress (localStorage). Any new network
    dependency must be proposed and approved first.

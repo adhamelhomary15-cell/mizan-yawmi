@@ -16,8 +16,17 @@ A block, task, or course module is marked done only by the owner, through a deli
 the app. No AI, automation, import, or sync may set, bulk-set, or clear a done state. AI may
 suggest ("this looks finished") but MUST NOT commit the check. "Mark all" in the day review MUST
 remain an explicit user action with a visible result and undo.
+Two exceptions carry only marks the owner already made, so they create no new done state:
+- **Restoring the owner's own backup** MAY replace the device's marks with the file's, only after
+  the owner confirms a preview of that file. It MUST reproduce the file's marks exactly, MUST NOT
+  add a mark the file does not hold, and MUST be all or nothing.
+- **The owner's chosen synced copy** of their progress (Principle III) MAY carry the owner's own
+  marks between devices unchanged; it MUST NOT add or clear marks on its own.
+Any other import, sync, AI, or automation that creates or clears a mark the owner did not make
+remains forbidden.
 Rationale: progress is the app's truth; auto-checked blocks make the day look balanced when it
-is not, which defeats the product.
+is not, which defeats the product. Bringing back the owner's own record of done work keeps that
+truth instead of faking it.
 
 ### III. Private Progress Stays on the Device
 Progress, tasks, notes, and added courses live in localStorage on the owner's device and MUST NOT
@@ -94,4 +103,4 @@ PATCH for clarifications. Principles I and II are non-negotiable and can be rela
 MAJOR amendment. Every plan and review MUST verify compliance; any deviation MUST be justified
 in writing in the plan. Runtime guidance lives in `PRODUCT.md`, `DESIGN.md`, and `README.md`.
 
-**Version**: 1.1.1 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-13
+**Version**: 2.0.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-14
