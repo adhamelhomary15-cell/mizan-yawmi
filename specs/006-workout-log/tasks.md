@@ -99,9 +99,9 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 5.
 
-- [ ] T027 [US4] Add the «التمارين» screen outside a workout: a searchable list of every exercise (starter first, then own), tapping one opens its exercise page (T025), and «ضيف تمرين» for a new own exercise with the name rules of T013.
-- [ ] T028 [US4] Add deleting: «امسح» only on own exercises with no history and in no routine, using `canDeleteExercise`; otherwise the reason is shown (`التمرين ده ليه سجل` or `التمرين ده في روتين: <اسم>`); starter exercises are never deletable.
-- [ ] T029 [US4] Verify per quickstart section 5: search narrows, a duplicate name in another case or with extra spaces is refused, an exercise with history shows why it cannot be deleted; run all checks.
+- [x] T027 [US4] Add the «التمارين» screen outside a workout: a searchable list of every exercise (starter first, then own), tapping one opens its exercise page (T025), and «ضيف تمرين» for a new own exercise with the name rules of T013.
+- [x] T028 [US4] Add deleting: «امسح» only on own exercises with no history and in no routine, using `canDeleteExercise`; otherwise the reason is shown (`التمرين ده ليه سجل` or `التمرين ده في روتين: <اسم>`); starter exercises are never deletable.
+- [x] T029 [US4] Verify per quickstart section 5: search narrows, a duplicate name in another case or with extra spaces is refused, an exercise with history shows why it cannot be deleted; run all checks.
 
 **Checkpoint (cut B)**: history, records and the exercise list work; a second pull request can ship here. Commit as `feat(workout): exercise list and delete rules (006, US4)`.
 
