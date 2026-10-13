@@ -102,12 +102,12 @@
 
 ## Phase 7: Polish and ship
 
-- [ ] T023 Run the SC-006 parity check against the baseline from T002 with the example anchor removed and with the owner's-style settings (a copy of `settings.example.json` with no sixth elements): `node tools/check-parity.js --old $TEMP/baseline-planner.html --new src/planner.html --settings <file>` over a full year, and again with `--no-adhan`; expect 0 differences. Never run it against `.private/` files in a way that prints values (the script prints counts only).
-- [ ] T024 [P] Document the feature: add the anchor format (the sixth element, its three fields and limits, the 15-minute floor, the fallback) to `README.md` in the settings section, and one line about prayer-anchored blocks to the capabilities list in `PRODUCT.md`; keep copy generic (Principle VI).
-- [ ] T025 Run the full [quickstart.md](quickstart.md) at 375 px, including airplane mode and the network panel (0 requests, SC-007), and a reload; report honestly that offline cold start on a real phone cannot be tested in the browser pane.
-- [ ] T026 Search the diff for the done-state guarantee: `git diff main -- src/planner.html` MUST show no added write to `checks`, `modules` or `done`, no added `fetch`, `XMLHttpRequest` or `localStorage` call; list what you checked in the commit message (Principle II, III).
-- [ ] T027 Rebuild with `PYTHONUTF8=1 python tools/build.py`, `git checkout` the icon files if Pillow re-rendered them, and run `node tools/check-anchors.js`, `node tools/check-anchors.js --self-test`, `node tools/check-settings.js --self-test`, `node tools/check-edit.js`, `node tools/check-private.js`; report any skipped check honestly.
-- [ ] T028 Tick completed tasks here, show the owner the final diff, and wait for explicit approval before any push or PR (AGENTS.md rule 5).
+- [x] T023 Run the SC-006 parity check against the baseline from T002 with the example anchor removed and with the owner's-style settings (a copy of `settings.example.json` with no sixth elements): `node tools/check-parity.js --old $TEMP/baseline-planner.html --new src/planner.html --settings <file>` over a full year, and again with `--no-adhan`; expect 0 differences. Never run it against `.private/` files in a way that prints values (the script prints counts only).
+- [x] T024 [P] Document the feature: add the anchor format (the sixth element, its three fields and limits, the 15-minute floor, the fallback) to `README.md` in the settings section, and one line about prayer-anchored blocks to the capabilities list in `PRODUCT.md`; keep copy generic (Principle VI).
+- [x] T025 Run the full [quickstart.md](quickstart.md) at 375 px, including airplane mode and the network panel (0 requests, SC-007), and a reload; report honestly that offline cold start on a real phone cannot be tested in the browser pane.
+- [x] T026 Search the diff for the done-state guarantee: `git diff main -- src/planner.html` MUST show no added write to `checks`, `modules` or `done`, no added `fetch`, `XMLHttpRequest` or `localStorage` call; list what you checked in the commit message (Principle II, III).
+- [x] T027 Rebuild with `PYTHONUTF8=1 python tools/build.py`, `git checkout` the icon files if Pillow re-rendered them, and run `node tools/check-anchors.js`, `node tools/check-anchors.js --self-test`, `node tools/check-settings.js --self-test`, `node tools/check-edit.js`, `node tools/check-private.js`; report any skipped check honestly.
+- [x] T028 Tick completed tasks here, show the owner the final diff, and wait for explicit approval before any push or PR (AGENTS.md rule 5).
 
 ---
 
