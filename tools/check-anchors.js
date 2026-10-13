@@ -2,7 +2,9 @@
 /*
  * Dev-only check for blocks tied to a prayer time (not shipped with the app).
  *
- *   node tools/check-anchors.js              run the checks against src/planner.html
+ *   node tools/check-anchors.js [--settings <file>] [--from 2026] [--to 2028] [--require-fit]
+ *                                            run the checks, then a year sweep with the real prayer times
+ *                                            (default file: settings.example.json; --require-fit also fails if any day falls back)
  *   node tools/check-anchors.js --self-test  break the layout rule on purpose and check that this script notices
  *
  * It runs the app's own layoutDay (the block between "start of anchor layout" and "end of anchor layout" in
@@ -124,6 +126,83 @@ function runChecks(layoutDay) {
   return results;
 }
 
+/*
+ * Year sweep: loads the app's own settings and day code (the same section tools/check-phase.js loads) with a
+ * settings file and the real prayer library, then for every date of the swept years compares blocksFor with the
+ * all-fixed layout of the same list. Prints counts only.
+ */
+const argv = process.argv.slice(2);
+const opt = n => { const i = argv.indexOf('--' + n); return i >= 0 ? argv[i + 1] : undefined; };
+
+function loadApp(settingsText, useAdhan) {
+  const adhanSrc = fs.readFileSync(path.join(__dirname, 'vendor', 'adhan.umd.min.js'), 'utf8');
+  const mod = {exports: {}};
+  new Function('module', 'exports', 'self', 'window', adhanSrc)(mod, mod.exports, globalThis, globalThis);
+  const adhan = useAdhan ? (mod.exports.Coordinates ? mod.exports : globalThis.adhan) : undefined;
+  const a = ['/* ---------------- settings: format check', '/* ---------------- settings: load'].map(m => html.indexOf(m)).filter(i => i >= 0).sort((x, y) => x - y)[0];
+  const b = html.indexOf('/* ---------------- courses ---------------- */');
+  if (a === undefined || b < 0) throw new Error('cannot find the settings/data section in src/planner.html');
+  const example = html.match(/<script type="application\/json" id="example-settings">([\s\S]*?)<\/script>/);
+  const store = {'mizan-settings-v1': settingsText};
+  const ls = {getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; }};
+  const doc = {getElementById: id => (id === 'example-settings' && example ? {textContent: example[1]} : null)};
+  const win = {adhan, localStorage: ls, document: doc};
+  return new Function('window', 'document', 'localStorage', 'adhan', html.slice(a, b) + '\nreturn {blocksFor, listFor, dayNotice, layoutDay, prayers, weekday, START, END, LOADED};')(win, doc, ls, adhan);
+}
+
+function sweep(settingsFile, fromYear, toYear, requireFit) {
+  const settingsText = fs.readFileSync(settingsFile, 'utf8');
+  const app = loadApp(settingsText, true);
+  if (app.LOADED.isExample && settingsFile.indexOf('settings.example.json') < 0) throw new Error('the settings file did not validate, so the app fell back to the example; run tools/check-settings.js on it');
+  const pad = n => String(n).padStart(2, '0');
+  const stats = {dates: 0, anchoredDays: 0, nofit: 0, unavailable: 0, bad: [], minDelta: Infinity, maxDelta: -Infinity, minAbsorb: Infinity};
+  for (let y = fromYear; y <= toYear; y++) {
+    for (let t = Date.UTC(y, 0, 1); t < Date.UTC(y + 1, 0, 1); t += 86400000) {
+      const d = new Date(t), iso = d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+      stats.dates++;
+      const list = app.listFor(iso);
+      const idx = list.map((b, i) => b[5] ? i : -1).filter(i => i >= 0);
+      if (!idx.length) continue;
+      stats.anchoredDays++;
+      const pm = app.prayers(iso);
+      const lay = app.layoutDay(list, pm, app.START, app.END);
+      const fixed = app.layoutDay(list, null, app.START, app.END).blocks;
+      const A = app.blocksFor(iso);
+      if (!eq(A, lay.blocks)) stats.bad.push(iso + ': blocksFor differs from layoutDay');
+      if (lay.notice === 'nofit') { stats.nofit++; if (!A.every((b, i) => b.s === fixed[i].s)) stats.bad.push(iso + ': nofit but not at fixed times'); continue; }
+      if (lay.notice === 'unavailable') { stats.unavailable++; continue; }
+      // SC-001: every anchored block starts at the prayer time plus or minus its minutes, rounded to 5
+      idx.forEach(j => {
+        const an = list[j][5];
+        let want = Math.round((pm[an.prayer] + (an.dir === 'before' ? -an.min : an.min)) / 5) * 5;
+        if (want < app.START) want += 1440;
+        if (A[j].s !== want) stats.bad.push(iso + ': block ' + j + ' starts at ' + A[j].s + ', wanted ' + want);
+        stats.minDelta = Math.min(stats.minDelta, A[j].s - fixed[j].s); stats.maxDelta = Math.max(stats.maxDelta, A[j].s - fixed[j].s);
+      });
+      // SC-002, SC-003: no overlap, day start and end unchanged, only the absorbing blocks change length
+      if (!A.every((b, i) => b.e > b.s && (i === 0 || b.s === A[i - 1].e))) stats.bad.push(iso + ': overlap or empty block');
+      if (A[0].s !== fixed[0].s || A[A.length - 1].e !== app.END) stats.bad.push(iso + ': day start or end moved');
+      const absorbing = new Set([A.length - 1]); idx.forEach(j => absorbing.add(j - 1));
+      A.forEach((b, i) => { const same = (b.e - b.s) === (fixed[i].e - fixed[i].s); if (!absorbing.has(i) && !same) stats.bad.push(iso + ': block ' + i + ' changed length'); if (absorbing.has(i)) stats.minAbsorb = Math.min(stats.minAbsorb, b.e - b.s); });
+      if (idx.length === 1) {
+        const dl = A.map((b, i) => (b.e - b.s) - (fixed[i].e - fixed[i].s)).reduce((s, v) => s + v, 0);
+        if (dl !== 0) stats.bad.push(iso + ': absorbing blocks do not balance');
+      }
+      if (A.some((b, i) => b.key !== list[i][0] + '-' + list[i][1])) stats.bad.push(iso + ': key not at fixed start');
+    }
+  }
+  const fmt = v => Number.isFinite(v) ? v : 'n/a';
+  console.log('sweep ' + fromYear + '-' + toYear + ' with ' + path.basename(settingsFile) + ': ' + stats.dates + ' dates, ' + stats.anchoredDays + ' with anchored blocks, ' + stats.nofit + ' not fitting, ' + stats.unavailable + ' without prayer times');
+  if (stats.anchoredDays) console.log('  shift of anchored blocks vs fixed time: ' + fmt(stats.minDelta) + ' to ' + fmt(stats.maxDelta) + ' minutes; shortest absorbing block: ' + fmt(stats.minAbsorb) + ' minutes');
+  stats.bad.slice(0, 10).forEach(m => console.log('  FAIL ' + m));
+  if (stats.bad.length > 10) console.log('  ... and ' + (stats.bad.length - 10) + ' more');
+  if (!stats.anchoredDays) console.log('  (no anchored blocks in this file: nothing to sweep)');
+  const ok = !stats.bad.length && (!requireFit || (stats.nofit === 0 && stats.unavailable === 0));
+  if (requireFit && (stats.nofit || stats.unavailable)) console.log('  FAIL --require-fit: some anchored days fall back to fixed times');
+  console.log('  ' + (ok ? 'ok    year sweep' : 'FAIL  year sweep'));
+  return ok;
+}
+
 function report(results) {
   results.forEach(([n, ok]) => console.log((ok ? 'ok    ' : 'FAIL  ') + n));
   const failed = results.filter(r => !r[1]).length;
@@ -162,4 +241,11 @@ if (process.argv.includes('--self-test')) {
 
 let results;
 try { results = runChecks(load(html)); } catch (e) { console.error(e.message); process.exit(2); }
-process.exit(report(results) ? 1 : 0);
+const failedChecks = report(results);
+let sweepOk = true;
+try {
+  const file = opt('settings') || path.join(__dirname, '..', 'settings.example.json');
+  console.log('');
+  sweepOk = sweep(file, Number(opt('from') || 2026), Number(opt('to') || 2028), argv.includes('--require-fit'));
+} catch (e) { console.error(e.message); process.exit(2); }
+process.exit(failedChecks || !sweepOk ? 1 : 0);

@@ -903,14 +903,15 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return fits ? {blocks: make(starts), notice: null} : {blocks: make(fixed), notice: 'nofit'};
   }
   // end of anchor layout
-  function blocksFor(iso){
+  // The day's block list from the settings (version A or B by phaseFor), laid out for that date's prayer times.
+  function listFor(iso){
     const day = SCHED[weekday(iso)] || {blocks: []};
-    const list = Array.isArray(day.blocks) ? day.blocks : (day.blocks[phaseFor(iso)] || day.blocks.A);
-    return list.map((b, i) => {
-      const s = toMin(b[0]), e = i + 1 < list.length ? toMin(list[i+1][0]) : END;
-      return {s, e, cat:b[1], title:b[2], detail:b[3] || '', subj:b[4] || '', key:b[0] + '-' + b[1]};
-    });
+    return Array.isArray(day.blocks) ? day.blocks : (day.blocks[phaseFor(iso)] || day.blocks.A);
   }
+  function dayLayout(iso){ return layoutDay(listFor(iso), prayers(iso), START, END); }
+  function blocksFor(iso){ return dayLayout(iso).blocks; }
+  // null, 'unavailable' (no prayer times for this date) or 'nofit' (the day cannot hold the anchors): blocks are at their fixed times.
+  function dayNotice(iso){ return dayLayout(iso).notice; }
   function apptsFor(iso, store){
     const wd = weekday(iso);
     return (store.appts || []).filter(a => Number(a.day) === wd && a.time).map(a => {
