@@ -67,8 +67,9 @@ overlap, and the last block ends exactly at the day's end.
 1. **Given** an anchored day, **When** the user opens it on the latest-prayer-time date, **Then** no
    block is shorter than planned, none overlaps another, and the day ends by its usual end.
 2. **Given** the same day on the earliest-prayer-time date, **Then** the same holds.
-3. **Given** the Week view, **When** the anchored block moves between dates, **Then** the planned hours
-   per category for that weekday do not change because of the shift.
+3. **Given** the Week view, **When** the anchored block moves between dates, **Then** the planned hours of
+   every block other than the two absorbing ones do not change, and the two absorbing blocks change by equal
+   and opposite amounts (what one gains the other loses).
 4. **Given** a date where the anchored time cannot be honoured honestly (it would leave an absorbing
    block too short or push the day past its end), **When** the user opens it, **Then** the anchored block
    is at its fixed time on that date and a short note says the anchor was not applied.
