@@ -39,7 +39,7 @@ Deterministic scan: CLI on src/planner.html found 1 finding (low-contrast #94a3b
 
 1. [P1] The current block is buried. On a 390px phone at 11:15pm the "دلوقتي" block starts 1,432px down, under the day picker, prayers, target card, progress and the day note. Fix: a compact "دلوقتي / الجاي" card at the top with a one-tap check, prayers and target folded into one slim strip, and the timeline scrolled to now on open. Commands: layout, distill.
 2. [P1] Check targets are 26px. The main mid-day action is a thumb tap. Fix: make the whole block row the toggle, or a 44px target. Command: adapt.
-3. [P2] Color overload. Nine categories; كلية, مذاكرة and كورس sit in close blue/teal/violet; amber and pink tags fail AA; the week strip needs a 10-item legend. Fix: three families (university, course, life) plus quiet tones for rest and commute; darken tag text. Commands: colorize, quieter.
+3. [P2] Color overload. Nine categories; the uni, study and course categories sit in close blue/teal/violet; amber and pink tags fail AA; the week strip needs a 10-item legend. Fix: three families (university, course, life) plus quiet tones for rest and commute; darken tag text. Commands: colorize, quieter.
 4. [P2] Done or not-done only. Gym days get skipped, lectures move; stats cannot tell skipped from forgotten, and small schedule edits in the app (wanted) do not exist. Fix: a second action per block (اتلغى / اتنقل), then an edit mode. Command: shape.
 5. [P2] Copy and time formatting. "0 س شغل حقيقي", "0 من 11" with no unit, end times wrapping to a lone "ل". Fix: rewrite labels and keep the range on one line. Command: clarify.
 

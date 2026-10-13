@@ -39,7 +39,7 @@ Deterministic scan: CLI 1 finding, the same false positive as before (#94a3b0, t
 
 1. [P2] "اتلغى النهارده" on the now card applies at once with no undo, and the card moves on to the next block. Fix: send it through the undo toast. Command: harden.
 2. [P2] On phones the target card and the day note still sit between the now card and the first block (~600px). Fix: fold the note under the heading or after the timeline; consider a slimmer target line. Command: distill.
-3. [P2] Mixed-direction text breaks: the course subtitle splits around "n8n و AI Automation", and long lecturer names wrap mid-name in row meta. Fix: isolate Latin runs with bdi, shorten meta. Command: typeset.
+3. [P2] Mixed-direction text breaks: a mixed-script course subtitle splits across lines, and long lecturer names wrap mid-name in row meta. Fix: isolate Latin runs with bdi, shorten meta. Command: typeset.
 4. [P3] The Course tab detector finding is unexamined. Command: audit.
 
 ## Persona Red Flags

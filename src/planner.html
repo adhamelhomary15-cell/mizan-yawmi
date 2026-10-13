@@ -721,228 +721,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   })();
   const CFG = LOADED.settings;
 
-  /* ---------------- schedule data ---------------- */
-  const OLD_CATS = {
-    uni:{label:'كلية', long:'حضور الكلية', track:true},
-    study:{label:'مذاكرة', long:'مذاكرة', track:true},
-    course:{label:'كورس', long:'الكورس', track:true},
-    work:{label:'شغل', long:'الشغل', track:true},
-    gym:{label:'جيم', long:'الجيم', track:true},
-    quran:{label:'قرآن', long:'القرآن', track:true},
-    personal:{label:'وقتك', long:'وقتك الخاص', track:false},
-    move:{label:'مواصلات', long:'مواصلات', track:false},
-    rest:{label:'راحة', long:'راحة', track:false}
-  };
-  const OLD_SUBJ = {MATH:'Math-3', OOP:'OOP', OR:'Operations Research', NET:'Networks', HU:'Economics + Social Issues'};
+  /* ---------------- fixed names (weekdays) ---------------- */
   const DAY_NAMES = {6:'السبت',0:'الحد',1:'الاتنين',2:'التلات',3:'الأربع',4:'الخميس',5:'الجمعة'};
   const DAY_SHORT = {6:'سبت',0:'حد',1:'اتنين',2:'تلات',3:'أربع',4:'خميس',5:'جمعة'};
   const WEEK_ORDER = [6,0,1,2,3,4,5];
-  const GYM_NOTE = 'صلّي المغرب وروح، وارجع على العشا';
 
-  // [start, category, title ("Subject|action" splits), detail, subject]. Each block ends where the next starts; the last ends at 1:00.
-  const SAT_HEAD = [
-    ['07:30','rest','صحيان وفطار'],
-    ['08:00','quran','حفظ قرآن','والدماغ لسه فاضية'],
-    ['08:45','rest','جهّز للمحاضرة'],
-    ['09:00','course','Arab Automators|محاضرة لايف','أونلاين · من ساعتين لـ 3. لو خلصت بدري، ابدأ تطبيق'],
-    ['12:00','rest','بريك'],
-    ['12:15','study','Operations Research|تحضير سكشن الحد','DS211 · راجع آخر محاضرة وحل مسائلها','OR']
-  ];
-  const MON_HEAD = [
-    ['07:00','rest','صحيان وفطار','بدري عشان محاضرة 8:30'],
-    ['07:45','move','مواصلات للكلية'],
-    ['08:30','uni','Math-3|محاضرة','MA214 · C2-6 · أ.د. طارق أبو العينين'],
-    ['11:30','uni','Math-3|سكشن','MA214 · H2-12'],
-    ['13:00','move','مواصلات للبيت'],
-    ['13:45','rest','راحة']
-  ];
-  const WED_HEAD = [
-    ['07:30','rest','صحيان وفطار'],
-    ['08:00','quran','حفظ قرآن','قبل تسميع الليلة'],
-    ['08:30','study','Economics + Social Issues|مراجعة','HU121 · HU117 · لخّص محاضرات الأسبوع','HU'],
-    ['09:15','move','مواصلات للكلية'],
-    ['10:00','uni','Operations Research|محاضرة','DS211 · C2-7 · د. سالي'],
-    ['13:00','move','مواصلات للبيت']
-  ];
-  const THU_HEAD = [
-    ['07:00','rest','صحيان وفطار','بدري عشان محاضرة 8:30'],
-    ['07:45','move','مواصلات للكلية'],
-    ['08:30','uni','OOP|محاضرة','CS213 · H1-1 · د. صباح'],
-    ['11:30','move','مواصلات للبيت']
-  ];
-  const OLD_SCHED = {
-    6:{note:'محاضرة الكورس لايف 9 الصبح (من ساعتين لـ 3). يوم جيم بين المغرب والعشا، والشغل متقسم عشان يخلص قبل المغرب.', blocks:{
-      A: SAT_HEAD.concat([
-        ['13:15','rest','غدا وراحة'],
-        ['14:00','study','Networks|تحضير سكشن الحد','IT223 · راجع آخر محاضرة','NET'],
-        ['15:00','work','شغل','الجزء الأول: 3 ساعات، يخلص قبل المغرب'],
-        ['18:00','gym','جيم',GYM_NOTE],
-        ['19:45','rest','العشا وعشا'],
-        ['20:30','work','شغل','ساعتين بالليل'],
-        ['22:30','study','Math-3|حل مسائل','MA214 · قبل محاضرة الاتنين','MATH'],
-        ['23:30','personal','وقتك','بكرة محاضرة 8:30']
-      ]),
-      B: SAT_HEAD.concat([
-        ['13:15','rest','غدا وراحة'],
-        ['14:15','work','شغل','الجزء الأول: ساعتين ونص، يخلص قبل المغرب'],
-        ['16:45','gym','جيم',GYM_NOTE],
-        ['18:30','rest','العشا وعشا'],
-        ['19:15','study','Networks|تحضير سكشن الحد','IT223 · راجع آخر محاضرة','NET'],
-        ['20:15','work','شغل','ساعتين ونص بالليل'],
-        ['22:45','study','Math-3|حل مسائل','MA214 · قبل محاضرة الاتنين','MATH'],
-        ['23:45','personal','وقتك','بكرة محاضرة 8:30']
-      ])
-    }},
-    0:{note:'أتقل يوم: كلية من 8:30 لـ 2:30، ومحاضرة Economics أونلاين من 8:30 لـ 10 بالليل، فالشغل متقسم حواليها. صحيان 7:00.', blocks:[
-      ['07:00','rest','صحيان وفطار','بدري عشان محاضرة 8:30'],
-      ['07:45','move','مواصلات للكلية'],
-      ['08:30','uni','Operations Research|سكشن','DS211 · H2-6'],
-      ['10:00','uni','Networks|سكشن','IT223 · H2-9'],
-      ['11:30','uni','Networks|محاضرة','IT223 · C2-6 · د. محمد حامد'],
-      ['14:30','move','مواصلات للبيت'],
-      ['15:15','rest','غدا'],
-      ['15:45','work','شغل','الجزء الأول: 4 ساعات'],
-      ['19:45','rest','عشا وراحة'],
-      ['20:30','uni','Economics|محاضرة أونلاين','HU121 · من 8:30 لـ 10'],
-      ['22:00','work','شغل','آخر ساعة'],
-      ['23:00','study','Networks|ملخص سريع لمحاضرة النهارده','صفحة واحدة، والمراجعة الكاملة الجمعة','NET'],
-      ['23:30','quran','حفظ قرآن'],
-      ['24:00','personal','وقتك','بكرة محاضرة 8:30']
-    ]},
-    1:{note:'يوم كلية: Math-3 من 8:30 لحد 1 (محاضرة وسكشن)، ومذاكرته التلات الصبح. سكشن OOP بقى يوم التلات. يوم جيم بين المغرب والعشا، والشغل متقسم عشان يخلص قبل المغرب. صحيان 7:00.', blocks:{
-      A: MON_HEAD.concat([
-        ['15:15','rest','غدا'],
-        ['15:45','work','شغل','الجزء الأول: ساعتين وربع، يخلص قبل المغرب'],
-        ['18:00','gym','جيم',GYM_NOTE],
-        ['19:45','rest','العشا وعشا'],
-        ['20:30','work','شغل','ساعتين وتلت ارباع بالليل'],
-        ['23:15','quran','حفظ قرآن'],
-        ['23:45','personal','وقتك']
-      ]),
-      B: MON_HEAD.concat([
-        ['15:15','rest','غدا'],
-        ['15:30','work','شغل','الجزء الأول: ساعة وربع، يخلص قبل المغرب'],
-        ['16:45','gym','جيم',GYM_NOTE],
-        ['18:30','rest','العشا وعشا'],
-        ['19:15','work','شغل','3 ساعات وتلت ارباع بالليل'],
-        ['23:00','quran','حفظ قرآن'],
-        ['23:30','personal','وقتك']
-      ])
-    }},
-    2:{note:'كلية حضوري النهارده لسكشن OOP بس (من 11:30 لـ 1). الصبح لمذاكرة Math-3 وتمارين OOP قبل السكشن. Social Issues أونلاين من 6 لـ 8، ومحاضرة الكورس لايف من 9 (من ساعتين لـ 3).', blocks:[
-      ['07:30','rest','صحيان وفطار'],
-      ['08:00','quran','حفظ قرآن'],
-      ['08:30','study','Math-3|مراجعة محاضرة امبارح وحل مسائل السكشن','حلها تاني من غير ما تبص على الحل','MATH'],
-      ['10:00','study','OOP|تمارين قبل السكشن بالكود','اكتب الكود بإيدك، متكتفيش بالقراية','OOP'],
-      ['10:45','move','مواصلات للكلية'],
-      ['11:30','uni','OOP|سكشن','CS213 · من 11:30 لـ 1'],
-      ['13:00','move','مواصلات للبيت'],
-      ['13:45','rest','غدا'],
-      ['14:15','work','شغل','الجزء الأول: 3 ساعات وتلت ارباع'],
-      ['18:00','uni','Social Issues|محاضرة أونلاين','HU117 · من 6 لـ 8'],
-      ['20:00','work','شغل','آخر 45 دقيقة'],
-      ['20:45','rest','عشا وجهّز للمحاضرة'],
-      ['21:00','course','Arab Automators|محاضرة لايف','أونلاين · من ساعتين لـ 3. لو خلصت بدري، الباقي وقتك'],
-      ['24:00','personal','وقتك']
-    ]},
-    3:{note:'محاضرة OR من 10 لـ 1، والتسميع مع الشيخ بعد العشا، فالشغل لازم يخلص قبل العشا. لو التسميع وصل لـ 11، مراجعة OR تتنقل للجمعة.', blocks:{
-      A: WED_HEAD.concat([
-        ['13:45','rest','غدا'],
-        ['14:15','work','شغل','5 ساعات، تخلص قبل العشا'],
-        ['19:15','rest','العشا وأكل خفيف'],
-        ['19:45','quran','تسميع مع الشيخ','بعد صلاة العشا لحد 10، وساعات بيوصل لـ 11'],
-        ['22:00','rest','بريك'],
-        ['22:15','study','Operations Research|مراجعة المحاضرة ومسائل','DS211 · حل مسائل بنفس الطريقة اللي اتشرحت','OR'],
-        ['23:30','personal','وقتك','بكرة محاضرة 8:30']
-      ]),
-      B: WED_HEAD.concat([
-        ['13:45','rest','غدا'],
-        ['14:00','work','شغل','الجزء الأول: 4 ساعات وربع، يخلص قبل العشا'],
-        ['18:15','rest','العشا وأكل خفيف'],
-        ['18:45','quran','تسميع مع الشيخ','بعد صلاة العشا لحد 10، وساعات بيوصل لـ 11'],
-        ['22:00','work','شغل','آخر 45 دقيقة'],
-        ['22:45','study','Operations Research|مراجعة المحاضرة ومسائل','DS211 · حل مسائل بنفس الطريقة اللي اتشرحت','OR'],
-        ['23:45','personal','وقتك','بكرة محاضرة 8:30']
-      ])
-    }},
-    4:{note:'يوم جيم بين المغرب والعشا. محاضرة OOP الصبح وتذاكرها بعدها على طول، والشغل متقسم عشان يخلص قبل المغرب.', blocks:{
-      A: THU_HEAD.concat([
-        ['12:15','rest','غدا'],
-        ['13:00','study','OOP|مراجعة المحاضرة وكتابة الكود','نفّذ كل مثال اتشرح','OOP'],
-        ['14:45','rest','بريك'],
-        ['15:00','work','شغل','الجزء الأول: 3 ساعات، يخلص قبل المغرب'],
-        ['18:00','gym','جيم',GYM_NOTE],
-        ['19:45','rest','العشا وعشا'],
-        ['20:30','work','شغل','ساعتين بالليل'],
-        ['22:30','quran','حفظ قرآن'],
-        ['23:00','course','Arab Automators|تطبيق على محاضرات الأسبوع','خلّص واجب الموديول'],
-        ['24:00','personal','وقتك','آخر الأسبوع']
-      ]),
-      B: THU_HEAD.concat([
-        ['12:15','rest','غدا'],
-        ['12:45','study','OOP|مراجعة المحاضرة وكتابة الكود','نفّذ كل مثال اتشرح','OOP'],
-        ['14:15','work','شغل','الجزء الأول: ساعتين ونص، يخلص قبل المغرب'],
-        ['16:45','gym','جيم',GYM_NOTE],
-        ['18:30','rest','العشا وعشا'],
-        ['19:15','quran','حفظ قرآن'],
-        ['19:45','work','شغل','ساعتين ونص بالليل'],
-        ['22:15','course','Arab Automators|تطبيق على محاضرات الأسبوع','خلّص واجب الموديول'],
-        ['23:30','personal','وقتك','آخر الأسبوع']
-      ])
-    }},
-    5:{note:'أجازة من الشغل. أكبر جلسة للكورس في الأسبوع، والتسميع مع الشيخ من المغرب للعشا، والليل كله ليك.', blocks:{
-      A: [
-        ['09:00','rest','صحيان وفطار','أجازة الشغل'],
-        ['09:30','course','Arab Automators|جلسة البناء','أطول جلسة: خلّص مشروع الموديول أو الـ workflow الكبير'],
-        ['12:00','rest','صلاة الجمعة وغدا'],
-        ['14:00','course','Arab Automators|كمّل البناء','واللي اتأجل من الأسبوع'],
-        ['15:30','study','Math-3|حل شيت كامل','MA214','MATH'],
-        ['17:30','quran','مراجعة قبل التسميع','راجع اللي هتسمّعه'],
-        ['18:15','quran','تسميع مع الشيخ','من المغرب للعشا'],
-        ['19:45','rest','العشا وعشا'],
-        ['20:30','study','Operations Research|مسائل الأسبوع','DS211','OR'],
-        ['21:15','study','Networks|مراجعة الأسبوع','IT223','NET'],
-        ['22:00','rest','خطّط للأسبوع الجاي','علّم الموديولات اللي خلصت وضيف المهام الجديدة'],
-        ['22:15','personal','وقتك','الليلة دي كلها ليك']
-      ],
-      B: [
-        ['09:00','rest','صحيان وفطار','أجازة الشغل'],
-        ['09:30','course','Arab Automators|جلسة البناء','خلّص مشروع الموديول أو الـ workflow الكبير'],
-        ['11:15','rest','صلاة الجمعة وغدا'],
-        ['13:15','course','Arab Automators|كمّل البناء','واللي اتأجل من الأسبوع'],
-        ['14:45','study','Math-3|حل شيت كامل','MA214','MATH'],
-        ['16:30','quran','مراجعة قبل التسميع','راجع اللي هتسمّعه'],
-        ['17:00','quran','تسميع مع الشيخ','من المغرب للعشا'],
-        ['18:30','rest','العشا وعشا'],
-        ['19:15','study','Operations Research|مسائل الأسبوع','DS211','OR'],
-        ['20:00','study','Networks|مراجعة الأسبوع','IT223','NET'],
-        ['20:45','rest','خطّط للأسبوع الجاي','علّم الموديولات اللي خلصت وضيف المهام الجديدة'],
-        ['21:00','personal','وقتك','الليلة دي كلها ليك']
-      ]
-    }}
-  };
-
-  const OLD_COURSE = {name:'Arab Automators', sub:'أتمتة بـ n8n والذكاء الاصطناعي · لايف السبت 9ص والتلات 9م'};
-
-  const OLD_PLAN = [
-    {from:'2026-10-12', to:'2026-10-16', label:'12 – 16 أكتوبر', note:'أسبوع ناقص (بادئ من الاتنين)، وجلسة الجمعة تخلّص موديول 02.', items:[
-      ['01','n8n Foundations: Automation & Workflows'],
-      ['02','APIs, Webhooks & Data']]},
-    {from:'2026-10-17', to:'2026-10-23', label:'17 – 23 أكتوبر', items:[
-      ['03','Databases & Supabase'],
-      ['04','WhatsApp Automation & Integrations']]},
-    {from:'2026-10-24', to:'2026-10-30', label:'24 – 30 أكتوبر', note:'موديول 05 مشاريع حقيقية وتقيل، اديله جلسة الجمعة كلها.', items:[
-      ['05','Production Projects: Real-World Automation'],
-      ['06','Your First AI Agent']]},
-    {from:'2026-10-31', to:'2026-11-06', label:'31 أكتوبر – 6 نوفمبر', items:[
-      ['07','RAG & Sub-Agents'],
-      ['08','Agentic System']]},
-    {from:'2026-11-07', to:'2026-11-13', label:'7 – 13 نوفمبر', note:'المشروع في جلسات الصبح، والبونص في جلسات الليل.', items:[
-      ['09','Final Graduation Project: From Idea to Production'],
-      ['B1','Claude Code: AI-Powered Development','3 محاضرات'],
-      ['B2','Tips to Get Clients & Handle Them','محاضرتين']]}
-  ];
-  const OLD_TASK_TAGS = {uni:'كلية', course:'كورس', quran:'قرآن', work:'شغل', personal:'شخصي'};
+  // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
+  // Each block ends where the next starts; the last ends at the end of the day.
 
   /* ---------------- data derived from settings ---------------- */
   // Missing categories fall back to these generic labels so every category id always has a label.
@@ -1075,17 +860,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       return {min:m, label:a.label};
     });
   }
-
-  const OLD_RULES = [
-    'أيام محاضرة 8:30 (الحد والاتنين والخميس): اصحى 7:00 مش 7:30.',
-    'الجيم السبت والاتنين والخميس بين المغرب والعشا، والشغل في الأيام دي بيتقسم عشان يخلص قبل المغرب. لو مرحتش، دوس على البلوك واختار "اتلغى النهارده".',
-    'محاضرات الكورس اللايف السبت 9 الصبح والتلات 9 بالليل (من ساعتين لـ 3). محاضرات الكلية الأونلاين: Economics الحد من 8:30 لـ 10 بالليل، وSocial Issues التلات من 6 لـ 8.',
-    'الأربع: التسميع بعد العشا، فالشغل كله قبل العشا. لو التسميع وصل لـ 11، مراجعة OR تتنقل للجمعة.',
-    'آخر أكتوبر الساعة بترجع ساعة، والجدول بيظبط مواعيده لوحده عشان الجيم والتسميع يفضلوا في مكانهم من الصلاة.',
-    'لو الشغل بالليل اتمد: بلوك الكورس يتنقل لجلسة الجمعة أو السبت الصبح.',
-    'ذاكر كل مادة في يوم المحاضرة أو اليوم اللي بعده.',
-    'الميدترم غالباً آخر نوفمبر أو ديسمبر، يعني بعد ما خطة الكورس تخلص. أسبوع الميدترم: الكورس جلسة الجمعة بس، والباقي للمادة اللي عليها امتحان.'
-  ];
 
   /* ---------------- courses ---------------- */
   const BUILTIN_ID = 'aa';
@@ -1240,7 +1014,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const Star = () => html`<svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.2l2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.6l-5.3 2.9 1.1-5.9-4.4-4.1 6-.8z"/></svg>`;
   const Chevron = ({dir}) => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d=${dir === 'next' ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'}/></svg>`;
   const Time = ({min}) => { const f = fmt(min); return html`<bdi class="t">${f.t}</bdi><span class="suf">${f.s}</span>`; };
-  // Course study slots follow whichever course is main; the live lectures stay Arab Automators.
+  // Course study slots follow whichever course is main; the live lectures keep the built-in course's name.
   // The built-in course's name in a block title ("Name|action" or just "Name") is swapped for whichever course is main.
   const showTitle = text => {
     if (text.indexOf('محاضرة لايف') > -1 || !COURSE.name) return text;
@@ -1445,7 +1219,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return html`<form class="panel add-form" onSubmit=${submit}>
       <div class="sec-head"><h2>حاجة زيادة لليوم ده</h2><button type="button" class="btn ghost small" onClick=${onDone}>إلغاء</button></div>
       <div class="form-row">
-        <label class="field wide" for="ab-title">إيه هي<input id="ab-title" value=${title} onInput=${x => setTitle(x.target.value)} placeholder="مثلاً: محاضرة تعويضية Networks" maxlength="80" /></label>
+        <label class="field wide" for="ab-title">إيه هي<input id="ab-title" value=${title} onInput=${x => setTitle(x.target.value)} placeholder="مثلاً: محاضرة تعويضية" maxlength="80" /></label>
         <label class="field" for="ab-s">من<input id="ab-s" type="time" value=${s} onInput=${x => setS(x.target.value)} /></label>
         <label class="field" for="ab-e">لحد<input id="ab-e" type="time" value=${e} onInput=${x => setE(x.target.value)} /></label>
         <label class="field" for="ab-cat">النوع<select id="ab-cat" value=${cat} onChange=${x => setCat(x.target.value)}>
@@ -1807,7 +1581,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         <div class="panel">
           ${taskForm ? html`<form class="form" onSubmit=${addTask} style="margin-bottom:10px">
             <div class="form-row">
-              <label class="field wide" for="task-text">مهمة جديدة<input id="task-text" value=${text} onInput=${e => setText(e.target.value)} placeholder="مثلاً: حل شيت 3 في Math-3" maxlength="140" /></label>
+              <label class="field wide" for="task-text">مهمة جديدة<input id="task-text" value=${text} onInput=${e => setText(e.target.value)} placeholder="مثلاً: حل شيت 3" maxlength="140" /></label>
               <label class="field" for="task-tag">النوع<select id="task-tag" value=${tag} onChange=${e => setTag(e.target.value)}>
                 ${Object.keys(TASK_TAGS).map(k => html`<option value=${k}>${TASK_TAGS[k]}</option>`)}</select></label>
               <label class="field" for="task-due">آخر ميعاد (اختياري)<input id="task-due" type="date" value=${due} onInput=${e => setDue(e.target.value)} /></label>
@@ -1995,7 +1769,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
     return html`<div class="shell">
       <nav class="nav" aria-label="أقسام">
-        <p class="brand">ميزان يومي<small>كلية · كورس · شغل · جيم · قرآن</small></p>
+        <p class="brand">ميزان يومي<small>${CATS.uni.label} · ${CATS.course.label} · ${CATS.work.label} · ${CATS.gym.label} · ${CATS.quran.label}</small></p>
         <div class="nav-in">
           ${TABS.map(([k, label, paths]) => html`<button type="button" aria-current=${tab === k ? 'page' : null} onClick=${() => goTab(k)}><${Icon} paths=${paths} /><span>${label}</span>${k === 'settings' && LOADED.isExample ? html`<i class="dot" aria-hidden="true"></i>` : null}</button>`)}
         </div>
