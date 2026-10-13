@@ -91,10 +91,10 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 6.
 
-- [ ] T019 [US4] Add one anchored block to the embedded example in `src/planner.html` (about lines 339-520): the exercise block of one weekday that has a block before and a block after it gets the sixth element `{"prayer":"maghrib","dir":"before","min":30}`, keeping its fixed time as today and `""` for the unused detail and subject positions. Use generic values only. Then run `node tools/check-settings.js --write-example` to regenerate `settings.example.json`.
-- [ ] T020 [US4] Confirm with the year sweep (`node tools/check-anchors.js`) that the example's anchored block fits on every date of every swept year for the example's city, so the example shows the anchor working and not the fallback; if it does not fit, move its fixed time or neighbours in the example (not the rule).
-- [ ] T021 [US4] Add the anchored count to the import summary in `src/planner.html` (about line 1737 for the count, about line 1789 for the text): `N بلوك مربوط بالصلاة` shown only when N is more than 0, counting across all days and both versions.
-- [ ] T022 [US4] Verify the import cases in the browser per quickstart section 6 (unknown prayer, `min` of 200, direction `later`, first block, last block, then a valid file): the first five are rejected with the day, version and field named and nothing replaced; the valid file shows the count in its summary.
+- [x] T019 [US4] Add one anchored block to the embedded example in `src/planner.html` (about lines 339-520): the exercise block of one weekday that has a block before and a block after it gets the sixth element `{"prayer":"maghrib","dir":"before","min":30}`, keeping its fixed time as today and `""` for the unused detail and subject positions. Use generic values only. Then run `node tools/check-settings.js --write-example` to regenerate `settings.example.json`.
+- [x] T020 [US4] Confirm with the year sweep (`node tools/check-anchors.js`) that the example's anchored block fits on every date of every swept year for the example's city, so the example shows the anchor working and not the fallback; if it does not fit, move its fixed time or neighbours in the example (not the rule).
+- [x] T021 [US4] Add the anchored count to the import summary in `src/planner.html` (about line 1737 for the count, about line 1789 for the text): `N بلوك مربوط بالصلاة` shown only when N is more than 0, counting across all days and both versions.
+- [x] T022 [US4] Verify the import cases in the browser per quickstart section 6 (unknown prayer, `min` of 200, direction `later`, first block, last block, then a valid file): the first five are rejected with the day, version and field named and nothing replaced; the valid file shows the count in its summary.
 
 **Checkpoint**: all four stories pass. Commit as `feat(anchors): example, import summary and messages (004, US4)`.
 
