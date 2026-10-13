@@ -329,6 +329,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .wk-picklist{display:flex;flex-direction:column;padding:6px 14px}
 .wk-pick{display:block;width:100%;text-align:start;background:none;border:0;border-top:1px solid var(--line);min-height:48px;padding:10px 0;cursor:pointer;font-size:15px}
 .wk-pick:first-child{border-top:0}
+.wk-exrow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;border-top:1px solid var(--line)}
+.wk-exrow:first-child{border-top:0}
+.wk-exrow .wk-pick{flex:1;width:auto;border-top:0}
+.wk-exrow .btn{min-height:44px}
+.wk-ask{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wk-exs{display:flex;flex-direction:column;gap:14px}
+.wk-exadd{display:flex;flex-direction:column;gap:10px}
 .wk-sheet{position:fixed;inset-inline:var(--s4);bottom:calc(84px + env(safe-area-inset-bottom, 0px));z-index:7;max-width:520px;margin-inline:auto;display:flex;flex-direction:column;gap:var(--s2);background:var(--surface);border:1px solid var(--fg);border-radius:14px;padding:var(--s4);box-shadow:0 8px 24px rgba(10,16,22,.22)}
 .wk-sheet-actions{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s2)}
 .wk-sheet-actions .btn{flex:1 1 8rem;min-height:44px}
@@ -2355,6 +2362,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return html`<div class="filters wk-switch" role="group" aria-label="أقسام التمارين">
       <button type="button" class="btn" aria-pressed=${cur === 'home' ? 'true' : 'false'} onClick=${() => go({n: 'home'})}>تمرين</button>
       <button type="button" class="btn" aria-pressed=${cur === 'history' ? 'true' : 'false'} onClick=${() => go({n: 'history'})}>السجل</button>
+      <button type="button" class="btn" aria-pressed=${cur === 'exercises' ? 'true' : 'false'} onClick=${() => go({n: 'exercises'})}>التمارين</button>
     </div>`;
   }
 
@@ -2408,6 +2416,39 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
+  // Every exercise, searchable. Own exercises can be added; one with no history and in no routine can be deleted.
+  function ExercisesScreen({all, workouts, routines, onOpen, onAdd, onDelete}){
+    const [q, setQ] = useState('');
+    const [nm, setNm] = useState('');
+    const [err, setErr] = useState('');
+    const [ask, setAsk] = useState(null);
+    const nq = normName(q);
+    const shown = nq ? all.filter(x => normName(x.name).indexOf(nq) >= 0) : all;
+    return html`<div class="wk-exs">
+      <label class="field"><span>دوّر على تمرين</span>
+        <input type="text" value=${q} autocomplete="off" onInput=${e => setQ(e.target.value)} />
+      </label>
+      <div class="panel wk-picklist">
+        ${shown.length ? shown.map(x => {
+          const own = x.id.indexOf('s-') !== 0, d = own ? canDeleteExercise(x.id, workouts, routines) : null;
+          return html`<div class="wk-exrow" key=${x.id}>
+            <button type="button" class="wk-pick" onClick=${() => onOpen(x.id)}><bdi>${x.name}</bdi></button>
+            ${d && d.ok && ask !== x.id ? html`<button type="button" class="btn danger" aria-label=${'امسح ' + x.name} onClick=${() => setAsk(x.id)}>امسح</button>` : null}
+            ${d && d.ok && ask === x.id ? html`<span class="wk-ask">متأكد؟ <button type="button" class="btn danger" onClick=${() => { setAsk(null); onDelete(x.id); }}>أيوه، امسح</button> <button type="button" class="btn" onClick=${() => setAsk(null)}>لأ</button></span>` : null}
+            ${d && !d.ok ? html`<span class="small muted">${d.reason === 'history' ? 'التمرين ده ليه سجل' : html`التمرين ده في روتين: <bdi>${d.routineName}</bdi>`}</span>` : null}
+          </div>`;
+        }) : html`<p class="empty">مفيش تمرين بالاسم ده.</p>`}
+      </div>
+      <form class="panel wk-exadd" onSubmit=${e => { e.preventDefault(); const r = onAdd(nm); if (r) setErr(r); else { setNm(''); setErr(''); } }}>
+        <label class="field"><span>ضيف تمرين</span>
+          <input type="text" value=${nm} autocomplete="off" onInput=${e => { setNm(e.target.value); setErr(''); }} />
+        </label>
+        <button type="submit" class="btn primary"><${Plus} />ضيف تمرين</button>
+        ${err ? html`<p class="form-err" role="alert">${err}</p>` : null}
+      </form>
+    </div>`;
+  }
+
   function WorkoutView({wk}){
     const {data, update, tooNew, saveFailed} = wk;
     const cur = data.current;
@@ -2433,12 +2474,21 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       const found = screen.id && data.workouts.find(x => x.id === screen.id);
       if (screen.n === 'detail' && found) return html`<${WorkoutDetail} w=${found} rec=${rec} onExercise=${id => go({n: 'exercise', id, back: screen})} onBack=${() => go({n: 'history'})} />`;
       if (screen.n === 'exercise') return html`<${ExerciseScreen} exId=${screen.id} name=${nameOf(screen.id)} rec=${rec} workouts=${data.workouts} onOpen=${id => go({n: 'detail', id})} onBack=${() => go(screen.back || {n: 'history'})} />`;
-      const inHistory = screen.n === 'history';
+      const inHistory = screen.n === 'history', inExs = screen.n === 'exercises';
+      const addOwn = name => {
+        const nm = String(name).trim().replace(/\s+/g, ' ');
+        if (!nm) return 'اكتب اسم التمرين';
+        if (nm.length > 60) return 'الاسم لحد 60 حرف';
+        if (isNameTaken(nm, all)) return 'الاسم ده موجود';
+        update(d => { d.custom.push({id: uid36(), name: nm}); return d; });
+        return null;
+      };
+      const delOwn = id => update(d => { if (canDeleteExercise(id, d.workouts, d.routines).ok) d.custom = d.custom.filter(x => x.id !== id); return d; });
       return html`<div class="wkv">
         <div class="top"><div class="top-meta"><h1>تمارين</h1><p class="sub">سجّل الأوزان والتكرارات، وكله على جهازك بس.</p></div></div>
-        <${WkSwitch} cur=${inHistory ? 'history' : 'home'} go=${go} />
+        <${WkSwitch} cur=${inHistory ? 'history' : inExs ? 'exercises' : 'home'} go=${go} />
         ${warn}
-        ${inHistory ? html`<${HistoryScreen} workouts=${data.workouts} rec=${rec} onOpen=${id => go({n: 'detail', id})} />` : html`<div class="panel wk-home">
+        ${inHistory ? html`<${HistoryScreen} workouts=${data.workouts} rec=${rec} onOpen=${id => go({n: 'detail', id})} />` : inExs ? html`<${ExercisesScreen} all=${all} workouts=${data.workouts} routines=${data.routines} onOpen=${id => go({n: 'exercise', id, back: screen})} onAdd=${addOwn} onDelete=${delOwn} />` : html`<div class="panel wk-home">
           <button type="button" class="btn primary" id="wk-start" onClick=${startEmpty}>ابدأ تمرينة فاضية</button>
           <p class="small muted">${n ? html`تمرينات محفوظة: <bdi>${n}</bdi>` : 'لسه مفيش تمرينات محفوظة.'}</p>
         </div>`}
