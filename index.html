@@ -278,6 +278,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .backup-act .btn{min-height:44px;min-width:44px}
 .restore{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:10px}
 .restore-preview{flex-direction:column;align-items:stretch}
+.storage-line{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line);padding-bottom:10px}
 .appt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2);align-items:center;padding:4px 0;border-top:1px solid var(--line)}
 .appt:first-child{border-top:0}
 .aact{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center}
@@ -2339,6 +2340,39 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     if (wk.tooNew) { try { workouts = JSON.parse(localStorage.getItem(WORKOUTS_KEY)); } catch(e){} }
     return {progress: store, workouts, settings};
   }
+  // Asking the browser to keep this site's data. Reading the state never prompts. Chromium and Safari decide a
+  // persist() request silently; Firefox shows the user a prompt for it, so there it is asked only from the button.
+  // Firefox is told by its user-agent token (InstallTrigger is gone from recent versions).
+  const IS_FIREFOX = (() => { try { return /\bFirefox\//.test(navigator.userAgent || ''); } catch(e){ return false; } })();
+  async function storageStatus(){
+    try {
+      if (!navigator.storage || typeof navigator.storage.persisted !== 'function') return 'unsupported';
+      return (await navigator.storage.persisted()) ? 'kept' : 'may-clear';
+    } catch(e){ return 'unsupported'; }
+  }
+  async function askPersist(){
+    try { if (navigator.storage && typeof navigator.storage.persist === 'function') await navigator.storage.persist(); } catch(e){}
+    return storageStatus();
+  }
+  // Once per start, where the browser decides on its own.
+  const STORAGE_READY = storageStatus().then(s => s === 'may-clear' && !IS_FIREFOX ? askPersist() : s);
+  const STORAGE_LINES = {
+    'kept': 'المتصفح هيحتفظ ببياناتك لحد ما انت تمسحها.',
+    'may-clear': 'المتصفح ممكن يمسح البيانات لو المساحة قلت. احفظ نسخة احتياطية.',
+    'unsupported': 'المتصفح ده مش بيقول إذا كان هيحتفظ بالبيانات. احفظ نسخة احتياطية.'
+  };
+  function StorageLine(){
+    const [st, setSt] = useState(null);
+    const [asking, setAsking] = useState(false);
+    useEffect(() => { let live = true; STORAGE_READY.then(s => { if (live) setSt(s); }); return () => { live = false; }; }, []);
+    if (!st) return null;
+    const ask = async () => { setAsking(true); const s = await askPersist(); setSt(s); setAsking(false); };
+    return html`<div class="storage-line" aria-live="polite">
+      <p class="small">${STORAGE_LINES[st]}</p>
+      ${st === 'may-clear' && IS_FIREFOX ? html`<span class="backup-act"><button type="button" class="btn" disabled=${asking} onClick=${ask}>اطلب من المتصفح يحتفظ بالبيانات</button></span>` : null}
+    </div>`;
+  }
+
   const RESTORE_SYNC_LATE_KEY = 'mizan-restore-sync-late';
   const BACKUP_REFUSALS = {
     'too-large': 'الملف كبير أوي على إنه نسخة احتياطية.',
@@ -2457,6 +2491,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return html`<div class="sec">
       <div class="sec-head"><h2>نسخة احتياطية</h2></div>
       <div class="panel form">
+        <${StorageLine} />
         <p class="small">${last ? html`آخر نسخة: <bdi>${when(last)}</bdi>` : 'لسه ما عملتش نسخة احتياطية على الجهاز ده'}</p>
         <span class="backup-act"><button type="button" class="btn primary" onClick=${save}>احفظ نسخة احتياطية</button>${canShare ? html`<button type="button" class="btn" onClick=${share}>ابعتها لمكان تاني</button>` : null}</span>
         <p class="small muted">الملف فيه بياناتك الشخصية. خليه في مكان آمن ومتبعتهوش لحد.</p>
