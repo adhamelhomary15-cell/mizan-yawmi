@@ -141,15 +141,15 @@ and plan phase 4 = Phase 6 (the owner's private file, outside the repo).
 
 ## Phase 5: Polish
 
-- [ ] T014 [P] In `README.md`, add a few lines after the anchored-block paragraph: what `absorb` does, with the
+- [x] T014 [P] In `README.md`, add a few lines after the anchored-block paragraph: what `absorb` does, with the
   generic example, and that only the anchor's block and the named block change length. In `PRODUCT.md`, extend
   the anchor sentence by a clause.
-- [ ] T015 Run quickstart section 3 in the browser at 375 px. On a summer date and a winter date on the
+- [x] T015 Run quickstart section 3 in the browser at 375 px. On a summer date and a winter date on the
   example's day 0:
   - the course block changes by the shift and ends at 21:00;
   - free time is unchanged;
   - Week agrees with Today.
-- [ ] T016 Rebuild and run every check and both parity runs (0 differences for the no-`absorb` file). Search
+- [x] T016 Rebuild and run every check and both parity runs (0 differences for the no-`absorb` file). Search
   the diff: no `checks`, `modules` or `.done` in the layout block, and no network call. **Commit**:
   `docs(anchors): document the absorbing block (008)`.
 - [ ] T017 Tick the tasks here. Show the owner the diff, and wait for explicit approval before any push or PR
