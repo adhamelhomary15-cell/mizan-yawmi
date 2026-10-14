@@ -244,5 +244,5 @@ Run on `main` at fa4ad5d, a build served locally, in a 375 px browser, with gene
 
   A valid file was imported with progress unchanged. «رجّع المثال» brought back the example, and progress was
   kept.
-- **T034**: The owner imported their own file on their phone on 2026-10-14 (FR-015). Not yet confirmed by the
-  owner: the app on a real phone offline.
+- **T034**: The owner imported their own file on their phone on 2026-10-14 (FR-015). The owner then confirmed the
+  app works on that phone with no network.
