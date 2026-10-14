@@ -48,7 +48,7 @@ plan 3 = Phases 4 and 5, plan 4 = Phase 6, plan 5 = Phase 7.
 
 **Purpose**: Ground the work in the current code before editing.
 
-- [ ] T001 Read the code this feature touches and note its current line numbers in the Phase 2 commit message:
+- [x] T001 Read the code this feature touches and note its current line numbers in the Phase 2 commit message:
   - `useStore`, `flush`, `queue`, `update` and the synced-copy `onSnapshot` (about lines 1083-1138). The synced
     copy loads first on start and would put old progress back (R4).
   - `normalize` (progress, about line 1064) and `EMPTY`.
@@ -59,7 +59,7 @@ plan 3 = Phases 4 and 5, plan 4 = Phase 6, plan 5 = Phase 7.
   - `normalizeRoot`, `WORKOUTS_KEY`, `loadWorkouts`, `useWorkouts` and its `tooNew`.
   - `App`, where `SettingsView` is rendered.
   - The marked blocks (`// start of workout rules` and the others), to place the new block after them.
-- [ ] T002 [P] Run the baseline checks and record the counts in the Phase 2 commit message: `check-workout.js`
+- [x] T002 [P] Run the baseline checks and record the counts in the Phase 2 commit message: `check-workout.js`
   and `--self-test`, `check-paste.js`, `check-edit.js`, `check-settings.js --self-test`,
   `check-anchors.js --require-fit`, and `check-private.js`. Build with `py tools/build.py`, or `python3`
   where that is on PATH.
@@ -73,7 +73,7 @@ new code is not called yet.
 
 **⚠️ CRITICAL**: No story work starts until T003-T007 pass.
 
-- [ ] T003 Add a marked block `// start of backup rules` … `// end of backup rules` in `src/planner.html`
+- [x] T003 Add a marked block `// start of backup rules` … `// end of backup rules` in `src/planner.html`
   after `// end of workout rules`. It uses no storage, no DOM and no `navigator`. It holds:
   - `const BACKUP_FORMAT = 'mizan-backup'`, `const BACKUP_VERSION = 1`, and
     `const BACKUP_MAX_BYTES = 5 * 1024 * 1024`.
@@ -84,7 +84,7 @@ new code is not called yet.
       where `data = {progress, workouts, settings: settings || null}` and `checksum = fnv1a(JSON.stringify(data))`.
     - `name` is `'mizan-backup-' + dateIso + '.json'`, with the date in the app's time zone, passed in by the
       caller.
-- [ ] T004 In the same block, add `readBackup(text, {normalize, normalizeRoot, validateSettings})`. It returns
+- [x] T004 In the same block, add `readBackup(text, {normalize, normalizeRoot, validateSettings})`. It returns
   `{ok: false, code}` or `{ok: true, parts, preview}`, checking in this order:
   - Blank or whitespace text gives `empty`. Text that does not parse as JSON gives `not-json`.
   - An object with `format === 'mizan-settings'` gives `settings-file`. Any other object without
@@ -103,14 +103,14 @@ new code is not called yet.
     The counts are the lengths of the progress lists. `tickDays` is the number of keys in `checks`. `workouts`
     is the number of finished workouts. `openWorkout` is whether `workouts.current` is set.
   - It never throws. The progress part is used as normalised and never edited (R5).
-- [ ] T005 [P] Create `tools/check-backup.js`, a dev-only Node script in the style of `tools/check-workout.js`:
+- [x] T005 [P] Create `tools/check-backup.js`, a dev-only Node script in the style of `tools/check-workout.js`:
   - It loads the backup rules block from `src/planner.html`, plus the real `normalizeRoot` from the workout
     rules block.
   - It loads `validateSettings` the way `tools/check-settings.js` does (`grabFunction`).
   - For `normalize` it uses a small stand-in that copies the progress shape, because the real one depends on
     settings-derived constants.
   - All data is generated and generic. Exit codes are 0 (pass), 1 (fail) and 2 (usage).
-- [ ] T006 In `tools/check-backup.js`, write these checks:
+- [x] T006 In `tools/check-backup.js`, write these checks:
   - **Round trip:** `makeBackup` then `readBackup` gives the same parts, and the preview counts match.
   - **Marks:** the restored `checks` and `modules` deep-equal the file's, with nothing added or dropped.
   - **Settings:** `null` gives `none`; a valid settings object gives `valid`; a broken one gives `invalid` with
@@ -125,7 +125,7 @@ new code is not called yet.
     500 ms in Node.
   - **Isolation:** the block contains no `localStorage`, `navigator.`, `fetch(`, `XMLHttp`, `sendBeacon` or
     `WebSocket`, ignoring comments.
-- [ ] T007 Add `--self-test` to `tools/check-backup.js` with one mutation per rule, which the checks MUST notice:
+- [x] T007 Add `--self-test` to `tools/check-backup.js` with one mutation per rule, which the checks MUST notice:
   - the checksum is skipped;
   - a version of 2 is accepted;
   - a settings file is accepted as a backup;

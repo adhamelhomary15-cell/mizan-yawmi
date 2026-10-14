@@ -2014,6 +2014,59 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   // end of workout rules
 
+  // start of backup rules
+  // One plain file the owner keeps: a marker, a format version, when it was made, a checksum, and the three parts.
+  // Nothing here touches storage, the page or the network; the caller passes the app's own normalisers in, so a
+  // backup is read with the same rules as the data it replaces. Marks are carried exactly as they are, never made.
+  const BACKUP_FORMAT = 'mizan-backup';
+  const BACKUP_VERSION = 1;
+  const BACKUP_MAX_BYTES = 5 * 1024 * 1024;
+  // FNV-1a, 32 bits, over the UTF-16 code units: catches a damaged or hand-edited file; not a security measure.
+  function fnv1a(text){
+    let h = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return ('0000000' + h.toString(16)).slice(-8);
+  }
+  // dateIso is today's date in the app's time zone (the caller knows it); the name holds nothing else.
+  function makeBackup(parts, now, dateIso){
+    const data = {progress: parts.progress, workouts: parts.workouts, settings: parts.settings || null};
+    const file = {format: BACKUP_FORMAT, version: BACKUP_VERSION, createdAt: new Date(now).toISOString(), checksum: fnv1a(JSON.stringify(data)), data};
+    return {text: JSON.stringify(file), name: 'mizan-backup-' + dateIso + '.json'};
+  }
+  // Returns {ok: false, code} or {ok: true, parts, preview}; never throws. Codes: empty, not-json, settings-file,
+  // not-backup, too-new, damaged.
+  function readBackup(text, deps){
+    try {
+      if (typeof text !== 'string' || !text.trim()) return {ok: false, code: 'empty'};
+      let f;
+      try { f = JSON.parse(text); } catch(e){ return {ok: false, code: 'not-json'}; }
+      const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+      if (!isObj(f)) return {ok: false, code: 'not-backup'};
+      if (f.format === 'mizan-settings') return {ok: false, code: 'settings-file'};
+      if (f.format !== BACKUP_FORMAT) return {ok: false, code: 'not-backup'};
+      if (!Number.isInteger(f.version) || f.version < 1) return {ok: false, code: 'damaged'};
+      if (f.version > BACKUP_VERSION) return {ok: false, code: 'too-new'};
+      const d = f.data;
+      if (typeof f.createdAt !== 'string' || Number.isNaN(Date.parse(f.createdAt))) return {ok: false, code: 'damaged'};
+      if (!isObj(d) || !isObj(d.progress) || !isObj(d.workouts) || !(d.settings === null || isObj(d.settings))) return {ok: false, code: 'damaged'};
+      if (typeof f.checksum !== 'string' || f.checksum !== fnv1a(JSON.stringify(d))) return {ok: false, code: 'damaged'};
+      const w = deps.normalizeRoot(d.workouts);
+      if (w.tooNew) return {ok: false, code: 'too-new'};
+      const progress = deps.normalize(d.progress);
+      let settings = null, settingsValid = 'none';
+      if (d.settings !== null) {
+        let r = null;
+        try { r = deps.validateSettings(d.settings); } catch(e){ r = null; }
+        if (r && r.ok) { settings = r.settings; settingsValid = 'valid'; } else settingsValid = 'invalid';
+      }
+      const workouts = w.root;
+      const preview = {createdAt: f.createdAt, tasks: progress.tasks.length, appts: progress.appts.length, courses: progress.courses.length,
+        tickDays: Object.keys(progress.checks).length, workouts: workouts.workouts.length, openWorkout: !!workouts.current, settings: settingsValid};
+      return {ok: true, parts: {progress, workouts, settings, settingsValid}, preview};
+    } catch(e){ return {ok: false, code: 'damaged'}; }
+  }
+  // end of backup rules
+
   /* ---------------- one form for adding and editing a task or an appointment ---------------- */
   // initial: task {text, tag, due} or appt {label, day, time}. onSubmit gets the validated, trimmed value.
   function ItemForm({kind, initial, idPrefix, textLabel, submitLabel, focusFirst, onSubmit, onCancel}){
