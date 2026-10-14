@@ -23,12 +23,14 @@
   "study": {
    "label": "مذاكرة",
    "long": "مذاكرة",
-   "track": true
+   "track": true,
+   "postpone": true
   },
   "course": {
    "label": "كورس",
    "long": "الكورس",
-   "track": true
+   "track": true,
+   "postpone": true
   },
   "work": {
    "label": "شغل",
@@ -43,12 +45,14 @@
   "quran": {
    "label": "ورد",
    "long": "الورد اليومي",
-   "track": true
+   "track": true,
+   "postpone": true
   },
   "personal": {
    "label": "وقتك",
    "long": "وقتك الخاص",
-   "track": false
+   "track": false,
+   "free": true
   },
   "move": {
    "label": "مواصلات",
