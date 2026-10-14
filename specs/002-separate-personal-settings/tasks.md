@@ -123,9 +123,9 @@ description: "Task list for 002 separate personal settings from the public app"
 
 ### Implementation for User Story 4
 
-- [ ] T031 [US4] In `src/planner.html` map validator results to plain Egyptian Arabic messages per contracts/settings-file.md "Import rules": not JSON/empty/wrong `format` ("this is not a settings file"), `version` too high ("made for a newer version of the app"), a required field missing or invalid (name the field, show the first 5 problems), unknown category or subject id in a block (name the day and block), file over 1 MB ("file too large"). Show messages in a polite live region and move focus to it
-- [ ] T032 [US4] In `src/planner.html` show unknown top-level fields as a warning (ignored, never executed) and, when the stored settings fail validation at startup, show a one-time notice that the example is in use, without deleting the stored value
-- [ ] T033 [US4] Run quickstart.md sections 1 and 5: the `--self-test` cases, then import a broken, an empty, and a newer-version file in the browser; confirm each shows a message and that stored settings and the progress object are unchanged; then reset and confirm the example returns with progress kept
+- [x] T031 [US4] In `src/planner.html` map validator results to plain Egyptian Arabic messages per contracts/settings-file.md "Import rules": not JSON/empty/wrong `format` ("this is not a settings file"), `version` too high ("made for a newer version of the app"), a required field missing or invalid (name the field, show the first 5 problems), unknown category or subject id in a block (name the day and block), file over 1 MB ("file too large"). Show messages in a polite live region and move focus to it
+- [x] T032 [US4] In `src/planner.html` show unknown top-level fields as a warning (ignored, never executed) and, when the stored settings fail validation at startup, show a one-time notice that the example is in use, without deleting the stored value
+- [x] T033 [US4] Run quickstart.md sections 1 and 5: the `--self-test` cases, then import a broken, an empty, and a newer-version file in the browser; confirm each shows a message and that stored settings and the progress object are unchanged; then reset and confirm the example returns with progress kept
 
 **Checkpoint**: All four user stories pass independently.
 
@@ -135,9 +135,9 @@ description: "Task list for 002 separate personal settings from the public app"
 
 **Purpose**: Final verification and shipping.
 
-- [ ] T034 Run the whole quickstart.md against the rebuilt `index.html` on a phone-width viewport and, by the owner, on a real phone offline: import the owner's file on each device right after the deploy (FR-015). Record results in `specs/002-separate-personal-settings/research.md` under "Final verification"
+- [x] T034 Run the whole quickstart.md against the rebuilt `index.html` on a phone-width viewport and, by the owner, on a real phone offline: import the owner's file on each device right after the deploy (FR-015). Record results in `specs/002-separate-personal-settings/research.md` under "Final verification"
 - [x] T035 After this feature merges, run `/speckit-constitution` to strike the Transitional Exception from the constitution (a separate amendment; this task only reminds, it does not edit the constitution here)
-- [ ] T036 Tick every finished task in this file, commit each phase with a clear message on branch `002-separate-personal-settings`, and report results to the owner. Open or update a PR only when the owner asks
+- [x] T036 Tick every finished task in this file, commit each phase with a clear message on branch `002-separate-personal-settings`, and report results to the owner. Open or update a PR only when the owner asks
 
 ---
 

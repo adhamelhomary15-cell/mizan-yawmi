@@ -220,3 +220,29 @@ the owner's device, plus a private archive of the removed documents).
   file imported the owner's schedule shows and all five tabs render.
 - **Known**: published git history and the currently published pages still contain the old data until the new
   build is deployed; history is not rewritten (owner's decision).
+
+## Final verification (2026-10-14)
+
+Run on `main` at fa4ad5d, a build served locally, in a 375 px browser, with generic data only.
+
+- **T031**: Import refusals show in a polite live region, and focus moves to the notice. In plain Egyptian Arabic:
+  not a settings file (empty, not JSON, wrong format), made for a newer version, and file over 1 MB. Field
+  problems list the first 5 with the field's path, which names the day and block. Their detail is still the
+  validator's English text, for example `week.0.blocks[2].category: category is not defined in categories`.
+  The owner decided on 2026-10-14 to keep these details in English. They only show when the owner edits the
+  settings file by hand, so the task counts as done.
+- **T032**: Unknown top-level fields are counted in the import preview as ignored. When the stored settings fail
+  validation at startup, the app shows «الإعدادات المحفوظة مش صالحة، فبنعرض المثال». The stored value is kept,
+  not deleted. The notice shows on every start while the settings stay invalid, not only once.
+- **T033**: `check-settings.js --self-test` passes all 37 cases. In the browser, each of these was refused with
+  its message, and the stored settings and the progress were byte-identical before and after:
+  - a broken JSON file;
+  - an empty file;
+  - a newer-version file;
+  - a file with an unknown category;
+  - a file over 1 MB.
+
+  A valid file was imported with progress unchanged. «رجّع المثال» brought back the example, and progress was
+  kept.
+- **T034**: The owner imported their own file on their phone on 2026-10-14 (FR-015). The owner then confirmed the
+  app works on that phone with no network.
