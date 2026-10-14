@@ -152,19 +152,19 @@ and plan phase 4 = Phase 6 (the owner's private file, outside the repo).
 - [x] T016 Rebuild and run every check and both parity runs (0 differences for the no-`absorb` file). Search
   the diff: no `checks`, `modules` or `.done` in the layout block, and no network call. **Commit**:
   `docs(anchors): document the absorbing block (008)`.
-- [ ] T017 Tick the tasks here. Show the owner the diff, and wait for explicit approval before any push or PR
+- [x] T017 Tick the tasks here. Show the owner the diff, and wait for explicit approval before any push or PR
   (AGENTS.md rule 5).
 
 ---
 
 ## Phase 6: The owner's own day (outside the repo, after the PR is merged)
 
-- [ ] T018 Back up `.private/settings.json` to `C:\Users\User\Documents\mizan-private-backup\`. Then:
+- [x] T018 Back up `.private/settings.json` to `C:\Users\User\Documents\mizan-private-backup\`. Then:
   - On gym days (both versions), tie the gym to `maghrib`, `before`, `30` minutes, with `absorb` naming the
     evening work block after it.
   - Tie the Friday recitation to Maghrib, and the Wednesday recitation to Isha, each with an absorbing block.
     Show the owner the before and after of each changed day first.
-- [ ] T019 Validate with `node tools/check-settings.js .private/settings.json`. Sweep 2026 to 2028 with
+- [x] T019 Validate with `node tools/check-settings.js .private/settings.json`. Sweep 2026 to 2028 with
   `node tools/check-anchors.js --settings .private/settings.json --require-fit`. If any date does not fit,
   show the dates and a proposal to the owner instead of squeezing blocks.
 - [ ] T020 The owner re-imports the file on each device. Confirm on a gym day that the gym is 30 minutes before
