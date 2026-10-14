@@ -143,7 +143,7 @@
 - [x] T039 Run the full [quickstart.md](quickstart.md) at 375 px including the network panel (0 requests, SC-007), a reload with an open workout, and that Settings "رجّع المثال" and a settings import leave the workout data untouched; report honestly what only a real phone can show (lock behaviour, vibration, sound, wake lock, offline cold start).
 - [x] T040 Search the diff for the guarantees: `git diff main -- src/planner.html` MUST show no use of `useStore`, `fall26-planner-v1`, `checks`, `modules`, tasks or appointments inside the workout code, no `fetch`, `XMLHttp`, `sendBeacon`, or notification permission request, and no personal exercise, weight or routine; list what you checked in the commit message (Principles II, III and VI).
 - [x] T041 Rebuild, run `node tools/check-workout.js`, `--self-test`, `check-paste.js`, `check-edit.js`, `check-settings.js --self-test`, `check-anchors.js --require-fit`, `check-private.js` with the files staged, and the parity check of T008 again (0 differences for a file used without opening the new tab); report any skipped check honestly.
-- [ ] T042 Tick completed tasks here, show the owner the final diff, and wait for explicit approval before any push or PR (AGENTS.md rule 5).
+- [x] T042 Tick completed tasks here, show the owner the final diff, and wait for explicit approval before any push or PR (AGENTS.md rule 5).
 
 ---
 
