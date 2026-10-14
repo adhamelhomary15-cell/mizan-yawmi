@@ -27,7 +27,9 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const GENERIC = ['last-thursday-october', 'maghrib', 'Egyptian', 'mizan-settings', 'Africa/Cairo', 'Sample city'];
+// Words of the settings format itself, never personal: they may appear in any settings file and in the docs.
+const GENERIC = ['last-thursday-october', 'maghrib', 'Egyptian', 'mizan-settings', 'Africa/Cairo', 'Sample city',
+  'fajr', 'dhuhr', 'asr', 'isha', 'before', 'after'];
 const SKIP_DIRS = ['tools/vendor/'];
 const BINARY = ['.png', '.jpg', '.jpeg', '.gif', '.ico', '.woff', '.woff2', '.zip', '.pdf'];
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
