@@ -324,7 +324,7 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
   - `check-private.js` with the files staged.
 
   Report any skipped check honestly.
-- [ ] T030 Tick the completed tasks here. Show the owner the final diff and wait for explicit approval before
+- [x] T030 Tick the completed tasks here. Show the owner the final diff and wait for explicit approval before
   any push or PR (AGENTS.md rule 5).
 
 **Checkpoint (cut C)**: Commit as `feat(backup): keep the browser's data and polish (007, US4)`.
