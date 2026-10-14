@@ -143,6 +143,10 @@ button{font:inherit;color:inherit}
 .row.quiet .row-body{cursor:default;padding:6px 0}
 .row-body > span{display:block}
 .row.done .title,.row.skipped .title{text-decoration:line-through;text-decoration-thickness:1px;color:var(--muted)}
+.row.moved .title{text-decoration:none}
+.postpone{grid-column:1 / -1;display:flex;flex-direction:column;gap:8px;padding-top:8px}
+.postpone-batch{flex-direction:column;align-items:stretch}
+.postpone-batch p{display:flex;flex-direction:column;gap:4px}
 .time{display:flex;flex-direction:column;line-height:1.35;padding-top:10px;white-space:nowrap;min-width:0}
 .row.quiet .time{padding-top:7px}
 .time .t{font-family:var(--font-mono);font-weight:600;font-size:14.5px;font-variant-numeric:tabular-nums}
@@ -471,12 +475,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   "study": {
    "label": "مذاكرة",
    "long": "مذاكرة",
-   "track": true
+   "track": true,
+   "postpone": true
   },
   "course": {
    "label": "كورس",
    "long": "الكورس",
-   "track": true
+   "track": true,
+   "postpone": true
   },
   "work": {
    "label": "شغل",
@@ -491,12 +497,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   "quran": {
    "label": "ورد",
    "long": "الورد اليومي",
-   "track": true
+   "track": true,
+   "postpone": true
   },
   "personal": {
    "label": "وقتك",
    "long": "وقتك الخاص",
-   "track": false
+   "track": false,
+   "free": true
   },
   "move": {
    "label": "مواصلات",
@@ -1191,10 +1199,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   function hmToMin(t){ let m = toMin(t); if (m < START) m += 1440; return m; }
   function dayBlocks(iso, store){
     const base = blocksFor(iso);
-    const extra = ((store.extras || {})[iso] || []).map(x => ({s: hmToMin(x.s), e: hmToMin(x.e), cat: x.cat, title: x.title, detail: 'حاجة زيادة لليوم ده', subj: '', key: 'x-' + x.id, extra: x.id}));
+    const extra = ((store.extras || {})[iso] || []).map(x => ({s: hmToMin(x.s), e: hmToMin(x.e), cat: x.cat, title: x.title,
+      detail: isISO(x.from) ? 'اتأجلت من ' + dateLabel(x.from) : 'حاجة زيادة لليوم ده', subj: typeof x.subj === 'string' ? x.subj : '', key: 'x-' + x.id, extra: x.id, from: isISO(x.from) ? x.from : null}));
     return base.concat(extra).sort((p, q) => p.s - q.s || (p.extra ? 1 : 0) - (q.extra ? 1 : 0));
   }
-  const statusOf = (store, iso, key) => { const v = (store.checks[iso] || {})[key]; return v === true ? 'done' : v === 'skip' ? 'skip' : null; };
+  // A block's state on a day: done (true), cancelled ('skip'), postponed ({moved: date}), or open.
+  const statusOf = (store, iso, key) => { const v = (store.checks[iso] || {})[key]; return v === true ? 'done' : v === 'skip' ? 'skip' : (v && typeof v === 'object' && isISO(v.moved)) ? 'moved' : null; };
+  const movedTo = (store, iso, key) => { const v = (store.checks[iso] || {})[key]; return v && typeof v === 'object' && isISO(v.moved) ? v.moved : null; };
+  // cancelled or postponed: not part of that day's plan any more
+  const away = st => st === 'skip' || st === 'moved';
+  const dayName = iso => DAY_NAMES[weekday(iso)] + '، ' + dateLabel(iso);
   function setStatus(update, iso, key, val){
     update(s => {
       const c = s.checks[iso] || {};
@@ -1205,9 +1219,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   function dayCounts(iso, store){
     const tracked = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
-    let done = 0, skip = 0, doneMin = 0;
-    tracked.forEach(b => { const st = statusOf(store, iso, b.key); if (st === 'done'){ done++; doneMin += b.e - b.s; } else if (st === 'skip') skip++; });
-    return {total: tracked.length - skip, done, skip, doneMin};
+    let done = 0, skip = 0, moved = 0, doneMin = 0;
+    tracked.forEach(b => { const st = statusOf(store, iso, b.key); if (st === 'done'){ done++; doneMin += b.e - b.s; } else if (st === 'skip') skip++; else if (st === 'moved') moved++; });
+    return {total: tracked.length - skip - moved, done, skip, moved, doneMin};
   }
 
   /* ---------------- small UI pieces ---------------- */
@@ -1278,7 +1292,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const a = {done:0, plan:0, by:{}, order:['uni','study','course']}, b = {done:0, plan:0, by:{}, order:['work','gym','quran']};
     days.forEach(d => dayBlocks(d, store).forEach(bl => {
       const f = FAMILY[bl.cat]; if (!f) return;
-      const st = statusOf(store, d, bl.key); if (st === 'skip') return;
+      const st = statusOf(store, d, bl.key); if (away(st)) return;
       const m = bl.e - bl.s, side = f === 'a' ? a : b;
       side.plan += m; if (st === 'done'){ side.done += m; side.by[bl.cat] = (side.by[bl.cat] || 0) + m; }
     }));
@@ -1341,18 +1355,18 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const k = dayCounts(iso, store);
     const pct = k.total ? Math.round(k.done / k.total * 100) : 0;
     return html`<div class="prog" style="--c:var(--fg)">
-      <div class="prog-row"><span>خلّصت <bdi class="num">${k.done}</bdi> من <bdi class="num">${k.total}</bdi>${k.skip ? html`<span class="muted"> · اتلغى <bdi class="num">${k.skip}</bdi></span>` : null}</span><span class="muted small"><bdi class="num">${hoursText(k.doneMin)}</bdi> س متعلّمة</span></div>
+      <div class="prog-row"><span>خلّصت <bdi class="num">${k.done}</bdi> من <bdi class="num">${k.total}</bdi>${k.skip ? html`<span class="muted"> · اتلغى <bdi class="num">${k.skip}</bdi></span>` : null}${k.moved ? html`<span class="muted"> · اتأجل <bdi class="num">${k.moved}</bdi></span>` : null}</span><span class="muted small"><bdi class="num">${hoursText(k.doneMin)}</bdi> س متعلّمة</span></div>
       <div class="track"><div class="fill" style=${{width: pct + '%'}}></div></div>
     </div>`;
   }
 
   function NowCard({iso, now, store, update, skip, onReview}){
     const blocks = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
-    const live = blocks.filter(b => now.min >= b.s && now.min < b.e && statusOf(store, iso, b.key) !== 'skip');
+    const live = blocks.filter(b => now.min >= b.s && now.min < b.e && !away(statusOf(store, iso, b.key)));
     const cur = live.length ? live[live.length - 1] : null;
     const upcoming = blocks.filter(b => b.s > now.min && statusOf(store, iso, b.key) === null);
     const main = cur || upcoming[0] || null;
-    const after = main ? blocks.find(b => b.s >= main.e && b !== main && statusOf(store, iso, b.key) !== 'skip') || upcoming.find(b => b !== main) : null;
+    const after = main ? blocks.find(b => b.s >= main.e && b !== main && !away(statusOf(store, iso, b.key))) || upcoming.find(b => b !== main) : null;
     const p = prayers(iso);
     const nx = p ? PRAYERS.find(([k]) => p[k] > now.min) : null;
     const fri = weekday(iso) === 5;
@@ -1383,12 +1397,87 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
 
   // Night review: everything not yet marked, one tap each. Opened from the header button.
+  /* ---------------- postponing (the rules are in the "postpone rules" block) ---------------- */
+  const minToHM = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  const canPostpone = b => !!(CATS[b.cat] && CATS[b.cat].postpone);
+  const isFreeCat = c => !!(CATS[c] && CATS[c].free);
+  // The first day a postponed item may go to: the day after the reviewed one, and never a day already past.
+  const postponeStart = (iso, now) => { const n = addDays(iso, 1); return n > now.iso ? n : now.iso; };
+  const postponeDays = (start, n, store, now) => Array.from({length: n}, (_, i) => addDays(start, i)).map(d => {
+    const bl = dayBlocks(d, store);
+    return {iso: d, blocks: bl, extras: bl.filter(b => b.extra), from: d === now.iso ? now.min : START};
+  });
+  // One store change for any number of moves; act() snapshots the store, so one undo puts everything back.
+  const applyPostpone = (iso, moves, taskIds, taskTo) => s => {
+    moves.forEach(({b, to}) => {
+      const c = s.checks[iso] || {}; c[b.key] = {moved: to.iso}; s.checks[iso] = c;
+      const list = (s.extras[to.iso] || []).slice();
+      // stored like the app's other times: after midnight as 00:00-06:59, which hmToMin reads as the same night
+      const x = {id: uid36(), s: minToHM(to.s % 1440), e: minToHM(to.e % 1440), cat: b.cat, title: String(b.title).slice(0, 120), from: b.from || iso};
+      if (b.subj) x.subj = b.subj;
+      list.push(x); s.extras[to.iso] = list;
+    });
+    (taskIds || []).forEach(id => { const t = s.tasks.find(x => x.id === id); if (t) t.due = taskTo; });
+    return s;
+  };
+  const PLACE_ERR = {none: 'اختار ميعاد.', late: 'الميعاد ده بيعدّي آخر اليوم.'};
+
+  // The inline proposal under one review row: «تمام» takes it, «غيّر» opens a day and time picker, «لأ» closes.
+  function PostponePanel({b, iso, now, store, act, onClose}){
+    const start = postponeStart(iso, now), len = b.e - b.s;
+    const prop = useMemo(() => proposePlaces([{len}], postponeDays(start, 7, store, now), isFreeCat)[0], []);
+    const [manual, setManual] = useState(!prop);
+    const days14 = useMemo(() => Array.from({length: 14}, (_, i) => addDays(start, i)), []);
+    const [day, setDay] = useState(prop ? prop.iso : start);
+    const [time, setTime] = useState(prop ? minToHM(prop.s % 1440) : '');
+    const [err, setErr] = useState('');
+    const ref = useRef(null);
+    useEffect(() => {
+      const f = ref.current && ref.current.querySelector('[data-first]'); if (f) f.focus();
+      const key = e => { if (e.key === 'Escape') onClose(); };
+      document.addEventListener('keydown', key);
+      return () => document.removeEventListener('keydown', key);
+    }, []);
+    const go = to => { act('اتأجلت "' + plainTitle(b.title) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
+    const pick = () => {
+      const bl = dayBlocks(day, store), s = time ? hmToMin(time) : NaN;
+      const r = checkManualPlace(bl, bl.filter(x => x.extra), s, len, START, END, c => !!CATS[c].track);
+      if (!r.ok) { setErr(r.code === 'clash' ? 'الميعاد ده بيتداخل مع ' + plainTitle(r.title) + '.' : PLACE_ERR[r.code]); return; }
+      go({iso: day, s, e: r.e});
+    };
+    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + plainTitle(b.title)}>
+      ${!manual ? html`<p class="small">هتتحط <bdi>${dayName(prop.iso)}</bdi> من <bdi>${fmtStr(prop.s)}</bdi> لحد <bdi>${fmtStr(prop.e)}</bdi></p>
+        <span class="backup-act"><button type="button" class="btn primary" data-first="1" onClick=${() => go(prop)}>تمام</button><button type="button" class="btn" onClick=${() => setManual(true)}>غيّر</button><button type="button" class="btn ghost" onClick=${onClose}>لأ</button></span>`
+      : html`${prop ? null : html`<p class="small">مفيش وقت فاضي يسعها في الأسبوع الجاي، اختار يوم وميعاد.</p>`}
+        <div class="form-row">
+          <label class="field">اليوم<select value=${day} onChange=${e => { setDay(e.target.value); setErr(''); }}>${days14.map(d => html`<option value=${d}>${dayName(d)}</option>`)}</select></label>
+          <label class="field">من<input type="time" value=${time} onInput=${e => { setTime(e.target.value); setErr(''); }} /></label>
+        </div>
+        ${err ? html`<p class="form-err" role="alert">${err}</p>` : null}
+        <span class="backup-act"><button type="button" class="btn primary" data-first="1" onClick=${pick}>أجّلها هنا</button><button type="button" class="btn ghost" onClick=${onClose}>لأ</button></span>`}
+    </div>`;
+  }
+
   function Review({iso, now, store, update, skip, act, onClose}){
     const isToday = iso === now.iso;
     const tracked = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
     const open = tracked.filter(b => statusOf(store, iso, b.key) === null && (!isToday || b.s <= now.min));
     const later = isToday ? tracked.filter(b => statusOf(store, iso, b.key) === null && b.s > now.min).length : 0;
     const ab = balanceOf([iso], store);
+    const [pp, setPp] = useState(null);        // the key of the row whose proposal is open
+    const [batch, setBatch] = useState(null);  // the list of proposals for «أجّل اللي فاضل كله»
+    const dueTasks = store.tasks.filter(t => !t.done && t.due === iso);
+    const movable = open.filter(canPostpone);
+    const taskTo = postponeStart(iso, now);
+    const openBatch = () => {
+      const places = proposePlaces(movable.map(b => ({len: b.e - b.s})), postponeDays(taskTo, 7, store, now), isFreeCat);
+      setPp(null); setBatch(movable.map((b, i) => ({b, to: places[i]})));
+    };
+    const applyBatch = () => {
+      const moves = batch.filter(x => x.to), n = moves.length + dueTasks.length;
+      act('اتأجل ' + n + ' حاجة', applyPostpone(iso, moves, dueTasks.map(t => t.id), taskTo));
+      setBatch(null);
+    };
     return html`<section class="review" aria-label="مراجعة اليوم">
       <div class="sec-head"><h2>${isToday ? 'راجع يومك' : 'مراجعة ' + DAY_NAMES[weekday(iso)]}</h2><button type="button" class="btn ghost small" onClick=${onClose}>اقفل</button></div>
       ${open.length ? html`<ul class="review-list">
@@ -1396,10 +1485,27 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           <div class="review-text"><span class="title"><${Title} text=${b.title} /></span><span class="meta"><b>${CATS[b.cat].label}</b> · ${fmtStr(b.s)} لحد ${fmtStr(b.e)}</span></div>
           <div class="review-actions">
             <button type="button" class="btn primary" onClick=${() => setStatus(update, iso, b.key, 'done')}><${CheckSvg} />خلّصته</button>
+            ${canPostpone(b) ? html`<button type="button" class="btn" aria-expanded=${pp === b.key ? 'true' : 'false'} onClick=${() => { setBatch(null); setPp(pp === b.key ? null : b.key); }}>أجّلها</button>` : null}
             <button type="button" class="btn" onClick=${() => skip(b)}>اتلغى</button>
           </div>
+          ${pp === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => setPp(null)} />` : null}
         </li>`)}
       </ul>` : html`<p class="review-empty">${later ? 'كل اللي فات متعلّم.' : 'كل بلوكات اليوم متعلّمة.'}</p>`}
+      ${dueTasks.length ? html`<ul class="review-list review-tasks" aria-label="مهام ميعادها اليوم ده">
+        ${dueTasks.map(t => html`<li class=${'c-' + (t.tag === 'quran' ? 'quran' : t.tag === 'work' ? 'work' : 'study')}>
+          <div class="review-text"><span class="title">${t.text}</span><span class="meta"><b>مهمة</b> · ميعادها اليوم ده</span></div>
+          <div class="review-actions">
+            <button type="button" class="btn primary" onClick=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })}><${CheckSvg} />خلّصتها</button>
+            <button type="button" class="btn" onClick=${() => act('اتأجلت المهمة لـ ' + dayName(taskTo), applyPostpone(iso, [], [t.id], taskTo))}>أجّلها</button>
+          </div>
+        </li>`)}
+      </ul>` : null}
+      ${movable.length + dueTasks.length > 1 && !batch ? html`<button type="button" class="btn review-all" onClick=${openBatch}>أجّل اللي فاضل كله</button>` : null}
+      ${batch ? html`<div class="notice postpone-batch" role="group" aria-label="تأجيل اللي فاضل"><p>
+          ${batch.map(x => html`<span class="small"><${Title} text=${x.b.title} /> ← ${x.to ? html`<bdi>${dayName(x.to.iso)}</bdi> <bdi>${fmtStr(x.to.s)}</bdi>–<bdi>${fmtStr(x.to.e)}</bdi>` : 'مفيش مكان، هيفضل زي ما هو'}</span>`)}
+          ${dueTasks.map(t => html`<span class="small">${t.text} ← <bdi>${dayName(taskTo)}</bdi></span>`)}
+        </p>
+        <span class="backup-act"><button type="button" class="btn primary" onClick=${applyBatch}>أجّلهم</button><button type="button" class="btn ghost" onClick=${() => setBatch(null)}>لأ</button></span></div>` : null}
       ${open.length > 1 ? html`<button type="button" class="btn review-all" onClick=${() => act('اتعلّم ' + open.length + ' بلوك إنهم خلصوا', s => { const c = s.checks[iso] || {}; open.forEach(b => { c[b.key] = true; }); s.checks[iso] = c; return s; })}><${CheckSvg} />علّمهم كلهم خلصوا</button>` : null}
       ${later ? html`<p class="small muted">فاضل <bdi class="num">${later}</bdi> بلوك لسه ميعادهم مجاش.</p>` : null}
       <${DayProgress} iso=${iso} store=${store} />
@@ -1486,17 +1592,18 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
               const body = html`
                 <span class="title"><${Title} text=${b.title} />${quiet ? html`<span class="muted small"> · ${durText(b.e - b.s)}</span>` : null}${cur ? html`<span class="now-pill">دلوقتي</span>` : null}</span>
                 ${quiet ? (b.detail ? html`<span class="meta">${b.detail}</span>` : null)
-                  : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${b.detail ? ' · ' + b.detail : ''}</span>`}
+                  : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${st === 'moved' ? html` · اتأجل لـ <bdi>${dayName(movedTo(store, iso, b.key))}</bdi>` : null}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
-              return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' c-' + b.cat + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '')}>
-                <div>${tracked ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
+              return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' c-' + b.cat + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
+                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
                   : html`<button type="button" class="row-body" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${() => setOpen(isOpen ? null : b.key)}>${body}</button>`}
                 ${quiet ? null : html`<span class="denom" aria-hidden="true">${(b.e - b.s) < 60 ? (b.e - b.s) : hoursText(b.e - b.s)}<small>${(b.e - b.s) < 60 ? 'د' : 'س'}</small></span>`}
                 ${isOpen ? html`<div class="row-actions">
-                  ${tracked ? (st === 'skip'
+                  ${tracked && st === 'moved' ? html`<button type="button" class="btn" onClick=${() => { setOpen(null); setIso(movedTo(store, iso, b.key)); }}>روح لليوم ده</button>`
+                    : tracked ? (st === 'skip'
                     ? html`<button type="button" class="btn" onClick=${() => { setStatus(update, iso, b.key, null); setOpen(null); }}>رجّعه للجدول</button>`
                     : html`<button type="button" class="btn" onClick=${() => { setOpen(null); skip(b); }}>اتلغى النهارده</button>`) : null}
                   ${b.extra ? html`<button type="button" class="btn ghost" onClick=${() => { setOpen(null); remove('اتمسحت "' + b.title + '"', s => { s.extras[iso] = (s.extras[iso] || []).filter(x => x.id !== b.extra); return s; }); }}>امسحها</button>` : null}
@@ -1543,6 +1650,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         if (!CATS[b.cat].track) return;
         const st = statusOf(store, d, b.key);
         if (st === 'skip'){ skipped[b.cat] = (skipped[b.cat] || 0) + m; return; }
+        if (st === 'moved') return;   // counted on the day it was moved to
         plan[b.cat] = (plan[b.cat] || 0) + m;
         if (b.cat === 'gym') gymPlan++;
         if (b.subj) subjPlan[b.subj] = (subjPlan[b.subj] || 0) + m;
@@ -1582,7 +1690,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
               return html`<button type="button" class="strip" onClick=${() => goDay(d)} aria-label=${DAY_NAMES[weekday(d)] + ' ' + dateLabel(d)}>
                 <span class="strip-name">${DAY_SHORT[weekday(d)]}${isToday ? html`<i class="today-dot"></i>` : null}</span>
                 <span class="bar">
-                  ${dayBlocks(d, store).map(b => html`<span class=${'seg c-' + b.cat + (statusOf(store, d, b.key) === 'skip' ? ' skipped' : '')} style=${{insetInlineStart: ((b.s - START)/SPAN*100).toFixed(3) + '%', width: ((b.e - b.s)/SPAN*100).toFixed(3) + '%'}}></span>`)}
+                  ${dayBlocks(d, store).map(b => html`<span class=${'seg c-' + b.cat + (away(statusOf(store, d, b.key)) ? ' skipped' : '')} style=${{insetInlineStart: ((b.s - START)/SPAN*100).toFixed(3) + '%', width: ((b.e - b.s)/SPAN*100).toFixed(3) + '%'}}></span>`)}
                   ${p ? ['dhuhr','asr','maghrib','isha'].map(k => html`<span class="tick" style=${{insetInlineStart: ((p[k] - START)/SPAN*100).toFixed(3) + '%'}}></span>`) : null}
                   ${isToday ? html`<span class="nowmark" style=${{insetInlineStart: ((Math.min(Math.max(now.min, START), END) - START)/SPAN*100).toFixed(3) + '%'}}></span>` : null}
                 </span>

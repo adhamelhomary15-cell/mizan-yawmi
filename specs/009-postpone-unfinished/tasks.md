@@ -66,49 +66,49 @@ self-test, run in CI, plus `check-settings.js` cases.
 
 ## Phase 3: User Story 1 - Postpone one block (Priority: P1) 🎯 MVP
 
-- [ ] T006 [US1] Status: `statusOf` returns `'moved'` for `{moved: 'YYYY-MM-DD'}`. Then:
+- [x] T006 [US1] Status: `statusOf` returns `'moved'` for `{moved: 'YYYY-MM-DD'}`. Then:
   - `dayCounts` returns `moved` and leaves it out of `total`;
   - `balanceOf` and the week view skip moved blocks without counting them as cancelled;
   - the week bar shows them faded;
   - the now card treats them like cancelled blocks.
-- [ ] T007 [US1] Today rows: a moved block shows «اتأجل لـ <اليوم>» with the faded style and no checkbox. Its
+- [x] T007 [US1] Today rows: a moved block shows «اتأجل لـ <اليوم>» with the faded style and no checkbox. Its
   actions offer «روح لليوم ده» (go to that day). `dayBlocks` reads an extra's `from` and `subj`:
   - the detail «اتأجلت من <التاريخ>»;
   - the subject is passed through.
 
   Day progress adds «· اتأجل K».
-- [ ] T008 [US1] Review: for each open tracked block of a postponable kind, add «أجّلها». It opens an inline
+- [x] T008 [US1] Review: for each open tracked block of a postponable kind, add «أجّلها». It opens an inline
   proposal using `proposePlaces`:
   - the days run from the later of the next day and today, 7 of them, with `from` being now on today and the
     day start otherwise;
   - the actions are «تمام», «غيّر» and «لأ», with Escape the same as «لأ»;
   - «غيّر» offers a day select (14 days) and a time, checked with `checkManualPlace`, using the contract's
     messages.
-- [ ] T009 [US1] Apply through `act` (one undo):
+- [x] T009 [US1] Apply through `act` (one undo):
   - `checks[iso][key] = {moved: target}`;
   - add an extra `{id, s, e, cat, title, from, subj}` on the target date, where `from` is the original's `from`
     or the reviewed date;
   - the toast reads «اتأجلت "<العنوان>" لـ <اليوم>».
-- [ ] T010 [US1] Verify quickstart section 2 in the browser at 375 px. **Commit**:
+- [x] T010 [US1] Verify quickstart section 2 in the browser at 375 px. **Commit**:
   `feat(postpone): postpone one block into free time (009, US1)`.
 
 ## Phase 4: User Stories 2 and 3 - Everything left, and tasks (Priority: P2)
 
-- [ ] T011 [US3] The review lists open tasks due on the reviewed day, with «خلّصتها» and «أجّلها». «أجّلها» sets
+- [x] T011 [US3] The review lists open tasks due on the reviewed day, with «خلّصتها» and «أجّلها». «أجّلها» sets
   the due date to the next day, through `act`.
-- [ ] T012 [US2] «أجّل اللي فاضل كله» appears when 2 or more postponable items are open. It shows a list from
+- [x] T012 [US2] «أجّل اللي فاضل كله» appears when 2 or more postponable items are open. It shows a list from
   `proposePlaces`: one line per block, and «← بكره» for tasks. Items with no place are left as they are.
   «أجّلهم» applies them all in one `act`.
-- [ ] T013 Verify quickstart sections 3 and 4. **Commit**:
+- [x] T013 Verify quickstart sections 3 and 4. **Commit**:
   `feat(postpone): postpone everything left, and tasks (009, US2, US3)`.
 
 ## Phase 5: Example and docs
 
-- [ ] T014 In the embedded example, set `postpone: true` on study, course and quran, and `free: true` on personal.
+- [x] T014 In the embedded example, set `postpone: true` on study, course and quran, and `free: true` on personal.
   Regenerate `settings.example.json`.
-- [ ] T015 [P] In `README.md`, add a short section «تأجيل اللي ماتعملش». In `PRODUCT.md`, add a clause about
+- [x] T015 [P] In `README.md`, add a short section «تأجيل اللي ماتعملش». In `PRODUCT.md`, add a clause about
   postponing in the review.
-- [ ] T016 Run the full quickstart at 375 px: totals, privacy, no network. Rebuild and run every check, then
+- [x] T016 Run the full quickstart at 375 px: totals, privacy, no network. Rebuild and run every check, then
   parity for a file without flags. Search the diff: no `true` written by postponing, and no network. **Commit**:
   `docs(postpone): example and docs (009)`.
 
