@@ -64,27 +64,29 @@ where the anchor moves later and a date where it moves earlier:
 
 ### User Story 2 - Marking the absorbing block is easy and hard to get wrong (Priority: P2)
 
-The user marks the absorbing block in the settings file they already import. The importer checks the mark:
-it must come after an anchored block on the same day, and before the next anchored block. A misplaced
-mark is refused with a message naming the day and block, and nothing stored changes.
+In the settings file they already import, the user names, on the anchored block, which later block takes
+the shift. The importer checks the name: it must be a block after the anchored block on the same day, and
+before the next anchored block. A wrong name is refused with a message naming the day and block, and nothing
+stored changes.
 
 **Why this priority**: A wrong mark would lay out a confusing day. Catching it at import keeps the plan
 trustworthy.
 
-**Independent Test**: Import files with a correct mark, a mark on a block with no anchor before it, a mark
-on an anchored block itself, and two marks for one anchor. Only the correct one is accepted, and each of
-the others gets a message naming the day and block. Stored settings and progress are unchanged after a
-refused import.
+**Independent Test**: Import files that name a correct block, a block that does not exist, a block before
+the anchor, and a block at or after the next anchor. Only the correct one is accepted, and each of the
+others gets a message naming the day and block. Stored settings and progress are unchanged after a refused
+import.
 
 **Acceptance Scenarios**:
 
-1. **Given** a file with an absorbing mark right after an anchor and before the next anchor, **When** the user
-   imports it, **Then** it is accepted, and the import summary counts the absorbing blocks.
-2. **Given** a mark with no anchored block before it on that day, **When** the user imports the file,
-   **Then** it is refused with a message naming the day and block.
-3. **Given** a block that is both anchored and marked absorbing, or two absorbing marks between the same
-   two anchors, **When** the user imports the file, **Then** it is refused the same way.
-4. **Given** a day with two versions, **When** the mark is set in one version, **Then** it applies to that
+1. **Given** an anchored block that names a later block before the next anchor, **When** the user imports
+   the file, **Then** it is accepted, and the import summary counts the absorbing blocks.
+2. **Given** an anchored block that names a block that does not exist on that day, or one at or before the
+   anchored block, **When** the user imports the file, **Then** it is refused with a message naming the day
+   and block.
+3. **Given** an anchored block that names a block at or after the next anchored block, **When** the user
+   imports the file, **Then** it is refused the same way.
+4. **Given** a day with two versions, **When** the name is set in one version, **Then** it applies to that
    version only, and the other version keeps its own rule.
 
 ---
@@ -94,7 +96,7 @@ refused import.
 - **Two anchors on one day:** each anchor may have its own absorbing block before the next anchor. The
   shift from the first anchor stops at its absorbing block, and the second anchor starts fresh from its
   fixed time.
-- **The last block of the day is marked absorbing:** this is the same as today's behaviour and is allowed.
+- **The last block of the day is named as absorbing:** this is the same as today's behaviour and is allowed.
 - **Prayer times are unavailable:** every block, including the absorbing one, is at its fixed time, with
   the existing note (unchanged from 004).
 - **The anchor does not move on a date** (shift of 0): every block is at its fixed time.
@@ -106,8 +108,8 @@ refused import.
 
 ### Functional Requirements
 
-- **FR-001**: The settings format MUST let the user mark one block on a day as absorbing the shift of the
-  nearest anchored block before it.
+- **FR-001**: The settings format MUST let the user name, on an anchored block, one later block on the same
+  day that absorbs that anchor's shift.
 - **FR-002**: When an absorbing block exists for an anchor:
   - The blocks from the anchor up to the absorbing block MUST shift with the anchor.
   - The absorbing block MUST end at its fixed end time.
@@ -121,9 +123,9 @@ refused import.
   block MUST be unchanged on every date.
 - **FR-006**: The importer MUST refuse, with a message naming the day and block and without changing stored
   settings or progress, any of these:
-  - an absorbing mark with no anchored block before it on the same day;
-  - a block that is both anchored and absorbing;
-  - more than one absorbing mark between two anchors, or after the last anchor.
+  - a name that matches no block on that day;
+  - a name that matches a block at or before the anchored block;
+  - a name that matches a block at or after the next anchored block.
 - **FR-007**: The import summary MUST report how many blocks are marked absorbing. The example settings
   MUST include a worked example of an absorbing block, with generic values.
 - **FR-008**: The Today view, Week view, the now/next card and the per-category totals MUST all use the same
@@ -162,7 +164,7 @@ refused import.
 
 ## Assumptions
 
-- The mark is written in the settings file, like the anchor from 004. There is no in-app editor for it,
+- The name is written in the settings file, like the anchor from 004. There is no in-app editor for it,
   because the schedule as a whole has none.
 - The minimum length for an absorbing block stays at 15 minutes, as in 004.
 - An absorbing block applies to the nearest anchor before it. The user does not pick a different anchor.
