@@ -299,6 +299,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
 /* workouts */
 .wkv{display:flex;flex-direction:column;gap:var(--s4)}
+.wkv .btn{min-height:44px;min-width:44px}
+.wkv .wk-link{min-width:44px}
 .wk-head{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:var(--s3);background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line)}
 .wk-title{flex:1 1 auto;min-width:0;text-align:center;overflow-wrap:anywhere}
 .wk-title h1{font-size:20px}
@@ -358,7 +360,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .wk-rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s3)}
 .wk-rcard{display:flex;flex-direction:column;gap:4px;min-width:0}
 .wk-rcard-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
-.wk-rcard-head .wk-link{text-decoration:none;min-width:0;overflow-wrap:anywhere}
+.wk-rcard-head .wk-link{text-decoration:none;min-width:44px;overflow-wrap:anywhere}
 .wk-rcard-body{display:flex;flex-direction:column;gap:6px;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:start;cursor:pointer;min-height:44px}
 .wk-clamp{text-align:start;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .wk-rcard .wk-menu{flex-wrap:wrap}
@@ -2382,14 +2384,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   const Stopwatch = () => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M9.5 3.5h5"/></svg>`;
 
-  // A confirmation that stays in view at the bottom; focus starts on the safe choice.
+  // A confirmation that stays in view at the bottom; focus starts on the safe choice and goes back to the
+  // control that opened it when it closes.
   function Sheet({label, onClose, children}){
     const ref = useRef(null);
     useEffect(() => {
+      const opener = document.activeElement;
       const b = ref.current && ref.current.querySelector('[data-first]'); if (b) b.focus();
       const key = e => { if (e.key === 'Escape') onClose(); };
       document.addEventListener('keydown', key);
-      return () => document.removeEventListener('keydown', key);
+      return () => {
+        document.removeEventListener('keydown', key);
+        // after the closing render, if focus was lost with the sheet
+        setTimeout(() => { try { if (opener && opener.isConnected && (!document.activeElement || document.activeElement === document.body)) opener.focus(); } catch(e){} }, 0);
+      };
     }, []);
     return html`<div class="wk-sheet" role="dialog" aria-label=${label} ref=${ref}>${children}</div>`;
   }
@@ -2460,8 +2468,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const rc = recordCount(w, rec.flags);
     const [ed, setEd] = useState(null);   // {ei, si, w, r, err}
     const editKey = ed && ed.ei + ':' + ed.si;
+    const lastKey = useRef(null);
     useEffect(() => {
-      if (!ed) return;
+      // closing the editor puts focus back on that set's «عدّل»
+      if (!ed) { const b = lastKey.current && document.querySelector('[data-fix="' + lastKey.current + '"]'); if (b) b.focus(); lastKey.current = null; return; }
+      lastKey.current = editKey;
       const key = e => { if (e.key === 'Escape') setEd(null); };
       document.addEventListener('keydown', key);
       return () => document.removeEventListener('keydown', key);
@@ -2484,7 +2495,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
               ${err ? html`<p class="form-err" role="alert">${err.error}</p>` : null}
             </form>`;
           }
-          return html`<div class="wk-hrow" key=${si}><span class="wk-no num">${si + 1}</span><${Kg} s=${s} />${f ? html`<span class="mk"><${Star} />رقم قياسي · ${recWords(f)}</span>` : null}<button type="button" class="btn ghost wk-hfix" aria-label=${'عدّل مجموعة ' + (si + 1) + ' من ' + e.name} onClick=${() => setEd({ei, si, w: String(s.w), r: String(s.r), err: null})}>عدّل</button></div>`;
+          return html`<div class="wk-hrow" key=${si}><span class="wk-no num">${si + 1}</span><${Kg} s=${s} />${f ? html`<span class="mk"><${Star} />رقم قياسي · ${recWords(f)}</span>` : null}<button type="button" class="btn ghost wk-hfix" data-fix=${ei + ':' + si} aria-label=${'عدّل مجموعة ' + (si + 1) + ' من ' + e.name} onClick=${() => setEd({ei, si, w: String(s.w), r: String(s.r), err: null})}>عدّل</button></div>`;
         })}
       </section>`)}
       <button type="button" class="btn danger" onClick=${onDelete}>امسح التمرينة</button>
