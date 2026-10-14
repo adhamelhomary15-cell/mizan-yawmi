@@ -149,18 +149,18 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
 
 **Independent Test**: [quickstart.md](quickstart.md) section 2.
 
-- [ ] T008 [US1] Give `SettingsView` what it needs, without changing how the other tabs work:
+- [x] T008 [US1] Give `SettingsView` what it needs, without changing how the other tabs work:
   - In `App`, pass `store` (the progress) and `wk` (the workout hook) as props.
   - Inside `SettingsView`, read the settings for the backup as follows. Use the stored settings object only
     when `!LOADED.isExample`, and only after `validateSettings` passes on it; otherwise use `null`. The example
     schedule is never saved as settings (R8).
-- [ ] T009 [US1] Add the section «نسخة احتياطية» in `SettingsView`, after «استيراد ملف إعدادات», using the
+- [x] T009 [US1] Add the section «نسخة احتياطية» in `SettingsView`, after «استيراد ملف إعدادات», using the
   existing `.sec`, `.panel` and `.btn` classes:
   - The line «آخر نسخة: <التاريخ>», or «لسه ما عملتش نسخة احتياطية على الجهاز ده». It is read from
     `mizan-backup-meta-v1` (`{lastBackupAt: <ISO date-time>}`); a missing or unreadable value means "never".
   - The primary button «احفظ نسخة احتياطية».
   - The note «الملف فيه بياناتك الشخصية. خليه في مكان آمن ومتبعتهوش لحد.»
-- [ ] T010 [US1] Implement saving:
+- [x] T010 [US1] Implement saving:
   - `makeBackup` with the date in the app's time zone (reuse `cairoParts`/`effectiveNow`, the helper the app
     already uses for "today").
   - Then `new Blob([text], {type: 'application/json'})`, an object URL, and a temporary `<a download=name>`
@@ -168,11 +168,11 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
   - Write `mizan-backup-meta-v1` after the download starts (R9). Show
     «اتحفظت النسخة: <bdi>mizan-backup-YYYY-MM-DD.json</bdi>».
   - Any exception shows «مقدرتش أحفظ الملف. افتح التطبيق في المتصفح العادي وجرّب تاني».
-- [ ] T011 [US1] Add «ابعتها لمكان تاني», shown only when
+- [x] T011 [US1] Add «ابعتها لمكان تاني», shown only when
   `navigator.canShare && navigator.canShare({files: [file]})`. It calls `navigator.share({files: [file]})`
   only on the tap. A user cancel (`AbortError`) shows nothing; any other error shows the save-failed message
   (R2).
-- [ ] T012 [US1] Verify per [quickstart.md](quickstart.md) section 2 at 375 px:
+- [x] T012 [US1] Verify per [quickstart.md](quickstart.md) section 2 at 375 px:
   - The file name holds the date only.
   - Opened as text, it shows the marker, version, date, checksum and the three parts.
   - `data.settings` is `null` with the example schedule.
