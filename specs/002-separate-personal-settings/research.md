@@ -229,7 +229,8 @@ Run on `main` at fa4ad5d, a build served locally, in a 375 px browser, with gene
   not a settings file (empty, not JSON, wrong format), made for a newer version, and file over 1 MB. Field
   problems list the first 5 with the field's path, which names the day and block. Their detail is still the
   validator's English text, for example `week.0.blocks[2].category: category is not defined in categories`.
-  That part of the task is open.
+  The owner decided on 2026-10-14 to keep these details in English. They only show when the owner edits the
+  settings file by hand, so the task counts as done.
 - **T032**: Unknown top-level fields are counted in the import preview as ignored. When the stored settings fail
   validation at startup, the app shows «الإعدادات المحفوظة مش صالحة، فبنعرض المثال». The stored value is kept,
   not deleted. The notice shows on every start while the settings stay invalid, not only once.
