@@ -80,6 +80,10 @@ function selfTest() {
     ['bad day key', JSON.stringify((() => { const o = ex(); o.week['9'] = o.week['0']; return o; })()), false, 'invalid'],
     ['bad prayer method', JSON.stringify(Object.assign(ex(), {prayerMethod: 'Nope'})), false, 'invalid'],
     ['course week with from after to', JSON.stringify((() => { const o = ex(); o.course.plan[0].from = '2030-01-01'; return o; })()), false, 'invalid'],
+    // postpone and free flags on a kind (feature 009)
+    ['postpone and free flags are accepted', JSON.stringify((() => { const o = ex(); o.categories.study.postpone = true; o.categories.personal.free = true; o.categories.work.postpone = false; return o; })()), true, null],
+    ['postpone that is not a boolean', JSON.stringify((() => { const o = ex(); o.categories.study.postpone = 'yes'; return o; })()), false, 'invalid', 'postpone must be true or false'],
+    ['free that is not a boolean', JSON.stringify((() => { const o = ex(); o.categories.personal.free = 1; return o; })()), false, 'invalid', 'free must be true or false'],
     ['file over 1 MB', JSON.stringify(Object.assign(ex(), {name: 'x'})) + ' '.repeat(MAX_BYTES), false, 'too-large'],
     // Blocks tied to a prayer time: a sixth element {prayer, dir, min}. Blocks at index 2 are in the middle of day 0.
     ['anchor on a middle block is accepted', withAnchor(2, {prayer: 'maghrib', dir: 'before', min: 30}), true, null],

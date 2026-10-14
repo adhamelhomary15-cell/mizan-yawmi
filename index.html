@@ -741,6 +741,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       else {
         if (c.long !== undefined && !isStr(c.long, 1, 60)) bad('invalid', 'categories.' + k + '.long', 'long must be 1 to 60 characters');
         if (c.track !== undefined && typeof c.track !== 'boolean') bad('invalid', 'categories.' + k + '.track', 'track must be true or false');
+        // postpone: open blocks of this kind can be moved to free time; free: this kind's time can receive them
+        if (c.postpone !== undefined && typeof c.postpone !== 'boolean') bad('invalid', 'categories.' + k + '.postpone', 'postpone must be true or false');
+        if (c.free !== undefined && typeof c.free !== 'boolean') bad('invalid', 'categories.' + k + '.free', 'free must be true or false');
       }
     });
 
@@ -2107,6 +2110,43 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     } catch(e){ return {ok: false, code: 'damaged'}; }
   }
   // end of backup rules
+
+  // start of postpone rules
+  // Finding a place for what was not done. A day is given as its blocks and its extra blocks, in minutes since
+  // midnight ({s, e, cat, title}); free time is the blocks of a free kind, minus the time any extra block takes.
+  // Nothing here touches storage, the page or the network, and nothing here can mark anything done.
+  function freeStretches(blocks, extras, isFree, from){
+    const merged = [];
+    blocks.filter(b => !b.extra && isFree(b.cat)).map(b => [Math.max(b.s, from || 0), b.e]).filter(r => r[1] > r[0])
+      .sort((p, q) => p[0] - q[0]).forEach(r => { const l = merged[merged.length - 1]; if (l && r[0] <= l[1]) l[1] = Math.max(l[1], r[1]); else merged.push(r.slice()); });
+    return extras.reduce((list, x) => list.reduce((out, r) => {
+      if (x.e <= r[0] || x.s >= r[1]) out.push(r);
+      else { if (x.s > r[0]) out.push([r[0], x.s]); if (x.e < r[1]) out.push([x.e, r[1]]); }
+      return out;
+    }, []), merged);
+  }
+  // items: [{len}] in order; days: [{iso, blocks, extras, from}] in order. Each item goes to the start of the earliest
+  // stretch that holds it, on the first day that has one; placed items are taken for the ones after.
+  function proposePlaces(items, days, isFree){
+    const taken = {};
+    return items.map(it => {
+      for (const d of days) {
+        const st = freeStretches(d.blocks, d.extras.concat(taken[d.iso] || []), isFree, d.from);
+        const hit = st.find(r => r[1] - r[0] >= it.len);
+        if (hit) { const p = {iso: d.iso, s: hit[0], e: hit[0] + it.len}; (taken[d.iso] = taken[d.iso] || []).push(p); return p; }
+      }
+      return null;
+    });
+  }
+  // A place the user picked: it must start on the day, end by END, and not overlap a tracked block or an extra.
+  function checkManualPlace(blocks, extras, s, len, START, END, isTracked){
+    if (!Number.isFinite(s) || !(len > 0) || s < START) return {ok: false, code: 'none'};
+    const e = s + len;
+    if (e > END) return {ok: false, code: 'late'};
+    const clash = blocks.filter(b => !b.extra && isTracked(b.cat)).concat(extras).find(b => s < b.e && e > b.s);
+    return clash ? {ok: false, code: 'clash', title: clash.title} : {ok: true, e};
+  }
+  // end of postpone rules
 
   /* ---------------- one form for adding and editing a task or an appointment ---------------- */
   // initial: task {text, tag, due} or appt {label, day, time}. onSubmit gets the validated, trimmed value.
