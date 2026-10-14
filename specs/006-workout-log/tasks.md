@@ -128,9 +128,9 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 7.
 
-- [ ] T034 [US6] Add «امسح التمرينة» on a finished workout with the app's 7-second undo toast: extend `App` with a small `showToast(text, undoFn)` that shows the existing toast for the workout hook (the existing `actEdit` works on the progress store and must not be used or changed), and pass it to `WorkoutView`; undo restores the workout exactly and in its place.
-- [ ] T035 [US6] Add correcting a finished set (weight and repetitions) with `validateSet`; saving recomputes records and previous values from the whole history on the next render, so no stored record can go stale.
-- [ ] T036 [US6] Verify per quickstart section 7: edit and remove a set in an open workout, discard asks first, delete and undo a finished workout, correct a weight and watch a record mark appear or disappear.
+- [x] T034 [US6] Add «امسح التمرينة» on a finished workout with the app's 7-second undo toast: extend `App` with a small `showToast(text, undoFn)` that shows the existing toast for the workout hook (the existing `actEdit` works on the progress store and must not be used or changed), and pass it to `WorkoutView`; undo restores the workout exactly and in its place.
+- [x] T035 [US6] Add correcting a finished set (weight and repetitions) with `validateSet`; saving recomputes records and previous values from the whole history on the next render, so no stored record can go stale.
+- [x] T036 [US6] Verify per quickstart section 7: edit and remove a set in an open workout, discard asks first, delete and undo a finished workout, correct a weight and watch a record mark appear or disappear.
 
 **Checkpoint (cut C)**: all six stories pass; a third pull request can ship here. Commit as `feat(workout): delete and correct finished workouts (006, US6)`.
 

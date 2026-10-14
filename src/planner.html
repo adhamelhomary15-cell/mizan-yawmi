@@ -351,6 +351,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .wk-card-row{display:grid;grid-template-columns:minmax(0,8.5rem) minmax(0,1fr);gap:var(--s3);font-size:14px}
 .wk-card-foot{display:flex;justify-content:space-between;gap:var(--s3);border-top:1px solid var(--line);padding-top:8px;margin-top:2px}
 .wk-hrow{display:flex;align-items:center;gap:var(--s3);padding:4px 0}
+.wk-hfix{margin-inline-start:auto;min-height:44px}
+.wk-hedit{display:grid;grid-template-columns:28px 68px 68px minmax(0,1fr);gap:6px;align-items:center;padding:4px 0}
+.wk-hedit-act{display:flex;gap:6px;justify-content:flex-end}
+.wk-hedit-act .btn{min-height:44px;min-width:44px;justify-content:center}
+.wk-hedit .form-err{grid-column:1 / -1}
 .wk-link{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:start;min-height:44px;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
 .wk-best{display:flex;flex-direction:column;gap:var(--s1)}
 
@@ -1896,6 +1901,28 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const r = routines.find(x => x.exIds.indexOf(exId) >= 0);
     return r ? {ok: false, reason: 'routine', routineName: r.name} : {ok: true};
   }
+  // Deleting a finished workout returns the new list, the removed workout and where it was, so an undo can put it back.
+  function removeWorkout(workouts, id){
+    const index = workouts.findIndex(w => w.id === id);
+    if (index < 0) return {workouts: workouts.slice(), removed: null, index: -1};
+    return {workouts: workouts.slice(0, index).concat(workouts.slice(index + 1)), removed: workouts[index], index};
+  }
+  // Puts a removed workout back in its place; a workout whose id is already there is not added twice.
+  function putBackWorkout(workouts, w, index){
+    if (!w || workouts.some(x => x.id === w.id)) return workouts.slice();
+    const i = Math.max(0, Math.min(workouts.length, index | 0));
+    return workouts.slice(0, i).concat([w], workouts.slice(i));
+  }
+  // Corrects one set of a finished workout with the same limits as logging; returns a copy, the input is not changed.
+  function correctSet(workout, ei, si, fields){
+    const e = workout && workout.exercises[ei];
+    if (!e || !e.sets[si]) return {ok: false, field: 'w', error: 'المجموعة دي مش موجودة'};
+    const v = validateSet(fields);
+    if (!v.ok) return v;
+    const copy = JSON.parse(JSON.stringify(workout));
+    copy.exercises[ei].sets[si] = v.value;
+    return {ok: true, workout: copy};
+  }
   // Turns whatever was stored (text, parsed, missing, damaged) into a valid root; never throws.
   // tooNew is true when the data was written by a newer app: the caller must then not overwrite it.
   function normalizeRoot(raw){
@@ -2384,15 +2411,39 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </section>`; })}</div>`;
   }
 
-  function WorkoutDetail({w, rec, onExercise, onBack}){
+  // A finished workout. One set at a time can be corrected; the workout can be deleted with the app's undo.
+  function WorkoutDetail({w, rec, onExercise, onBack, onCorrect, onDelete}){
     const rc = recordCount(w, rec.flags);
+    const [ed, setEd] = useState(null);   // {ei, si, w, r, err}
+    const editKey = ed && ed.ei + ':' + ed.si;
+    useEffect(() => {
+      if (!ed) return;
+      const key = e => { if (e.key === 'Escape') setEd(null); };
+      document.addEventListener('keydown', key);
+      return () => document.removeEventListener('keydown', key);
+    }, [editKey]);
+    const save = () => { const r = onCorrect(ed.ei, ed.si, {w: ed.w, r: ed.r}); if (r.ok) setEd(null); else setEd(Object.assign({}, ed, {err: r})); };
     return html`<div class="wkv">
       <div class="wk-head"><button type="button" class="btn" onClick=${onBack}>رجوع</button><div class="wk-title"><h1>${wkTitle(w)}</h1><p class="wk-meta">${wkWhen(w)}</p></div></div>
       <p class="small muted">المدة <bdi dir="ltr" class="num">${formatClock(w.endedAt - w.startedAt)}</bdi> · <bdi class="num">${Math.round(volumeOf(allSets(w)))}</bdi> كجم${rc ? html` · <bdi>${rc}</bdi> رقم قياسي` : null}</p>
       ${w.exercises.map((e, ei) => html`<section class="panel wk-ex" key=${ei + ':' + e.exId}>
         <h2><button type="button" class="wk-link" onClick=${() => onExercise(e.exId)}><bdi>${e.name}</bdi></button></h2>
-        ${e.sets.map((s, si) => { const f = rec.flags[w.id + ':' + ei + ':' + si]; return html`<div class="wk-hrow" key=${si}><span class="wk-no num">${si + 1}</span><${Kg} s=${s} />${f ? html`<span class="mk"><${Star} />رقم قياسي · ${recWords(f)}</span>` : null}</div>`; })}
+        ${e.sets.map((s, si) => {
+          const f = rec.flags[w.id + ':' + ei + ':' + si];
+          if (ed && ed.ei === ei && ed.si === si) {
+            const err = ed.err;
+            return html`<form class="wk-hedit" key=${si} onSubmit=${ev => { ev.preventDefault(); save(); }}>
+              <span class="wk-no num">${si + 1}</span>
+              <input class="wk-in" type="text" inputmode="decimal" dir="ltr" autocomplete="off" aria-label=${e.name + '، مجموعة ' + (si + 1) + '، الوزن بالكيلو'} aria-invalid=${err && err.field === 'w' ? 'true' : 'false'} value=${ed.w} onInput=${ev => setEd(Object.assign({}, ed, {w: ev.target.value, err: null}))} />
+              <input class="wk-in" type="text" inputmode="numeric" dir="ltr" autocomplete="off" aria-label=${e.name + '، مجموعة ' + (si + 1) + '، التكرارات'} aria-invalid=${err && err.field === 'r' ? 'true' : 'false'} value=${ed.r} onInput=${ev => setEd(Object.assign({}, ed, {r: ev.target.value, err: null}))} />
+              <span class="wk-hedit-act"><button type="submit" class="btn primary">احفظ</button><button type="button" class="btn" onClick=${() => setEd(null)}>لأ</button></span>
+              ${err ? html`<p class="form-err" role="alert">${err.error}</p>` : null}
+            </form>`;
+          }
+          return html`<div class="wk-hrow" key=${si}><span class="wk-no num">${si + 1}</span><${Kg} s=${s} />${f ? html`<span class="mk"><${Star} />رقم قياسي · ${recWords(f)}</span>` : null}<button type="button" class="btn ghost wk-hfix" aria-label=${'عدّل مجموعة ' + (si + 1) + ' من ' + e.name} onClick=${() => setEd({ei, si, w: String(s.w), r: String(s.r), err: null})}>عدّل</button></div>`;
+        })}
       </section>`)}
+      <button type="button" class="btn danger" onClick=${onDelete}>امسح التمرينة</button>
     </div>`;
   }
 
@@ -2444,7 +2495,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
-  function WorkoutView({wk}){
+  function WorkoutView({wk, showToast}){
     const {data, update, tooNew, saveFailed} = wk;
     const cur = data.current;
     const all = useMemo(() => STARTER_EXERCISES.concat(data.custom), [data.custom]);
@@ -2467,7 +2518,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       const go = sc => { setScreen(sc); top(); };
       const nameOf = id => names[id] || ((data.workouts.map(w => w.exercises.find(e => e.exId === id)).filter(Boolean)[0] || {}).name) || id;
       const found = screen.id && data.workouts.find(x => x.id === screen.id);
-      if (screen.n === 'detail' && found) return html`<${WorkoutDetail} w=${found} rec=${rec} onExercise=${id => go({n: 'exercise', id, back: screen})} onBack=${() => go({n: 'history'})} />`;
+      // Records are never stored, so a correction or a delete shows its effect on the next render.
+      const correct = (ei, si, fields) => {
+        const r = correctSet(found, ei, si, fields);
+        if (r.ok) update(d => { d.workouts = d.workouts.map(x => x.id === found.id ? r.workout : x); return d; });
+        return r;
+      };
+      const del = () => {
+        const r = removeWorkout(data.workouts, found.id);
+        if (!r.removed) return;
+        update(d => { d.workouts = removeWorkout(d.workouts, found.id).workouts; return d; });
+        go({n: 'history'});
+        showToast('اتمسحت التمرينة', () => update(d => { d.workouts = putBackWorkout(d.workouts, r.removed, r.index); return d; }));
+      };
+      if (screen.n === 'detail' && found) return html`<${WorkoutDetail} key=${found.id} w=${found} rec=${rec} onExercise=${id => go({n: 'exercise', id, back: screen})} onBack=${() => go({n: 'history'})} onCorrect=${correct} onDelete=${del} />`;
       if (screen.n === 'exercise') return html`<${ExerciseScreen} exId=${screen.id} name=${nameOf(screen.id)} rec=${rec} workouts=${data.workouts} onOpen=${id => go({n: 'detail', id})} onBack=${() => go(screen.back || {n: 'history'})} />`;
       const inHistory = screen.n === 'history', inExs = screen.n === 'exercises';
       const addOwn = name => {
@@ -2649,13 +2713,19 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       setToast({text, undo: () => update(undoFn)});
       toastTimer.current = setTimeout(() => setToast(null), 7000);
     };
+    // The same toast for the workout log, which has its own store; the caller already made the change.
+    const showToast = (text, undoFn) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({text, undo: undoFn});
+      toastTimer.current = setTimeout(() => setToast(null), 7000);
+    };
     MAIN_NAME = mainCourse(store).name;
 
     let view;
     if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} />`;
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
-    else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} />`;
+    else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} showToast=${showToast} />`;
     else if (tab === 'settings') view = html`<${SettingsView} />`;
     else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
 
