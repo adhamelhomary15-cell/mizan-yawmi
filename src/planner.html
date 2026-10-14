@@ -276,6 +276,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .field textarea{min-height:9rem;resize:vertical;line-height:1.7}
 ::placeholder{color:var(--muted);opacity:1}
 .form-err{font-size:13px;color:var(--danger)}
+.backup-act{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.backup-act .btn{min-height:44px}
 .appt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2);align-items:center;padding:4px 0;border-top:1px solid var(--line)}
 .appt:first-child{border-top:0}
 .aact{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center}
@@ -2009,6 +2011,59 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   // end of workout rules
 
+  // start of backup rules
+  // One plain file the owner keeps: a marker, a format version, when it was made, a checksum, and the three parts.
+  // Nothing here touches storage, the page or the network; the caller passes the app's own normalisers in, so a
+  // backup is read with the same rules as the data it replaces. Marks are carried exactly as they are, never made.
+  const BACKUP_FORMAT = 'mizan-backup';
+  const BACKUP_VERSION = 1;
+  const BACKUP_MAX_BYTES = 5 * 1024 * 1024;
+  // FNV-1a, 32 bits, over the UTF-16 code units: catches a damaged or hand-edited file; not a security measure.
+  function fnv1a(text){
+    let h = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return ('0000000' + h.toString(16)).slice(-8);
+  }
+  // dateIso is today's date in the app's time zone (the caller knows it); the name holds nothing else.
+  function makeBackup(parts, now, dateIso){
+    const data = {progress: parts.progress, workouts: parts.workouts, settings: parts.settings || null};
+    const file = {format: BACKUP_FORMAT, version: BACKUP_VERSION, createdAt: new Date(now).toISOString(), checksum: fnv1a(JSON.stringify(data)), data};
+    return {text: JSON.stringify(file), name: 'mizan-backup-' + dateIso + '.json'};
+  }
+  // Returns {ok: false, code} or {ok: true, parts, preview}; never throws. Codes: empty, not-json, settings-file,
+  // not-backup, too-new, damaged.
+  function readBackup(text, deps){
+    try {
+      if (typeof text !== 'string' || !text.trim()) return {ok: false, code: 'empty'};
+      let f;
+      try { f = JSON.parse(text); } catch(e){ return {ok: false, code: 'not-json'}; }
+      const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+      if (!isObj(f)) return {ok: false, code: 'not-backup'};
+      if (f.format === 'mizan-settings') return {ok: false, code: 'settings-file'};
+      if (f.format !== BACKUP_FORMAT) return {ok: false, code: 'not-backup'};
+      if (!Number.isInteger(f.version) || f.version < 1) return {ok: false, code: 'damaged'};
+      if (f.version > BACKUP_VERSION) return {ok: false, code: 'too-new'};
+      const d = f.data;
+      if (typeof f.createdAt !== 'string' || Number.isNaN(Date.parse(f.createdAt))) return {ok: false, code: 'damaged'};
+      if (!isObj(d) || !isObj(d.progress) || !isObj(d.workouts) || !(d.settings === null || isObj(d.settings))) return {ok: false, code: 'damaged'};
+      if (typeof f.checksum !== 'string' || f.checksum !== fnv1a(JSON.stringify(d))) return {ok: false, code: 'damaged'};
+      const w = deps.normalizeRoot(d.workouts);
+      if (w.tooNew) return {ok: false, code: 'too-new'};
+      const progress = deps.normalize(d.progress);
+      let settings = null, settingsValid = 'none';
+      if (d.settings !== null) {
+        let r = null;
+        try { r = deps.validateSettings(d.settings); } catch(e){ r = null; }
+        if (r && r.ok) { settings = r.settings; settingsValid = 'valid'; } else settingsValid = 'invalid';
+      }
+      const workouts = w.root;
+      const preview = {createdAt: f.createdAt, tasks: progress.tasks.length, appts: progress.appts.length, courses: progress.courses.length,
+        tickDays: Object.keys(progress.checks).length, workouts: workouts.workouts.length, openWorkout: !!workouts.current, settings: settingsValid};
+      return {ok: true, parts: {progress, workouts, settings, settingsValid}, preview};
+    } catch(e){ return {ok: false, code: 'damaged'}; }
+  }
+  // end of backup rules
+
   /* ---------------- one form for adding and editing a task or an appointment ---------------- */
   // initial: task {text, tag, due} or appt {label, day, time}. onSubmit gets the validated, trimmed value.
   function ItemForm({kind, initial, idPrefix, textLabel, submitLabel, focusFirst, onSubmit, onCancel}){
@@ -2247,7 +2302,68 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const anchored = lists.reduce((n, l) => n + l.filter(b => b.length === 6).length, 0);
     return {days: days.length, blocks, anchored, course: s.course ? s.course.name : '', language: s.language, place: s.location.label || ''};
   }
-  function SettingsView(){
+  /* backup: saving a file to the owner's own device (the rules are in the "backup rules" block) */
+  const BACKUP_META_KEY = 'mizan-backup-meta-v1';
+  function readBackupMeta(){
+    try { const m = JSON.parse(localStorage.getItem(BACKUP_META_KEY) || 'null'); return m && typeof m.lastBackupAt === 'string' && !Number.isNaN(Date.parse(m.lastBackupAt)) ? m.lastBackupAt : null; } catch(e){ return null; }
+  }
+  // What goes in a backup: the progress as the app holds it, the workout log (as stored, if a newer app wrote it, so
+  // it is never lost), and the imported settings only when they exist and are valid; the example is never saved.
+  function backupParts(store, wk){
+    let settings = null;
+    if (!LOADED.isExample) {
+      try { const r = validateSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY))); if (r.ok) settings = r.settings; } catch(e){}
+    }
+    let workouts = wk.data;
+    if (wk.tooNew) { try { workouts = JSON.parse(localStorage.getItem(WORKOUTS_KEY)); } catch(e){} }
+    return {progress: store, workouts, settings};
+  }
+  function BackupSection({store, wk}){
+    const [last, setLast] = useState(readBackupMeta);
+    const [msg, setMsg] = useState(null);   // {ok, text}
+    const build = () => {
+      const now = Date.now(), b = makeBackup(backupParts(store, wk), now, cairoParts(new Date(now)).iso);
+      return {b, now, file: new File([b.text], b.name, {type: 'application/json'})};
+    };
+    const remember = now => {
+      const at = new Date(now).toISOString();
+      try { localStorage.setItem(BACKUP_META_KEY, JSON.stringify({lastBackupAt: at})); } catch(e){}
+      setLast(at);
+    };
+    const failed = () => setMsg({ok: false, text: 'مقدرتش أحفظ الملف. افتح التطبيق في المتصفح العادي وجرّب تاني'});
+    const save = () => {
+      try {
+        const {b, now, file} = build();
+        const url = URL.createObjectURL(file), a = document.createElement('a');
+        a.href = url; a.download = b.name; a.style.display = 'none';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        remember(now);
+        setMsg({ok: true, name: b.name});
+      } catch(e){ failed(); }
+    };
+    // The system share sheet, only where the device can share files, and only on this tap.
+    let canShare = false;
+    try { canShare = !!(navigator.canShare && navigator.canShare({files: [new File(['{}'], 'x.json', {type: 'application/json'})]})); } catch(e){}
+    const share = async () => {
+      let built;
+      try { built = build(); } catch(e){ failed(); return; }
+      try { await navigator.share({files: [built.file]}); remember(built.now); setMsg({ok: true, name: built.b.name}); }
+      catch(e){ if (!e || e.name !== 'AbortError') failed(); }
+    };
+    const when = iso => { const p = cairoParts(new Date(iso)); return dateLabel(p.iso) + ' · ' + fmtStr(p.min); };
+    return html`<div class="sec">
+      <div class="sec-head"><h2>نسخة احتياطية</h2></div>
+      <div class="panel form">
+        <p class="small">${last ? html`آخر نسخة: <bdi>${when(last)}</bdi>` : 'لسه ما عملتش نسخة احتياطية على الجهاز ده'}</p>
+        <span class="backup-act"><button type="button" class="btn primary" onClick=${save}>احفظ نسخة احتياطية</button>${canShare ? html`<button type="button" class="btn" onClick=${share}>ابعتها لمكان تاني</button>` : null}</span>
+        <p class="small muted">الملف فيه بياناتك الشخصية. خليه في مكان آمن ومتبعتهوش لحد.</p>
+        <div aria-live="polite">${msg ? (msg.ok ? html`<p class="small">اتحفظت النسخة: <bdi dir="ltr">${msg.name}</bdi></p>` : html`<div class="notice" role="alert"><p>${msg.text}</p></div>`) : null}</div>
+      </div>
+    </div>`;
+  }
+
+  function SettingsView({store, wk}){
     const [pending, setPending] = useState(null);
     const [msgs, setMsgs] = useState([]);
     const [done, setDone] = useState('');
@@ -2302,6 +2418,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
       </div>
+      <${BackupSection} store=${store} wk=${wk} />
       ${LOADED.isExample ? null : html`<div class="sec">
         <div class="sec-head"><h2>رجوع للمثال</h2></div>
         <div class="panel">
@@ -2876,7 +2993,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
     else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} showToast=${showToast} />`;
-    else if (tab === 'settings') view = html`<${SettingsView} />`;
+    else if (tab === 'settings') view = html`<${SettingsView} store=${store} wk=${wk} />`;
     else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
 
     return html`<div class="shell">

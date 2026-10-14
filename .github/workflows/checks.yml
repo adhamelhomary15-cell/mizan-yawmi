@@ -57,6 +57,11 @@ jobs:
           node tools/check-workout.js
           node tools/check-workout.js --self-test
 
+      - name: Backup rules
+        run: |
+          node tools/check-backup.js
+          node tools/check-backup.js --self-test
+
       - name: Privacy check works
         # The owner's private settings are not in the repo, so CI can only prove the checker itself works.
         # The real scan runs locally before each commit (AGENTS.md).
