@@ -124,8 +124,8 @@ description: "Task list for 002 separate personal settings from the public app"
 ### Implementation for User Story 4
 
 - [ ] T031 [US4] In `src/planner.html` map validator results to plain Egyptian Arabic messages per contracts/settings-file.md "Import rules": not JSON/empty/wrong `format` ("this is not a settings file"), `version` too high ("made for a newer version of the app"), a required field missing or invalid (name the field, show the first 5 problems), unknown category or subject id in a block (name the day and block), file over 1 MB ("file too large"). Show messages in a polite live region and move focus to it
-- [ ] T032 [US4] In `src/planner.html` show unknown top-level fields as a warning (ignored, never executed) and, when the stored settings fail validation at startup, show a one-time notice that the example is in use, without deleting the stored value
-- [ ] T033 [US4] Run quickstart.md sections 1 and 5: the `--self-test` cases, then import a broken, an empty, and a newer-version file in the browser; confirm each shows a message and that stored settings and the progress object are unchanged; then reset and confirm the example returns with progress kept
+- [x] T032 [US4] In `src/planner.html` show unknown top-level fields as a warning (ignored, never executed) and, when the stored settings fail validation at startup, show a one-time notice that the example is in use, without deleting the stored value
+- [x] T033 [US4] Run quickstart.md sections 1 and 5: the `--self-test` cases, then import a broken, an empty, and a newer-version file in the browser; confirm each shows a message and that stored settings and the progress object are unchanged; then reset and confirm the example returns with progress kept
 
 **Checkpoint**: All four user stories pass independently.
 
