@@ -268,7 +268,7 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
 
 **Independent Test**: [quickstart.md](quickstart.md) section 5.
 
-- [ ] T022 [US4] Add a small function outside the pure block, `storageStatus()`. It returns `'kept'`,
+- [x] T022 [US4] Add a small function outside the pure block, `storageStatus()`. It returns `'kept'`,
   `'may-clear'` or `'unsupported'`, using `navigator.storage.persisted()` when it exists (that call never
   prompts).
   - At app start, only once: when it is `'may-clear'` and the browser is not Firefox, call
@@ -276,13 +276,13 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
   - Detect Firefox by feature, not by guessing a version. Use `typeof InstallTrigger !== 'undefined'` or the
     `Firefox/` user-agent token, and record the reason in a comment.
   - Every call is wrapped in `try/catch`. A failure means `'unsupported'`.
-- [ ] T023 [US4] In the «نسخة احتياطية» section, add the status line:
+- [x] T023 [US4] In the «نسخة احتياطية» section, add the status line:
   - kept: «المتصفح هيحتفظ ببياناتك لحد ما انت تمسحها.»
   - may clear: «المتصفح ممكن يمسح البيانات لو المساحة قلت. احفظ نسخة احتياطية.»
   - unsupported: «المتصفح ده مش بيقول إذا كان هيحتفظ بالبيانات. احفظ نسخة احتياطية.»
   - On Firefox while the state is may-clear, add the button «اطلب من المتصفح يحتفظ بالبيانات». Its tap is the
     only place that calls `persist()` there; refresh the line after it.
-- [ ] T024 [US4] Verify per [quickstart.md](quickstart.md) section 5 in this app's browser pane:
+- [x] T024 [US4] Verify per [quickstart.md](quickstart.md) section 5 in this app's browser pane:
   - No prompt appears and the line shows a status.
   - Report honestly that a Firefox check, with no prompt on load and Firefox's own prompt on the tap, needs a
     real Firefox, unless one is available.
@@ -291,23 +291,23 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T025 [P] Add a short section «نسخة احتياطية» to `README.md`:
+- [x] T025 [P] Add a short section «نسخة احتياطية» to `README.md`:
   - what is in the file, and that it holds personal data and is not encrypted;
   - how to restore on a new device;
   - that nothing is uploaded;
   - the storage status line.
 
   Add one line to the Settings capability in `PRODUCT.md`. Use generic copy only (Principle VI).
-- [ ] T026 Test performance per [quickstart.md](quickstart.md) section 6. Generate 700 workouts and two years of
+- [x] T026 Test performance per [quickstart.md](quickstart.md) section 6. Generate 700 workouts and two years of
   ticks in the console; save and restore must each finish in under 2 seconds at 375 px (SC-001). Report the
   measured times.
-- [ ] T027 Run the layout and keyboard pass at 375 px on the Settings tab:
+- [x] T027 Run the layout and keyboard pass at 375 px on the Settings tab:
   - no horizontal scroll;
   - every control at least 44 px and named;
   - a logical Tab order;
   - the preview's Escape and focus behaviour;
   - right-to-left layout with Latin digits in `<bdi>`.
-- [ ] T028 Search the diff for the guarantees. In the lines `git diff main -- src/planner.html` adds, there must
+- [x] T028 Search the diff for the guarantees. In the lines `git diff main -- src/planner.html` adds, there must
   be:
   - no `fetch(`, `XMLHttp`, `sendBeacon` or `WebSocket`;
   - no permission request other than `persist()` (silent outside Firefox, and on Firefox only from the button's
@@ -316,7 +316,7 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
   - no personal value.
 
   List what was checked in the commit message (Principles II, III and VI).
-- [ ] T029 Rebuild and run every check:
+- [x] T029 Rebuild and run every check:
   - `check-backup.js` and `--self-test`;
   - `check-workout.js` and `--self-test`;
   - `check-paste.js`, `check-edit.js`, `check-settings.js --self-test`, `check-anchors.js --require-fit`;

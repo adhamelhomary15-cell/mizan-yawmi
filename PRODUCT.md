@@ -43,7 +43,8 @@ The prayer location and method come from the user's settings, not from a fixed c
   Workouts (a gym log in kilograms: sets with last time's values, rest and workout timers, user-named splits
   with planned set counts, history by month with best set, volume and records, and fixing or deleting a finished
   workout with undo; kept under its own key, separate from progress and settings), Settings
-  (what is in use, import a settings file, reset to the example).
+  (what is in use, import a settings file, reset to the example, save a backup file of all the data to the
+  device and restore it after a preview, all or nothing, and whether the browser agreed to keep the data).
 - The schedule, subjects, category labels, course plan, rules text, time zone, prayer location and method, the
   day-version rule, and language all come from a settings object: the stored settings file if there is one,
   otherwise the embedded example. A day can have two versions that switch by a prayer-time threshold, and a block can be tied to a prayer
