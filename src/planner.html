@@ -277,7 +277,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 ::placeholder{color:var(--muted);opacity:1}
 .form-err{font-size:13px;color:var(--danger)}
 .backup-act{display:flex;flex-wrap:wrap;gap:var(--s2)}
-.backup-act .btn{min-height:44px}
+.backup-act .btn{min-height:44px;min-width:44px}
+.restore{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.restore-preview{flex-direction:column;align-items:stretch}
 .appt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2);align-items:center;padding:4px 0;border-top:1px solid var(--line)}
 .appt:first-child{border-top:0}
 .aact{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center}
@@ -1106,6 +1108,19 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       latest.current = next; setStore(next); saveLocal(next);
       if (ref.current) queue();
     }
+    // A restore: the whole progress at once, and, when a synced copy is active, written there now rather than
+    // after the usual delay. Resolves true when that write finished (or there is no synced copy), false if it failed.
+    function replaceAll(nextRaw){
+      const next = normalize(nextRaw);
+      latest.current = next; setStore(next); saveLocal(next);
+      if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+      const r = ref.current;
+      if (!r) return Promise.resolve(true);
+      const body = JSON.parse(JSON.stringify(next));
+      const p = chain.current.then(() => r.set(body));
+      chain.current = p.catch(() => {});
+      return p.then(() => true, () => false);
+    }
 
     useEffect(() => {
       let unsub = null, dead = false;
@@ -1137,7 +1152,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       return () => { dead = true; if (unsub) unsub(); };
     }, []);
 
-    return [store, update, sync];
+    return [store, update, sync, replaceAll];
   }
 
   /* ---------------- day model: schedule + one-off blocks + status ---------------- */
@@ -2036,7 +2051,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     try {
       if (typeof text !== 'string' || !text.trim()) return {ok: false, code: 'empty'};
       let f;
-      try { f = JSON.parse(text); } catch(e){ return {ok: false, code: 'not-json'}; }
+      // A half-downloaded or cut backup no longer parses but still carries the marker: that is damage, not a foreign file.
+      try { f = JSON.parse(text); } catch(e){ return {ok: false, code: /"format"\s*:\s*"mizan-backup"/.test(text) ? 'damaged' : 'not-json'}; }
       const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
       if (!isObj(f)) return {ok: false, code: 'not-backup'};
       if (f.format === 'mizan-settings') return {ok: false, code: 'settings-file'};
@@ -2318,7 +2334,88 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     if (wk.tooNew) { try { workouts = JSON.parse(localStorage.getItem(WORKOUTS_KEY)); } catch(e){} }
     return {progress: store, workouts, settings};
   }
-  function BackupSection({store, wk}){
+  const RESTORE_SYNC_LATE_KEY = 'mizan-restore-sync-late';
+  const BACKUP_REFUSALS = {
+    'too-large': 'الملف كبير أوي على إنه نسخة احتياطية.',
+    'empty': 'ده مش ملف نسخة احتياطية من ميزان يومي.',
+    'not-json': 'ده مش ملف نسخة احتياطية من ميزان يومي.',
+    'not-backup': 'ده مش ملف نسخة احتياطية من ميزان يومي.',
+    'settings-file': 'ده ملف إعدادات. استورده من «استيراد ملف إعدادات».',
+    'too-new': 'النسخة دي معمولة بنسخة أحدث من التطبيق. حدّث التطبيق الأول.',
+    'damaged': 'الملف ده بايظ أو اتعدّل، فمش هسترجع منه حاجة.'
+  };
+  // Restore: read and check the file, show what it holds, and only on «استرجع» replace the device's data with it,
+  // all or nothing. The progress goes in exactly as the file has it; no mark is made here.
+  function RestorePart({wk, sync, replaceAll, when}){
+    const [pending, setPending] = useState(null);   // the result of readBackup when it is ok
+    const [err, setErr] = useState('');
+    const [busy, setBusy] = useState(false);
+    const inputRef = useRef(null), noRef = useRef(null), errRef = useRef(null);
+    useEffect(() => { if (err && errRef.current) { try { errRef.current.focus(); } catch(e){} } }, [err]);
+    const cancel = () => { setPending(null); if (inputRef.current) { inputRef.current.value = ''; try { inputRef.current.focus(); } catch(e){} } };
+    useEffect(() => {
+      if (!pending) return;
+      if (noRef.current) noRef.current.focus();
+      const key = e => { if (e.key === 'Escape' && !busy) cancel(); };
+      document.addEventListener('keydown', key);
+      return () => document.removeEventListener('keydown', key);
+    }, [pending, busy]);
+    const refuse = code => { setPending(null); setErr(BACKUP_REFUSALS[code] || BACKUP_REFUSALS['not-backup']); if (inputRef.current) inputRef.current.value = ''; };
+    const onFile = e => {
+      const f = e.target.files && e.target.files[0];
+      setPending(null); setErr('');
+      if (!f) return;
+      if (f.size > BACKUP_MAX_BYTES) { refuse('too-large'); return; }
+      const r = new FileReader();
+      r.onload = () => {
+        const res = readBackup(String(r.result || ''), {normalize, normalizeRoot, validateSettings});
+        if (res.ok) setPending(res); else refuse(res.code);
+      };
+      r.onerror = () => refuse('not-backup');
+      r.readAsText(f);
+    };
+    const apply = async () => {
+      if (!pending || busy) return;
+      if (wk.tooNew) { setPending(null); setErr('بيانات التمارين على الجهاز ده من نسخة أحدث من التطبيق، فمش هقدر أستبدلها.'); return; }
+      const p = pending.parts, keys = [LOCAL_KEY, WORKOUTS_KEY, SETTINGS_KEY], raw = {};
+      try { keys.forEach(k => { raw[k] = localStorage.getItem(k); }); }
+      catch(e){ setPending(null); setErr('الاسترجاع فشل ومفيش حاجة اتغيّرت.'); return; }
+      setBusy(true);
+      try {
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(p.progress));
+        localStorage.setItem(WORKOUTS_KEY, JSON.stringify(p.workouts));
+        if (p.settingsValid === 'valid') localStorage.setItem(SETTINGS_KEY, JSON.stringify(p.settings));
+      } catch(e){
+        // put every key back as it was, so a half-written restore never stays
+        keys.forEach(k => { try { if (raw[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, raw[k]); } catch(e2){} });
+        setBusy(false); setPending(null); setErr('الاسترجاع فشل ومفيش حاجة اتغيّرت.');
+        return;
+      }
+      // The synced copy loads first on start, so it gets the restored progress before the reload (up to 5 seconds).
+      const synced = await Promise.race([replaceAll(p.progress), new Promise(res => setTimeout(() => res(false), 5000))]);
+      if (!synced) { try { sessionStorage.setItem(RESTORE_SYNC_LATE_KEY, '1'); } catch(e){} }
+      location.reload();
+    };
+    const pv = pending && pending.preview;
+    return html`<div class="restore">
+      <label class="field wide" for="backup-file">اختار ملف النسخة الاحتياطية<input id="backup-file" ref=${inputRef} type="file" accept=".json,application/json" disabled=${busy} onChange=${onFile} /></label>
+      <div aria-live="polite">
+        ${err ? html`<div class="notice" role="alert" tabindex="-1" ref=${errRef}><p>${err}</p></div>` : null}
+        ${pv ? html`<div class="notice restore-preview" role="group" aria-label="معاينة النسخة الاحتياطية"><p>
+            <b>نسخة من <bdi>${when(pv.createdAt)}</bdi></b>
+            <span class="small"><bdi>${pv.tasks}</bdi> مهمة · <bdi>${pv.appts}</bdi> ميعاد · <bdi>${pv.courses}</bdi> كورس · <bdi>${pv.tickDays}</bdi> يوم فيه علامات · <bdi>${pv.workouts}</bdi> تمرينة</span>
+            ${pv.openWorkout ? html`<span class="small">فيه تمرينة مفتوحة</span>` : null}
+            <span class="small">${pv.settings === 'valid' ? 'فيها إعدادات' : pv.settings === 'none' ? 'مفيهاش إعدادات، إعداداتك الحالية هتفضل' : 'الإعدادات اللي فيها مش صالحة، إعداداتك الحالية هتفضل'}</span>
+            <span class="small"><b>الاسترجاع هيستبدل كل بياناتك على الجهاز ده بالنسخة دي.</b>${sync === 'cloud' ? ' وهيتغيّر كمان في النسخة المتزامنة' : ''}</span>
+            ${busy ? html`<span class="small" role="status">بسترجع…</span>` : null}
+          </p>
+          <span class="backup-act"><button type="button" class="btn danger" disabled=${busy} onClick=${apply}>استرجع</button><button type="button" class="btn" ref=${noRef} disabled=${busy} onClick=${cancel}>لأ</button></span>
+        </div>` : null}
+      </div>
+    </div>`;
+  }
+
+  function BackupSection({store, wk, sync, replaceAll}){
     const [last, setLast] = useState(readBackupMeta);
     const [msg, setMsg] = useState(null);   // {ok, text}
     const build = () => {
@@ -2359,11 +2456,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         <span class="backup-act"><button type="button" class="btn primary" onClick=${save}>احفظ نسخة احتياطية</button>${canShare ? html`<button type="button" class="btn" onClick=${share}>ابعتها لمكان تاني</button>` : null}</span>
         <p class="small muted">الملف فيه بياناتك الشخصية. خليه في مكان آمن ومتبعتهوش لحد.</p>
         <div aria-live="polite">${msg ? (msg.ok ? html`<p class="small">اتحفظت النسخة: <bdi dir="ltr">${msg.name}</bdi></p>` : html`<div class="notice" role="alert"><p>${msg.text}</p></div>`) : null}</div>
+        <${RestorePart} wk=${wk} sync=${sync} replaceAll=${replaceAll} when=${when} />
       </div>
     </div>`;
   }
 
-  function SettingsView({store, wk}){
+  function SettingsView({store, wk, sync, replaceAll}){
     const [pending, setPending] = useState(null);
     const [msgs, setMsgs] = useState([]);
     const [done, setDone] = useState('');
@@ -2418,7 +2516,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
       </div>
-      <${BackupSection} store=${store} wk=${wk} />
+      <${BackupSection} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />
       ${LOADED.isExample ? null : html`<div class="sec">
         <div class="sec-head"><h2>رجوع للمثال</h2></div>
         <div class="panel">
@@ -2938,13 +3036,15 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
 
   function App(){
-    const [store, update, sync] = useStore();
+    const [store, update, sync, replaceAll] = useStore();
     const wk = useWorkouts();
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
     const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','tasks','workout','settings'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
+    // Shown once after a restore whose write to the synced copy did not finish in time.
+    const [syncLate, setSyncLate] = useState(() => { try { const v = sessionStorage.getItem(RESTORE_SYNC_LATE_KEY); sessionStorage.removeItem(RESTORE_SYNC_LATE_KEY); return !!v; } catch(e){ return false; } });
     // One-time notice after the day version (A late / B early) switches. phaseSeen is the last version the owner saw:
     // first run records it silently, a later difference shows the notice, "تمام" records the new one.
     const phaseNow = phaseFor(now.iso);
@@ -2993,7 +3093,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
     else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} showToast=${showToast} />`;
-    else if (tab === 'settings') view = html`<${SettingsView} store=${store} wk=${wk} />`;
+    else if (tab === 'settings') view = html`<${SettingsView} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />`;
     else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
 
     return html`<div class="shell">
@@ -3007,6 +3107,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         ${installEvt ? html`<div class="install"><p><b>ثبّت ميزان يومي</b><span class="small muted">أيقونة على الشاشة الرئيسية، ويشتغل من غير نت</span></p><button type="button" class="btn primary" onClick=${install}>ثبّت</button></div>` : null}
         ${LOADED.isExample ? html`<div class="notice"><p><b>${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'}</b><span class="small muted">${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات' : 'لما يبقى عندك ملف إعداداتك هتستورده من الإعدادات'}</span></p></div>` : null}
         <div aria-live="polite">${phaseNotice ? html`<div class="notice"><p>${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}</p><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></div>` : null}</div>
+        ${syncLate ? html`<div class="notice" role="status"><p>النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة.</p><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></div>` : null}
         ${view}
         <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
       </main>

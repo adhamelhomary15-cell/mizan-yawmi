@@ -129,6 +129,10 @@ function runChecks(h, source) {
     const cases = [d => { delete d.workouts; }, d => { delete d.progress; }, d => { d.workouts = []; }, d => { d.progress = 'x'; }, d => { d.settings = 7; }, d => { delete d.settings; }];
     return cases.every(c => h.readBackup(resum(c), deps).code === 'damaged');
   });
+  check('a cut or half-downloaded backup is refused as damaged, not as a foreign file', () => {
+    const t = made(sample()).text;
+    return [t.slice(0, Math.floor(t.length / 2)), t.slice(0, -1), t.slice(0, 60)].every(x => h.readBackup(x, deps).code === 'damaged');
+  });
   check('one character changed inside the data is caught by the checksum', () => {
     const t = made(sample()).text, bad = t.replace('Read chapter 2', 'Read chapter 3');
     return bad !== t && h.readBackup(bad, deps).code === 'damaged';
@@ -179,6 +183,7 @@ if (process.argv.includes('--self-test')) {
     ['the size limit is raised', s => s.replace('const BACKUP_MAX_BYTES = 5 * 1024 * 1024;', 'const BACKUP_MAX_BYTES = 50 * 1024 * 1024;')],
     ['a missing workouts part is accepted', s => s.replace('!isObj(d.workouts) || ', '')],
     ['a newer workouts part is accepted', s => s.replace("if (w.tooNew) return {ok: false, code: 'too-new'};", '')],
+    ['a cut backup is called a foreign file', s => s.replace(`code: /"format"\\s*:\\s*"mizan-backup"/.test(text) ? 'damaged' : 'not-json'`, "code: 'not-json'")],
     ['the file name carries more than the date', s => s.replace("name: 'mizan-backup-' + dateIso + '.json'", "name: 'mizan-backup-' + dateIso + '-' + now + '.json'")]
   ];
   let missed = 0;
