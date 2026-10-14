@@ -523,10 +523,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
    ["10:45", "work", "مثال: شغل", "جزء أول من الشغل"],
    ["13:30", "rest", "غدا وراحة"],
    ["14:30", "study", "مثال: مذاكرة مادة 2", "S2", "S2"],
-   ["16:30", "gym", "مثال: رياضة", "بيبدأ قبل المغرب بنص ساعة", "", {"prayer": "maghrib", "dir": "before", "min": 30}],
-   ["18:00", "rest", "عشا"],
-   ["19:00", "course", "مثال: كورس", "جلسة كورس"],
-   ["21:00", "personal", "وقتك", "وقت حر"]
+   ["16:00", "work", "مثال: شغل", "جزء تاني، بيطول أو يقصر مع المغرب"],
+   ["18:00", "gym", "مثال: رياضة", "بيبدأ قبل المغرب بنص ساعة", "", {"prayer": "maghrib", "dir": "before", "min": 30, "absorb": "20:15"}],
+   ["19:30", "rest", "عشا"],
+   ["20:15", "work", "مثال: شغل", "آخر الشغل، بيقصر أو يطول بالعكس فمجموع الشغل ثابت"],
+   ["22:15", "course", "مثال: كورس", "جلسة كورس"],
+   ["23:30", "personal", "وقتك", "وقت حر"]
   ]
   },
   "1": {
@@ -772,7 +774,18 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           const a = b[5], an = at + '.anchor';
           if (!isObj(a)) bad('invalid', an, 'anchor must be an object with prayer, dir and min');
           else {
-            Object.keys(a).forEach(k => { if (k !== 'prayer' && k !== 'dir' && k !== 'min') bad('invalid', an + '.' + k, 'anchor has only prayer, dir and min'); });
+            Object.keys(a).forEach(k => { if (k !== 'prayer' && k !== 'dir' && k !== 'min' && k !== 'absorb') bad('invalid', an + '.' + k, 'anchor has only prayer, dir, min and absorb'); });
+            // absorb names, by its fixed start, the later block that takes this anchor's shift (before the next anchor)
+            if (a.absorb !== undefined) {
+              const ab = an + '.absorb';
+              if (typeof a.absorb !== 'string' || !/^\d{2}:\d{2}$/.test(a.absorb) || timeOk(a.absorb) === null) bad('invalid', ab, 'absorb must be HH:MM');
+              else {
+                const j = list.findIndex(x => Array.isArray(x) && x[0] === a.absorb);
+                const next = list.findIndex((x, q) => q > i && Array.isArray(x) && x.length === 6);
+                if (j <= i) bad('invalid', ab, 'absorb must name the start of a later block on this day');
+                else if (next >= 0 && j >= next) bad('invalid', ab, 'absorb must name a block before the next block tied to a prayer');
+              }
+            }
             if (['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].indexOf(a.prayer) < 0) bad('invalid', an + '.prayer', 'prayer must be fajr, dhuhr, asr, maghrib or isha');
             if (a.dir !== 'before' && a.dir !== 'after') bad('invalid', an + '.dir', 'dir must be before or after');
             if (!Number.isInteger(a.min) || a.min < 0 || a.min > 180) bad('invalid', an + '.min', 'min must be a whole number from 0 to 180');
@@ -980,8 +993,10 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   // day's prayer time (pm: minutes since midnight per prayer, or null) minus or plus min, rounded to 5 minutes.
   // The schedule has no gaps (a block ends where the next starts, the last ends at END), so everything after an
   // anchored block shifts with it, the block just before it ends where it starts, and the last block takes the
-  // rest. If prayer times are missing, or an absorbing block would get shorter than 15 minutes (or than it
-  // already was at its fixed time, when that was less), every block keeps its fixed time and a notice says why.
+  // rest. The anchor may name, with absorb ("HH:MM", a later block's fixed start), the block that takes the shift
+  // instead: that block ends at its fixed end, so every block after it keeps its fixed time. If prayer times are
+  // missing, or an absorbing block would get shorter than 15 minutes (or than it already was at its fixed time,
+  // when that was less), every block keeps its fixed time and a notice says why.
   // Keys always use the fixed start, so ticks never move.
   function layoutDay(list, pm, START, END){
     const tm = t => { const [a, b] = t.split(':').map(Number); return a * 60 + b; };
@@ -989,17 +1004,24 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const fixed = list.map(b => tm(b[0]));
     if (!list.some(b => b[5])) return {blocks: make(fixed), notice: null};
     if (!pm || list.some(b => b[5] && !Number.isFinite(pm[b[5].prayer]))) return {blocks: make(fixed), notice: 'unavailable'};
-    let delta = 0;
+    let delta = 0, stop = -1;
+    const named = new Set();   // blocks named by an anchor's absorb
     const starts = list.map((b, i) => {
-      if (!b[5]) return fixed[i] + delta;
+      if (!b[5]) {
+        const s = fixed[i] + delta;
+        if (i === stop) { delta = 0; stop = -1; }
+        return s;
+      }
       let m = Math.round((pm[b[5].prayer] + (b[5].dir === 'before' ? -1 : 1) * b[5].min) / 5) * 5;
       if (m < START) m += 1440;
       delta = m - fixed[i];
+      stop = -1;
+      if (b[5].absorb) { const j = list.findIndex((x, k) => k > i && x[0] === b[5].absorb); if (j > i && !list[j][5]) { stop = j; named.add(j); } }
       return m;
     });
     const fits = list.every((b, i) => {
       const last = i === list.length - 1;
-      if (!last && !list[i + 1][5]) return true;
+      if (!last && !list[i + 1][5] && !named.has(i)) return true;
       const len = (last ? END : starts[i + 1]) - starts[i];
       const was = (last ? END : fixed[i + 1]) - fixed[i];
       return len >= Math.min(15, was);
@@ -2322,7 +2344,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const days = Object.keys(s.week), blocks = days.reduce((n, k) => { const b = s.week[k].blocks; return n + (Array.isArray(b) ? b.length : Object.keys(b).reduce((m, v) => m + b[v].length, 0)); }, 0);
     const lists = days.reduce((a, k) => { const b = s.week[k].blocks; return a.concat(Array.isArray(b) ? [b] : Object.keys(b).map(v => b[v])); }, []);
     const anchored = lists.reduce((n, l) => n + l.filter(b => b.length === 6).length, 0);
-    return {days: days.length, blocks, anchored, course: s.course ? s.course.name : '', language: s.language, place: s.location.label || ''};
+    const absorbing = lists.reduce((n, l) => n + l.filter(b => b.length === 6 && b[5] && b[5].absorb).length, 0);
+    return {days: days.length, blocks, anchored, absorbing, course: s.course ? s.course.name : '', language: s.language, place: s.location.label || ''};
   }
   /* backup: saving a file to the owner's own device (the rules are in the "backup rules" block) */
   const BACKUP_META_KEY = 'mizan-backup-meta-v1';
@@ -2550,7 +2573,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           <div aria-live="polite">
             ${msgs.length ? html`<div class="notice" role="alert" tabindex="-1" ref=${msgRef}><p><b>مقدرتش أستورد الملف</b>${msgs.map(m => html`<span class="small"><bdi>${m}</bdi></span>`)}</p></div>` : null}
             ${sm ? html`<div class="notice"><p><b>جاهز للاستيراد: ${pending.settings.name || 'من غير اسم'}</b>
-              <span class="small">${sm.days} أيام · ${sm.blocks} بلوك${sm.anchored ? ' · ' + sm.anchored + ' بلوك مربوط بالصلاة' : ''}${sm.course ? ' · كورس: ' : ''}${sm.course ? html`<bdi>${sm.course}</bdi>` : null} · الموقع: <bdi>${sm.place || '—'}</bdi> · اللغة: <bdi>${sm.language}</bdi>${pending.warnings ? ' · فيه ' + pending.warnings + ' حقول مش معروفة هتتجاهل' : ''}</span>
+              <span class="small">${sm.days} أيام · ${sm.blocks} بلوك${sm.anchored ? ' · ' + sm.anchored + ' بلوك مربوط بالصلاة' : ''}${sm.absorbing ? ' · ' + sm.absorbing + ' بلوك بياخد فرق الصلاة' : ''}${sm.course ? ' · كورس: ' : ''}${sm.course ? html`<bdi>${sm.course}</bdi>` : null} · الموقع: <bdi>${sm.place || '—'}</bdi> · اللغة: <bdi>${sm.language}</bdi>${pending.warnings ? ' · فيه ' + pending.warnings + ' حقول مش معروفة هتتجاهل' : ''}</span>
               <span class="small muted">${LOADED.isExample ? 'هيحل محل المثال.' : 'هيحل محل الإعدادات الحالية (' + (CFG.name || 'من غير اسم') + ').'}</span></p>
               <span><button type="button" class="btn primary" onClick=${apply}>استبدل</button> <button type="button" class="btn ghost" onClick=${() => setPending(null)}>إلغاء</button></span></div>` : null}
           </div>
