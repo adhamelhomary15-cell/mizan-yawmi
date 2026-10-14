@@ -58,6 +58,12 @@ function selfTest() {
     b[5] = a;
     return o;
   })());
+  // The example with the day-0 anchor's absorb set to a value (and optional extra anchor keys).
+  const withAbsorb = (v, extra) => JSON.stringify((() => {
+    const o = ex(), b = o.week['0'].blocks.find(x => x.length === 6);
+    b[5] = Object.assign({}, b[5], {absorb: v}, extra || {});
+    return o;
+  })());
   const cases = [
     ['example is accepted', exampleText, true, null],
     ['empty file', '', false, 'not-settings'],
@@ -87,12 +93,22 @@ function selfTest() {
     ['anchor on the first block', withAnchor(0, {prayer: 'maghrib', dir: 'before', min: 30}), false, 'invalid'],
     ['anchor on the last block', withAnchor(-1, {prayer: 'maghrib', dir: 'before', min: 30}), false, 'invalid'],
     ['a block with seven items', JSON.stringify((() => { const o = ex(); const b = o.week['0'].blocks[2]; while (b.length < 5) b.push(''); b.push({prayer: 'maghrib', dir: 'before', min: 30}, 'x'); return o; })()), false, 'invalid'],
-    ['unknown top-level field is only a warning',JSON.stringify(Object.assign(ex(), {extraThing: 1})), true, null]
+    ['unknown top-level field is only a warning',JSON.stringify(Object.assign(ex(), {extraThing: 1})), true, null],
+    // absorb (feature 008): the example's day-0 workout (block 7) names the work block at 20:15; each rule has a case
+    ['absorb naming a later block is accepted', withAbsorb('20:15'), true, null],
+    ['absorb naming the last block is accepted', withAbsorb('23:30'), true, null],
+    ['absorb that is not HH:MM', withAbsorb('7pm'), false, 'invalid', 'absorb must be HH:MM'],
+    ['absorb that is a number', withAbsorb(2015), false, 'invalid', 'absorb must be HH:MM'],
+    ['absorb naming no block on the day', withAbsorb('19:31'), false, 'invalid', 'absorb must name the start of a later block on this day'],
+    ['absorb naming the anchored block itself', withAbsorb('18:00'), false, 'invalid', 'absorb must name the start of a later block on this day'],
+    ['absorb naming an earlier block', withAbsorb('16:00'), false, 'invalid', 'absorb must name the start of a later block on this day'],
+    ['absorb naming a block after the next anchored block', JSON.stringify((() => { const o = JSON.parse(withAbsorb('20:15')), b = o.week['0'].blocks[8]; while (b.length < 5) b.push(''); b[5] = {prayer: 'isha', dir: 'after', min: 0}; return o; })()), false, 'invalid', 'absorb must name a block before the next block tied to a prayer'],
+    ['anchor with an unknown key besides absorb', withAbsorb('20:15', {later: true}), false, 'invalid', 'anchor has only prayer, dir, min and absorb']
   ];
   let failed = 0;
-  cases.forEach(([label, text, wantOk, wantCode]) => {
+  cases.forEach(([label, text, wantOk, wantCode, wantDetail]) => {
     const res = checkText(text);
-    const codeOk = wantOk ? true : res.errors.some(e => e.code === wantCode);
+    const codeOk = wantOk ? true : res.errors.some(e => e.code === wantCode && (!wantDetail || e.detail === wantDetail));
     const pass = res.ok === wantOk && codeOk && (wantOk ? true : res.errors.length > 0);
     if (label.indexOf('warning') >= 0 && !res.warnings.length) { console.log('FAIL  ' + label + ' (no warning raised)'); failed++; return; }
     console.log((pass ? 'ok    ' : 'FAIL  ') + label);

@@ -107,7 +107,7 @@ and plan phase 4 = Phase 6 (the owner's private file, outside the repo).
 
 **Independent Test**: [quickstart.md](quickstart.md) section 4.
 
-- [ ] T009 [US2] In `validateSettings` (`checkBlocks`) in `src/planner.html`:
+- [x] T009 [US2] In `validateSettings` (`checkBlocks`) in `src/planner.html`:
   - Allow the `absorb` key in an anchor. The unknown-key message becomes
     'anchor has only prayer, dir, min and absorb'.
   - When `absorb` is present, check it in this order:
@@ -117,13 +117,13 @@ and plan phase 4 = Phase 6 (the owner's private file, outside the repo).
     - the block is at or after the next anchored block in the list gives
       `absorb must name a block before the next block tied to a prayer`.
   - Each message uses the path `<day path>[i].anchor.absorb`.
-- [ ] T010 [US2] In `summaryOf`, add `absorbing`: the number of anchors carrying `absorb`. In the settings import
+- [x] T010 [US2] In `summaryOf`, add `absorbing`: the number of anchors carrying `absorb`. In the settings import
   preview, after the anchored count, add «· N بلوك بياخد فرق الصلاة» when N > 0.
-- [ ] T011 [US2] In the embedded example (`<script id="example-settings">`), give the day-0 workout anchor
+- [x] T011 [US2] In the embedded example (`<script id="example-settings">`), give the day-0 workout anchor
   `"absorb": "19:00"` (the course block). Regenerate `settings.example.json` with
   `node tools/check-settings.js --write-example`, and check that `check-anchors.js --require-fit` still fits
   every date for 2026 to 2028.
-- [ ] T012 [US2] In `tools/check-settings.js`, add import cases built from the example:
+- [x] T012 [US2] In `tools/check-settings.js`, add import cases built from the example:
   - a valid `absorb` is accepted;
   - a time that matches no block is refused with the second message;
   - a time at the anchored block's own start is refused with the second message;
@@ -133,7 +133,7 @@ and plan phase 4 = Phase 6 (the owner's private file, outside the repo).
   - an extra unknown key still gets the unknown-key message.
 
   Add self-test mutations that drop each rule.
-- [ ] T013 [US2] Run quickstart section 4 in the browser at 375 px. Each bad file shows its message, and the
+- [x] T013 [US2] Run quickstart section 4 in the browser at 375 px. Each bad file shows its message, and the
   stored settings key is byte-identical before and after. The valid file shows the new summary text. **Commit**:
   `feat(anchors): check and count the absorbing block at import (008, US2)`.
 
