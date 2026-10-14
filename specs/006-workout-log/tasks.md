@@ -100,7 +100,7 @@
 **Independent Test**: [quickstart.md](quickstart.md) section 5.
 
 - [x] T027 [US4] Add the «التمارين» screen outside a workout: a searchable list of every exercise (starter first, then own), tapping one opens its exercise page (T025), and «ضيف تمرين» for a new own exercise with the name rules of T013.
-- [x] T028 [US4] Add deleting: «امسح» only on own exercises with no history and in no routine, using `canDeleteExercise`; otherwise the reason is shown (`التمرين ده ليه سجل` or `التمرين ده في روتين: <اسم>`); starter exercises are never deletable.
+- [x] T028 [US4] Add deleting: «امسح» only on own exercises with no history and in no routine, using `canDeleteExercise`; otherwise the reason is shown (`التمرين ده ليه سجل` or `التمرين ده في سبليت: <اسم>`); starter exercises are never deletable.
 - [x] T029 [US4] Verify per quickstart section 5: search narrows, a duplicate name in another case or with extra spaces is refused, an exercise with history shows why it cannot be deleted; run all checks.
 
 **Checkpoint (cut B)**: history, records and the exercise list work; a second pull request can ship here. Commit as `feat(workout): exercise list and delete rules (006, US4)`.
@@ -113,10 +113,10 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 6.
 
-- [ ] T030 [US5] Add the routines on Home («روتيناتي» cards: name, first exercises, date last used, `⋯` menu; last use is read from finished workouts by `routineName`, so renaming a routine starts its "last used" afresh) and the routine page («ابدأ التمرينة», names only): a list with «روتين جديد»; a routine has a name "1 to 40 characters after trimming, unique ignoring case" and an ordered list of exercises "no repeats, at most 40" picked with the picker of T013; rename, add, remove, move up and down, and delete (deleting never touches finished workouts).
-- [ ] T031 [US5] Add «ابدأ <اسم الروتين>» on Home and on the routine: `startFromRoutine` creates the open workout with the routine's exercises in order, each with one empty set row and last time's values; changing the workout never changes the routine; a finished workout keeps the routine's name as `routineName`.
-- [ ] T032 [US5] Wire the refusal of T028 to routines: an exercise that is in a routine cannot be deleted and the message names the routine; removing it from the routine allows the delete.
-- [ ] T033 [US5] Verify per quickstart section 6: create "Push" and "Legs", start from "Push", add an exercise inside the workout, finish, and confirm the routine is unchanged (SC-009); try the refusal.
+- [x] T030 [US5] Add the routines on Home («سبليتاتي» cards: name, first exercises, date last used, `⋯` menu; last use is read from finished workouts by `routineName`, so renaming a routine starts its "last used" afresh) and the routine page («ابدأ التمرينة», names only): a list with «سبليت جديد»; a routine has a name "1 to 40 characters after trimming, unique ignoring case" and an ordered list of exercises "no repeats, at most 40", each with a set count "1 to 20, default 1" (−/+), picked with the picker of T013; rename, add, remove, move up and down, and delete (deleting never touches finished workouts).
+- [x] T031 [US5] Add «ابدأ <اسم السبليت>» on Home and on the routine: `startFromRoutine` creates the open workout with the routine's exercises in order, each with as many empty set rows as the routine plans and last time's values; changing the workout never changes the routine; a finished workout keeps the routine's name as `routineName`.
+- [x] T032 [US5] Wire the refusal of T028 to routines: an exercise that is in a routine cannot be deleted and the message names the routine; removing it from the routine allows the delete.
+- [x] T033 [US5] Verify per quickstart section 6: create "Push" and "Legs", start from "Push", add an exercise inside the workout, finish, and confirm the routine is unchanged (SC-009); try the refusal.
 
 **Checkpoint**: routines work. Commit as `feat(workout): routines and starting from a routine (006, US5)`.
 

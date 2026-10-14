@@ -60,8 +60,9 @@ At least one set overall, or the workout is not finished (it can be discarded).
 | `id` | string |
 | `name` | 1 to 40 characters after trimming, unique ignoring case |
 | `exIds` | ordered list of exercise ids, no repeats, at most 40 |
+| `sets` | planned number of sets per exercise, same length as `exIds`, whole numbers 1 to 20 (missing or bad: 1) |
 
-A routine has no planned weights, sets or rest times (out of scope).
+A routine has no planned weights or rest times (out of scope). The set counts were added 2026-10-14 with the owner.
 
 ## Derived data (never stored)
 
