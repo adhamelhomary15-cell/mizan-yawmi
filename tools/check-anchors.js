@@ -40,6 +40,30 @@ const PM = {fajr: 300, dhuhr: 720, asr: 900, maghrib: 1080, isha: 1200};
 const round5 = m => Math.round(m / 5) * 5;
 const lengths = r => r.blocks.map(b => b.e - b.s);
 
+// An independent layout written differently from the app: split the day into segments that each start at an
+// anchor, give each block its new start and end from its fixed times, and decide fit from the changed lengths.
+function oracleLayout(list, pm) {
+  const fx = list.map(b => tm(b[0])), ends = fx.map((s, i) => i + 1 < fx.length ? fx[i + 1] : END);
+  const fixedSpans = fx.map((s, i) => [s, ends[i]]);
+  const anchors = list.map((b, i) => b[5] ? i : -1).filter(i => i >= 0);
+  if (!anchors.length) return {notice: null, spans: fixedSpans};
+  if (!pm || anchors.some(i => !Number.isFinite(pm[list[i][5].prayer]))) return {notice: 'unavailable', spans: fixedSpans};
+  const shiftOf = new Array(list.length).fill(0);   // how much each block's start moves
+  const mustCheck = new Set([list.length - 1]);
+  anchors.forEach((ai, n) => {
+    const an = list[ai][5];
+    let m = round5(pm[an.prayer] + (an.dir === 'before' ? -an.min : an.min)); if (m < START) m += 1440;
+    const d = m - fx[ai], next = n + 1 < anchors.length ? anchors[n + 1] : list.length;
+    const named = an.absorb ? list.findIndex((x, k) => k > ai && x[0] === an.absorb && !x[5]) : -1;
+    const lastMoved = named > ai && named < next ? named : next - 1;   // the shift reaches up to this block's start
+    for (let k = ai; k <= lastMoved; k++) shiftOf[k] = d;
+    mustCheck.add(ai - 1); if (named > ai) mustCheck.add(named);
+  });
+  const spans = fx.map((s, i) => [s + shiftOf[i], i + 1 < fx.length ? fx[i + 1] + shiftOf[i + 1] : END]);
+  const ok = [...mustCheck].every(i => (spans[i][1] - spans[i][0]) >= Math.min(15, ends[i] - fx[i]));
+  return ok ? {notice: null, spans} : {notice: 'nofit', spans: fixedSpans};
+}
+
 function runChecks(layoutDay) {
   const results = [];
   const check = (name, fn) => { let ok = false; try { ok = !!fn(); } catch (e) { ok = false; } results.push([name, ok]); };
@@ -120,6 +144,60 @@ function runChecks(layoutDay) {
     layoutDay(list, PM, START, END);
     return eq(list, copy);
   });
+  // absorb: the anchor names the block that takes the shift (feature 008)
+  const withAbsorb = (at, a) => day(Object.assign(anchor('maghrib', 'before', 30), {absorb: at}, a || {}));
+  check('absorb: a later shift makes the block before longer and the named block shorter by the same amount', () => {
+    const fixed = lay(plainList, PM), r = lay(withAbsorb('19:00'), PM), d = 1050 - tm('16:30');
+    return r.notice === null && d === 60 && lengths(r)[2] === lengths(fixed)[2] + d && lengths(r)[5] === lengths(fixed)[5] - d
+      && r.blocks[4].s === tm('18:00') + d && lengths(r)[4] === lengths(fixed)[4] && r.blocks[5].e === tm('21:00') && r.blocks[6].s === tm('21:00') && lengths(r)[6] === lengths(fixed)[6];
+  });
+  check('absorb: an earlier shift does the opposite', () => {
+    const fixed = lay(plainList, PM), r = lay(withAbsorb('19:00'), Object.assign({}, PM, {maghrib: 960})), d = 930 - tm('16:30');
+    return r.notice === null && d === -60 && lengths(r)[2] === lengths(fixed)[2] + d && lengths(r)[5] === lengths(fixed)[5] - d && r.blocks[6].s === tm('21:00');
+  });
+  check('absorb: the named block may shrink to 15 minutes but not below', () => {
+    // the course block is 120 minutes, so a shift of 105 leaves 15 and 110 leaves 10
+    const at15 = lay(withAbsorb('19:00'), Object.assign({}, PM, {maghrib: 1125})), at10 = lay(withAbsorb('19:00'), Object.assign({}, PM, {maghrib: 1130}));
+    return at15.notice === null && lengths(at15)[5] === 15 && at10.notice === 'nofit' && at10.blocks.every((b, i) => b.s === tm(day()[i][0]));
+  });
+  check('absorb: naming the last block equals having no absorb', () => {
+    return [960, 1080, 1200].every(m => { const pm = Object.assign({}, PM, {maghrib: m}); return eq(lay(withAbsorb('21:00'), pm), lay(day(anchor('maghrib', 'before', 30)), pm)); });
+  });
+  check('absorb: with two anchors, the second starts fresh and blocks after each named block keep their fixed times', () => {
+    // the first anchor moves 60 minutes later (dhuhr 12:00 minus 60 = 11:00 instead of 10:00) and its named block is 90 minutes
+    const list = [['07:00', 'rest', 'A'], ['08:00', 'study', 'B'], ['10:00', 'work', 'C', '', '', {prayer: 'dhuhr', dir: 'before', min: 60, absorb: '11:30'}], ['11:30', 'study', 'D'], ['13:00', 'rest', 'E'],
+      ['15:00', 'study', 'F'], ['16:30', 'exercise', 'G', '', '', {prayer: 'maghrib', dir: 'before', min: 30, absorb: '19:00'}], ['18:00', 'rest', 'H'], ['19:00', 'course', 'I'], ['21:00', 'personal', 'J']];
+    const r = lay(list, PM);
+    return r.notice === null && r.blocks[2].s === 660 && r.blocks[3].s === tm('11:30') + 60 && r.blocks[3].e === tm('13:00') && r.blocks[4].s === tm('13:00') && r.blocks[5].s === tm('15:00')
+      && r.blocks[6].s === 1050 && r.blocks[7].s === tm('18:00') + 60 && r.blocks[9].s === tm('21:00') && r.blocks[9].e === END;
+  });
+  check('absorb: keys keep the fixed start whatever the shift', () => {
+    const want = day().map(b => b[0] + '-' + b[1]);
+    return [900, 1080, 1125, 1300].every(m => eq(lay(withAbsorb('19:00'), Object.assign({}, PM, {maghrib: m})).blocks.map(b => b.key), want));
+  });
+  check('absorb: an independent oracle agrees on 300 generated days', () => {
+    let seed = 2024; const rnd = n => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+    const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    for (let k = 0; k < 300; k++) {
+      // a day of 6 to 12 blocks from 07:00, each 30 to 180 minutes, ending before END
+      const n = 6 + rnd(7); let t = START; const list = [];
+      for (let i = 0; i < n && t < END - 30; i++) { list.push([hm(t), ['study', 'work', 'rest', 'course'][rnd(4)], 'B' + i]); t += 30 + 15 * rnd(11); }
+      if (list.length < 5) continue;
+      const pick = () => 1 + rnd(list.length - 2);
+      const a1 = pick(), a2 = rnd(2) ? pick() : -1;
+      [a1, a2].filter(x => x > 0).forEach(ai => {
+        const ab = rnd(3) === 0 ? null : list[Math.min(list.length - 1, ai + 1 + rnd(3))][0];
+        const an = {prayer: ['dhuhr', 'asr', 'maghrib', 'isha'][rnd(4)], dir: rnd(2) ? 'before' : 'after', min: 15 * rnd(5)};
+        if (ab) an.absorb = ab;
+        while (list[ai].length < 5) list[ai].push('');
+        list[ai][5] = an;
+      });
+      const pm = {fajr: 300, dhuhr: 690 + rnd(60), asr: 870 + rnd(90), maghrib: 1000 + rnd(220), isha: 1080 + rnd(220)};
+      const mine = lay(list, pm), want = oracleLayout(list, pm);
+      if (!eq(mine.notice, want.notice) || !eq(mine.blocks.map(b => [b.s, b.e]), want.spans)) return false;
+    }
+    return true;
+  });
   check('the layout block never mentions done, checks or modules', () => {
     const block = html.slice(html.indexOf(START_MARK), html.indexOf(END_MARK));
     return !/\bchecks\b|\bmodules\b|\.done\b/.test(block);
@@ -183,6 +261,15 @@ function sweepStats(settingsText, fromYear, toYear, label) {
       if (!A.every((b, i) => b.e > b.s && (i === 0 || b.s === A[i - 1].e))) stats.bad.push(iso + ': overlap or empty block');
       if (A[0].s !== fixed[0].s || A[A.length - 1].e !== app.END) stats.bad.push(iso + ': day start or end moved');
       const absorbing = new Set([A.length - 1]); idx.forEach(j => absorbing.add(j - 1));
+      // feature 008: a block named by an anchor's absorb also changes length, and every block after it, up to the
+      // next anchor, is back at its fixed time
+      idx.forEach((j, n) => {
+        const ab = list[j][5].absorb; if (!ab) return;
+        const k = list.findIndex((x, q) => q > j && x[0] === ab && !x[5]); if (k < 0) return;
+        absorbing.add(k);
+        const next = n + 1 < idx.length ? idx[n + 1] : A.length;
+        for (let q = k + 1; q < next; q++) if (A[q].s !== fixed[q].s) stats.bad.push(iso + ': block ' + q + ' after the absorbing block is not at its fixed time');
+      });
       A.forEach((b, i) => { const same = (b.e - b.s) === (fixed[i].e - fixed[i].s); if (!absorbing.has(i) && !same) stats.bad.push(iso + ': block ' + i + ' changed length'); if (absorbing.has(i)) stats.minAbsorb = Math.min(stats.minAbsorb, b.e - b.s); });
       if (idx.length === 1) {
         const dl = A.map((b, i) => (b.e - b.s) - (fixed[i].e - fixed[i].s)).reduce((s, v) => s + v, 0);
@@ -247,7 +334,10 @@ if (process.argv.includes('--self-test')) {
     ['the nofit notice is not set', s => s.replace("notice: 'nofit'", 'notice: null')],
     ['the unavailable notice is not set', s => s.replace("notice: 'unavailable'", 'notice: null')],
     ['direction is ignored', s => s.replace("(b[5].dir === 'before' ? -1 : 1)", '-1')],
-    ['blocks after the anchor do not shift', s => s.replace('return fixed[i] + delta;', 'return fixed[i];')]
+    ['blocks after the anchor do not shift', s => s.replace('const s = fixed[i] + delta;', 'const s = fixed[i];')],
+    ['absorb: the shift never stops at the named block', s => s.replace('if (i === stop) { delta = 0; stop = -1; }', '')],
+    ['absorb: the named block is left out of the fit check', s => s.replace('&& !named.has(i)) return true;', ') return true;')],
+    ['absorb: the shift stops one block early', s => s.replace('if (j > i && !list[j][5]) { stop = j; named.add(j); }', 'if (j > i && !list[j][5]) { stop = j - 1; named.add(j - 1); }')]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

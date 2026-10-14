@@ -975,8 +975,10 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   // day's prayer time (pm: minutes since midnight per prayer, or null) minus or plus min, rounded to 5 minutes.
   // The schedule has no gaps (a block ends where the next starts, the last ends at END), so everything after an
   // anchored block shifts with it, the block just before it ends where it starts, and the last block takes the
-  // rest. If prayer times are missing, or an absorbing block would get shorter than 15 minutes (or than it
-  // already was at its fixed time, when that was less), every block keeps its fixed time and a notice says why.
+  // rest. The anchor may name, with absorb ("HH:MM", a later block's fixed start), the block that takes the shift
+  // instead: that block ends at its fixed end, so every block after it keeps its fixed time. If prayer times are
+  // missing, or an absorbing block would get shorter than 15 minutes (or than it already was at its fixed time,
+  // when that was less), every block keeps its fixed time and a notice says why.
   // Keys always use the fixed start, so ticks never move.
   function layoutDay(list, pm, START, END){
     const tm = t => { const [a, b] = t.split(':').map(Number); return a * 60 + b; };
@@ -984,17 +986,24 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const fixed = list.map(b => tm(b[0]));
     if (!list.some(b => b[5])) return {blocks: make(fixed), notice: null};
     if (!pm || list.some(b => b[5] && !Number.isFinite(pm[b[5].prayer]))) return {blocks: make(fixed), notice: 'unavailable'};
-    let delta = 0;
+    let delta = 0, stop = -1;
+    const named = new Set();   // blocks named by an anchor's absorb
     const starts = list.map((b, i) => {
-      if (!b[5]) return fixed[i] + delta;
+      if (!b[5]) {
+        const s = fixed[i] + delta;
+        if (i === stop) { delta = 0; stop = -1; }
+        return s;
+      }
       let m = Math.round((pm[b[5].prayer] + (b[5].dir === 'before' ? -1 : 1) * b[5].min) / 5) * 5;
       if (m < START) m += 1440;
       delta = m - fixed[i];
+      stop = -1;
+      if (b[5].absorb) { const j = list.findIndex((x, k) => k > i && x[0] === b[5].absorb); if (j > i && !list[j][5]) { stop = j; named.add(j); } }
       return m;
     });
     const fits = list.every((b, i) => {
       const last = i === list.length - 1;
-      if (!last && !list[i + 1][5]) return true;
+      if (!last && !list[i + 1][5] && !named.has(i)) return true;
       const len = (last ? END : starts[i + 1]) - starts[i];
       const was = (last ? END : fixed[i + 1]) - fixed[i];
       return len >= Math.min(15, was);
