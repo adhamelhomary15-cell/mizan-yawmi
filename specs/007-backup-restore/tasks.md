@@ -190,18 +190,18 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
 
 **Independent Test**: [quickstart.md](quickstart.md) section 3.
 
-- [ ] T013 [US2] In `useStore`, add and return a fourth value `replaceAll(next)`:
+- [x] T013 [US2] In `useStore`, add and return a fourth value `replaceAll(next)`:
   - It normalises `next`, sets the store and saves it locally.
   - When a synced copy is active (`ref.current`), it writes `next` there at once instead of after the 600 ms
     queue.
   - It returns a promise that resolves when that write finishes, or at once when there is no synced copy.
     Existing callers keep using the first three values unchanged.
-- [ ] T014 [US2] Add the restore control in the «نسخة احتياطية» section: a file input «اختار ملف النسخة الاحتياطية»
+- [x] T014 [US2] Add the restore control in the «نسخة احتياطية» section: a file input «اختار ملف النسخة الاحتياطية»
   with `accept=".json,application/json"`.
   - On a file over `BACKUP_MAX_BYTES`, refuse with `too-large` without reading it.
   - Otherwise read it with `FileReader` and call `readBackup(text, {normalize, normalizeRoot, validateSettings})`.
   - Nothing is written in this task.
-- [ ] T015 [US2] Show the preview notice per the contract, with nothing changed yet:
+- [x] T015 [US2] Show the preview notice per the contract, with nothing changed yet:
   - The lines «نسخة من <التاريخ>» and «<N> مهمة · <N> ميعاد · <N> كورس · <N> يوم فيه علامات · <N> تمرينة».
   - «فيه تمرينة مفتوحة» when there is one.
   - One of «فيها إعدادات», «مفيهاش إعدادات، إعداداتك الحالية هتفضل», or
@@ -210,7 +210,7 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
     «وهيتغيّر كمان في النسخة المتزامنة» when `sync === 'cloud'`.
   - The buttons «استرجع» (danger) and «لأ». Focus starts on «لأ», Escape is the same as «لأ», and closing
     returns focus to the file input. «لأ» clears the input and changes nothing.
-- [ ] T016 [US2] Implement applying, all or nothing (R4):
+- [x] T016 [US2] Implement applying, all or nothing (R4):
   - (a) If `wk.tooNew`, stop with «بيانات التمارين على الجهاز ده من نسخة أحدث من التطبيق، فمش هقدر أستبدلها.».
   - (b) Read the raw current strings of `fall26-planner-v1`, `mizan-workouts-v1` and `mizan-settings-v1`, with
     `null` meaning absent.
@@ -223,10 +223,10 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
   - (g) `location.reload()` so every view, including the settings-derived constants, reads the restored data.
   - No code path in this task builds or edits a done mark: the progress part goes in exactly as `readBackup`
     returned it.
-- [ ] T017 [US2] When the synced write does not finish within 5 seconds, still reload, and show once after the
+- [x] T017 [US2] When the synced write does not finish within 5 seconds, still reload, and show once after the
   reload: «النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة.». Carry this with a one-time flag in
   `sessionStorage`, wrapped in `try/catch`.
-- [ ] T018 [US2] Verify per [quickstart.md](quickstart.md) section 3:
+- [x] T018 [US2] Verify per [quickstart.md](quickstart.md) section 3:
   - The counts and date are right, and nothing changes before «استرجع».
   - «لأ» changes nothing.
   - Confirming restores the exact ticks, tasks and workouts; the extra workout is gone, and no other mark exists.
@@ -241,7 +241,7 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
 
 **Independent Test**: [quickstart.md](quickstart.md) section 4.
 
-- [ ] T019 [US3] Map every refusal to the contract's text, shown in a `.notice` with `role="alert"` that takes
+- [x] T019 [US3] Map every refusal to the contract's text, shown in a `.notice` with `role="alert"` that takes
   focus (as the settings import does):
   - `too-large`: «الملف كبير أوي على إنه نسخة احتياطية.»
   - `empty`, `not-json`, `not-backup`: «ده مش ملف نسخة احتياطية من ميزان يومي.»
@@ -250,11 +250,11 @@ same app behaviour. Commit as `feat(backup): backup rules and their check (007)`
   - `damaged`: «الملف ده بايظ أو اتعدّل، فمش هسترجع منه حاجة.»
   - A `FileReader` error uses the same line as `not-backup`.
   - A refusal clears any previous preview.
-- [ ] T020 [US3] Verify per [quickstart.md](quickstart.md) section 4. Pick a photo, an empty file, a settings
+- [x] T020 [US3] Verify per [quickstart.md](quickstart.md) section 4. Pick a photo, an empty file, a settings
   file, a backup with one character changed, a backup with `version: 2`, and a file over 5 MB. For each, check
   that the message appears and that the three keys are byte-identical before and after (compare in the console,
   SC-003).
-- [ ] T021 [US3] Test a failed write: make `localStorage.setItem` throw in the console after the first key is
+- [x] T021 [US3] Test a failed write: make `localStorage.setItem` throw in the console after the first key is
   written. The rollback must leave all three keys as they were, and the failure message must show (FR-008).
 
 **Checkpoint (cut B)**: Restore and every rejection pass together. Commit as
