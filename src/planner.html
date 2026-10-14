@@ -299,6 +299,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
 /* workouts */
 .wkv{display:flex;flex-direction:column;gap:var(--s4)}
+.wkv .btn{min-height:44px;min-width:44px}
+.wkv .wk-link{min-width:44px}
 .wk-head{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:var(--s3);background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line)}
 .wk-title{flex:1 1 auto;min-width:0;text-align:center;overflow-wrap:anywhere}
 .wk-title h1{font-size:20px}
@@ -351,6 +353,33 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .wk-card-row{display:grid;grid-template-columns:minmax(0,8.5rem) minmax(0,1fr);gap:var(--s3);font-size:14px}
 .wk-card-foot{display:flex;justify-content:space-between;gap:var(--s3);border-top:1px solid var(--line);padding-top:8px;margin-top:2px}
 .wk-hrow{display:flex;align-items:center;gap:var(--s3);padding:4px 0}
+.wk-hfix{margin-inline-start:auto;min-height:44px}
+/* routines */
+.wk-routines{display:flex;flex-direction:column;gap:var(--s3)}
+.wk-routines .sec-head .btn{min-height:44px}
+.wk-rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s3)}
+.wk-rcard{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wk-rcard-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.wk-rcard-head .wk-link{text-decoration:none;min-width:44px;overflow-wrap:anywhere}
+.wk-rcard-body{display:flex;flex-direction:column;gap:6px;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:start;cursor:pointer;min-height:44px}
+.wk-clamp{text-align:start;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.wk-rcard .wk-menu{flex-wrap:wrap}
+.wk-rcard .wk-menu .btn{min-height:44px}
+.wk-rline{padding:10px 0;border-top:1px solid var(--line)}
+.wk-rline:first-child{border-top:0}
+.wk-wide{width:100%;justify-content:center;min-height:48px}
+.wk-redit{display:flex;flex-direction:column;padding:6px 14px}
+.wk-ritem{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
+.wk-ritem:first-child{border-top:0}
+.wk-ritem-act{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.wk-ritem-act .wk-step{gap:var(--s2);margin-inline-end:auto}
+.wk-ritem-act .wk-step .btn{min-width:44px}
+.wk-ritem-act .wk-step-v{font-size:16px}
+.wk-ritem-act > .btn{min-width:44px;min-height:44px;justify-content:center}
+.wk-hedit{display:grid;grid-template-columns:28px 68px 68px minmax(0,1fr);gap:6px;align-items:center;padding:4px 0}
+.wk-hedit-act{display:flex;gap:6px;justify-content:flex-end}
+.wk-hedit-act .btn{min-height:44px;min-width:44px;justify-content:center}
+.wk-hedit .form-err{grid-column:1 / -1}
 .wk-link{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:start;min-height:44px;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
 .wk-best{display:flex;flex-direction:column;gap:var(--s1)}
 
@@ -1884,10 +1913,28 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     if (current.routineName) workout.routineName = current.routineName;
     return {ok: true, workout, dropped};
   }
-  // A new open workout holding the routine's exercises in order, each with one empty set; the routine is not changed.
+  // A routine plans 1 to 20 sets per exercise; anything else counts as 1.
+  const clampSets = n => Number.isInteger(n) && n >= 1 ? Math.min(20, n) : 1;
+  // A routine's name: 1 to 40 characters after trimming, unique ignoring case.
+  function validateRoutineName(name, routines, exceptId){
+    const nm = String(name == null ? '' : name).trim().replace(/\s+/g, ' ');
+    if (!nm) return {ok: false, error: 'اكتب اسم السبليت'};
+    if (nm.length > 40) return {ok: false, error: 'الاسم لحد 40 حرف'};
+    if (isNameTaken(nm, routines, exceptId)) return {ok: false, error: 'فيه سبليت بالاسم ده'};
+    return {ok: true, value: nm};
+  }
+  // When a routine was last used: the latest finished workout saved with its name (a renamed routine starts afresh).
+  function routineLastUsed(name, workouts){
+    let t = null;
+    workouts.forEach(w => { if (w.routineName === name && (t === null || w.startedAt > t)) t = w.startedAt; });
+    return t;
+  }
+  // A new open workout holding the routine's exercises in order, each with its planned number of empty sets;
+  // the routine is not changed.
   function startFromRoutine(routine, exercisesById, now, uid){
     return {id: uid(), startedAt: now, routineId: routine.id, routineName: routine.name, rest: null,
-      exercises: routine.exIds.filter(id => exercisesById[id]).map(exId => ({exId, sets: [{w: '', r: '', done: false}]}))};
+      exercises: routine.exIds.map((exId, i) => ({exId, n: clampSets(routine.sets ? routine.sets[i] : 1)})).filter(x => exercisesById[x.exId])
+        .map(x => ({exId: x.exId, sets: Array.from({length: x.n}, () => ({w: '', r: '', done: false}))}))};
   }
   // An exercise with history, or one used by a routine, can not be deleted; starter exercises never.
   function canDeleteExercise(exId, workouts, routines){
@@ -1895,6 +1942,28 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     if (workouts.some(w => w.exercises.some(e => e.exId === exId))) return {ok: false, reason: 'history'};
     const r = routines.find(x => x.exIds.indexOf(exId) >= 0);
     return r ? {ok: false, reason: 'routine', routineName: r.name} : {ok: true};
+  }
+  // Deleting a finished workout returns the new list, the removed workout and where it was, so an undo can put it back.
+  function removeWorkout(workouts, id){
+    const index = workouts.findIndex(w => w.id === id);
+    if (index < 0) return {workouts: workouts.slice(), removed: null, index: -1};
+    return {workouts: workouts.slice(0, index).concat(workouts.slice(index + 1)), removed: workouts[index], index};
+  }
+  // Puts a removed workout back in its place; a workout whose id is already there is not added twice.
+  function putBackWorkout(workouts, w, index){
+    if (!w || workouts.some(x => x.id === w.id)) return workouts.slice();
+    const i = Math.max(0, Math.min(workouts.length, index | 0));
+    return workouts.slice(0, i).concat([w], workouts.slice(i));
+  }
+  // Corrects one set of a finished workout with the same limits as logging; returns a copy, the input is not changed.
+  function correctSet(workout, ei, si, fields){
+    const e = workout && workout.exercises[ei];
+    if (!e || !e.sets[si]) return {ok: false, field: 'w', error: 'المجموعة دي مش موجودة'};
+    const v = validateSet(fields);
+    if (!v.ok) return v;
+    const copy = JSON.parse(JSON.stringify(workout));
+    copy.exercises[ei].sets[si] = v.value;
+    return {ok: true, workout: copy};
   }
   // Turns whatever was stored (text, parsed, missing, damaged) into a valid root; never throws.
   // tooNew is true when the data was written by a newer app: the caller must then not overwrite it.
@@ -1908,7 +1977,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const num = x => typeof x === 'number' && Number.isFinite(x);
     const sets = a => Array.isArray(a) ? a.filter(s => s && num(s.w) && num(s.r)).map(s => ({w: s.w, r: s.r})) : [];
     if (Array.isArray(v.custom)) root.custom = v.custom.filter(x => x && str(x.id, 60) && str(x.name, 60)).map(x => ({id: x.id, name: x.name.trim()}));
-    if (Array.isArray(v.routines)) root.routines = v.routines.filter(x => x && str(x.id, 60) && str(x.name, 40) && Array.isArray(x.exIds)).map(x => ({id: x.id, name: x.name.trim(), exIds: x.exIds.filter(i => typeof i === 'string').slice(0, 40)}));
+    if (Array.isArray(v.routines)) root.routines = v.routines.filter(x => x && str(x.id, 60) && str(x.name, 40) && Array.isArray(x.exIds)).map(x => {
+      const exIds = [], counts = [];
+      x.exIds.forEach((id, i) => { if (typeof id === 'string' && exIds.indexOf(id) < 0 && exIds.length < 40) { exIds.push(id); counts.push(clampSets(Array.isArray(x.sets) ? x.sets[i] : 1)); } });
+      return {id: x.id, name: x.name.trim(), exIds, sets: counts};
+    });
     if (Array.isArray(v.workouts)) root.workouts = v.workouts.filter(w => w && str(w.id, 60) && num(w.startedAt) && num(w.endedAt) && Array.isArray(w.exercises)).map(w => {
       const o = {id: w.id, startedAt: w.startedAt, endedAt: Math.max(w.endedAt, w.startedAt), exercises: w.exercises.filter(e => e && typeof e.exId === 'string').map(e => ({exId: e.exId, name: typeof e.name === 'string' ? e.name : e.exId, sets: sets(e.sets)})).filter(e => e.sets.length)};
       if (typeof w.routineName === 'string') o.routineName = w.routineName;
@@ -2311,14 +2384,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   const Stopwatch = () => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M9.5 3.5h5"/></svg>`;
 
-  // A confirmation that stays in view at the bottom; focus starts on the safe choice.
+  // A confirmation that stays in view at the bottom; focus starts on the safe choice and goes back to the
+  // control that opened it when it closes.
   function Sheet({label, onClose, children}){
     const ref = useRef(null);
     useEffect(() => {
+      const opener = document.activeElement;
       const b = ref.current && ref.current.querySelector('[data-first]'); if (b) b.focus();
       const key = e => { if (e.key === 'Escape') onClose(); };
       document.addEventListener('keydown', key);
-      return () => document.removeEventListener('keydown', key);
+      return () => {
+        document.removeEventListener('keydown', key);
+        // after the closing render, if focus was lost with the sheet
+        setTimeout(() => { try { if (opener && opener.isConnected && (!document.activeElement || document.activeElement === document.body)) opener.focus(); } catch(e){} }, 0);
+      };
     }, []);
     return html`<div class="wk-sheet" role="dialog" aria-label=${label} ref=${ref}>${children}</div>`;
   }
@@ -2384,15 +2463,42 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </section>`; })}</div>`;
   }
 
-  function WorkoutDetail({w, rec, onExercise, onBack}){
+  // A finished workout. One set at a time can be corrected; the workout can be deleted with the app's undo.
+  function WorkoutDetail({w, rec, onExercise, onBack, onCorrect, onDelete}){
     const rc = recordCount(w, rec.flags);
+    const [ed, setEd] = useState(null);   // {ei, si, w, r, err}
+    const editKey = ed && ed.ei + ':' + ed.si;
+    const lastKey = useRef(null);
+    useEffect(() => {
+      // closing the editor puts focus back on that set's «عدّل»
+      if (!ed) { const b = lastKey.current && document.querySelector('[data-fix="' + lastKey.current + '"]'); if (b) b.focus(); lastKey.current = null; return; }
+      lastKey.current = editKey;
+      const key = e => { if (e.key === 'Escape') setEd(null); };
+      document.addEventListener('keydown', key);
+      return () => document.removeEventListener('keydown', key);
+    }, [editKey]);
+    const save = () => { const r = onCorrect(ed.ei, ed.si, {w: ed.w, r: ed.r}); if (r.ok) setEd(null); else setEd(Object.assign({}, ed, {err: r})); };
     return html`<div class="wkv">
       <div class="wk-head"><button type="button" class="btn" onClick=${onBack}>رجوع</button><div class="wk-title"><h1>${wkTitle(w)}</h1><p class="wk-meta">${wkWhen(w)}</p></div></div>
       <p class="small muted">المدة <bdi dir="ltr" class="num">${formatClock(w.endedAt - w.startedAt)}</bdi> · <bdi class="num">${Math.round(volumeOf(allSets(w)))}</bdi> كجم${rc ? html` · <bdi>${rc}</bdi> رقم قياسي` : null}</p>
       ${w.exercises.map((e, ei) => html`<section class="panel wk-ex" key=${ei + ':' + e.exId}>
         <h2><button type="button" class="wk-link" onClick=${() => onExercise(e.exId)}><bdi>${e.name}</bdi></button></h2>
-        ${e.sets.map((s, si) => { const f = rec.flags[w.id + ':' + ei + ':' + si]; return html`<div class="wk-hrow" key=${si}><span class="wk-no num">${si + 1}</span><${Kg} s=${s} />${f ? html`<span class="mk"><${Star} />رقم قياسي · ${recWords(f)}</span>` : null}</div>`; })}
+        ${e.sets.map((s, si) => {
+          const f = rec.flags[w.id + ':' + ei + ':' + si];
+          if (ed && ed.ei === ei && ed.si === si) {
+            const err = ed.err;
+            return html`<form class="wk-hedit" key=${si} onSubmit=${ev => { ev.preventDefault(); save(); }}>
+              <span class="wk-no num">${si + 1}</span>
+              <input class="wk-in" type="text" inputmode="decimal" dir="ltr" autocomplete="off" aria-label=${e.name + '، مجموعة ' + (si + 1) + '، الوزن بالكيلو'} aria-invalid=${err && err.field === 'w' ? 'true' : 'false'} value=${ed.w} onInput=${ev => setEd(Object.assign({}, ed, {w: ev.target.value, err: null}))} />
+              <input class="wk-in" type="text" inputmode="numeric" dir="ltr" autocomplete="off" aria-label=${e.name + '، مجموعة ' + (si + 1) + '، التكرارات'} aria-invalid=${err && err.field === 'r' ? 'true' : 'false'} value=${ed.r} onInput=${ev => setEd(Object.assign({}, ed, {r: ev.target.value, err: null}))} />
+              <span class="wk-hedit-act"><button type="submit" class="btn primary">احفظ</button><button type="button" class="btn" onClick=${() => setEd(null)}>لأ</button></span>
+              ${err ? html`<p class="form-err" role="alert">${err.error}</p>` : null}
+            </form>`;
+          }
+          return html`<div class="wk-hrow" key=${si}><span class="wk-no num">${si + 1}</span><${Kg} s=${s} />${f ? html`<span class="mk"><${Star} />رقم قياسي · ${recWords(f)}</span>` : null}<button type="button" class="btn ghost wk-hfix" data-fix=${ei + ':' + si} aria-label=${'عدّل مجموعة ' + (si + 1) + ' من ' + e.name} onClick=${() => setEd({ei, si, w: String(s.w), r: String(s.r), err: null})}>عدّل</button></div>`;
+        })}
       </section>`)}
+      <button type="button" class="btn danger" onClick=${onDelete}>امسح التمرينة</button>
     </div>`;
   }
 
@@ -2430,7 +2536,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
             <button type="button" class="wk-pick" onClick=${() => onOpen(x.id)}><bdi>${x.name}</bdi></button>
             ${d && d.ok && ask !== x.id ? html`<button type="button" class="btn danger" aria-label=${'امسح ' + x.name} onClick=${() => setAsk(x.id)}>امسح</button>` : null}
             ${d && d.ok && ask === x.id ? html`<span class="wk-ask">متأكد؟ <button type="button" class="btn danger" onClick=${() => { setAsk(null); onDelete(x.id); }}>أيوه، امسح</button> <button type="button" class="btn" onClick=${() => setAsk(null)}>لأ</button></span>` : null}
-            ${d && !d.ok ? html`<span class="small muted">${d.reason === 'history' ? 'التمرين ده ليه سجل' : html`التمرين ده في روتين: <bdi>${d.routineName}</bdi>`}</span>` : null}
+            ${d && !d.ok ? html`<span class="small muted">${d.reason === 'history' ? 'التمرين ده ليه سجل' : html`التمرين ده في سبليت: <bdi>${d.routineName}</bdi>`}</span>` : null}
           </div>`;
         }) : html`<p class="empty">مفيش تمرين بالاسم ده.</p>`}
       </div>
@@ -2444,7 +2550,83 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
-  function WorkoutView({wk}){
+  /* routines: the user's own split (Push, Pull, Legs, or anything else), each exercise with a planned set count */
+  const routineLine = (r, names) => r.exIds.map((id, i) => (r.sets[i] || 1) + ' × ' + (names[id] || id)).join('، ');
+
+  function RoutineCards({routines, workouts, names, onOpen, onNew, onEdit, onDelete}){
+    const [menu, setMenu] = useState(null);
+    const [ask, setAsk] = useState(null);
+    return html`<section class="sec wk-routines">
+      <div class="sec-head"><h2>سبليتاتي (<bdi>${routines.length}</bdi>)</h2><button type="button" class="btn" onClick=${onNew}><${Plus} />سبليت جديد</button></div>
+      ${routines.length ? html`<div class="wk-rgrid">${routines.map(r => {
+        const last = routineLastUsed(r.name, workouts);
+        return html`<div class="panel wk-rcard" key=${r.id}>
+          <div class="wk-rcard-head">
+            <button type="button" class="wk-link" onClick=${() => onOpen(r.id)}><b><bdi>${r.name}</bdi></b></button>
+            <button type="button" class="icon-btn" aria-label=${'خيارات ' + r.name} aria-expanded=${menu === r.id ? 'true' : 'false'} onClick=${() => { setAsk(null); setMenu(menu === r.id ? null : r.id); }}><${Dots} /></button>
+          </div>
+          ${menu === r.id ? html`<div class="wk-menu">${ask === r.id
+            ? html`<span class="wk-ask">تمسح السبليت؟ التمرينات اللي خلصتها منه هتفضل. <button type="button" class="btn danger" onClick=${() => { setMenu(null); setAsk(null); onDelete(r.id); }}>أيوه، امسحه</button> <button type="button" class="btn" onClick=${() => setAsk(null)}>لأ</button></span>`
+            : html`<button type="button" class="btn" onClick=${() => { setMenu(null); onEdit(r.id); }}>عدّل</button><button type="button" class="btn danger" onClick=${() => setAsk(r.id)}>امسح</button>`}</div>` : null}
+          <button type="button" class="wk-rcard-body" onClick=${() => onOpen(r.id)}>
+            <span class="small muted wk-clamp" dir="auto">${routineLine(r, names)}</span>
+            <span class="small muted">${last === null ? 'لسه ما اتعملش' : html`آخر مرة: ${wkDay(last)}`}</span>
+          </button>
+        </div>`;
+      })}</div>` : html`<p class="empty">اعمل سبليت لكل يوم في تقسيمتك (مثلاً Push و Pull و Legs) وابدأ منه بضغطة.</p>`}
+    </section>`;
+  }
+
+  function RoutinePage({r, names, workouts, onStart, onEdit, onBack}){
+    const last = routineLastUsed(r.name, workouts);
+    return html`<div class="wkv">
+      <div class="wk-head"><button type="button" class="btn" onClick=${onBack}>رجوع</button><div class="wk-title"><h1><bdi>${r.name}</bdi></h1>${last === null ? null : html`<p class="wk-meta">آخر مرة: ${wkDay(last)}</p>`}</div><button type="button" class="btn" onClick=${onEdit}>عدّل</button></div>
+      <div class="panel wk-picklist">${r.exIds.map((id, i) => html`<p class="wk-rline" key=${id}><bdi class="num">${r.sets[i] || 1}</bdi> × <bdi>${names[id] || id}</bdi></p>`)}</div>
+      <button type="button" class="btn primary wk-wide" onClick=${onStart}>ابدأ التمرينة</button>
+    </div>`;
+  }
+
+  // Create or edit a routine. Nothing is saved until «احفظ»; the exercise picker is the one used inside a workout.
+  function RoutineEditor({r, all, routines, onSave, onCreateExercise, onCancel}){
+    const [name, setName] = useState(r ? r.name : '');
+    const [items, setItems] = useState(() => r ? r.exIds.map((exId, i) => ({exId, n: r.sets[i] || 1})) : []);
+    const [err, setErr] = useState('');
+    const [picking, setPicking] = useState(false);
+    const nameOf = id => (all.find(x => x.id === id) || {}).name || id;
+    const change = fn => { setItems(list => { const c = list.map(x => Object.assign({}, x)); fn(c); return c; }); setErr(''); };
+    const move = (i, d) => change(c => { const j = i + d; if (j >= 0 && j < c.length) { const t = c[i]; c[i] = c[j]; c[j] = t; } });
+    if (picking) return html`<${ExercisePicker} all=${all.filter(x => !items.some(it => it.exId === x.id))}
+      onPick=${id => { change(c => { if (c.length < 40) c.push({exId: id, n: 1}); }); setPicking(false); }}
+      onCreate=${q => { const res = onCreateExercise(q); if (res.error) return res.error; change(c => { if (c.length < 40) c.push({exId: res.id, n: 1}); }); setPicking(false); return null; }}
+      onBack=${() => setPicking(false)} />`;
+    const save = () => {
+      const v = validateRoutineName(name, routines, r && r.id);
+      if (!v.ok) { setErr(v.error); return; }
+      if (!items.length) { setErr('ضيف تمرين واحد على الأقل'); return; }
+      onSave({id: r ? r.id : uid36(), name: v.value, exIds: items.map(x => x.exId), sets: items.map(x => clampSets(x.n))});
+    };
+    return html`<div class="wkv">
+      <div class="wk-head"><button type="button" class="btn" onClick=${onCancel}>لأ</button><h1 class="wk-title">${r ? 'عدّل السبليت' : 'سبليت جديد'}</h1><button type="button" class="btn primary" onClick=${save}>احفظ</button></div>
+      <label class="field"><span>اسم السبليت</span>
+        <input type="text" value=${name} maxlength="60" autocomplete="off" onInput=${e => { setName(e.target.value); setErr(''); }} />
+      </label>
+      ${err ? html`<p class="form-err" role="alert">${err}</p>` : null}
+      <div class="panel wk-redit">
+        ${items.length ? items.map((it, i) => { const nm = nameOf(it.exId); return html`<div class="wk-ritem" key=${it.exId}>
+          <b class="wk-ritem-name"><bdi>${nm}</bdi></b>
+          <span class="wk-ritem-act">
+            <span class="wk-step"><button type="button" class="btn" aria-label=${'مجموعة أقل في ' + nm} disabled=${it.n <= 1} onClick=${() => change(c => { c[i].n = clampSets(c[i].n - 1); })}>−</button><bdi class="num wk-step-v" aria-label=${'عدد المجموعات ' + it.n}>${it.n} ×</bdi><button type="button" class="btn" aria-label=${'مجموعة زيادة في ' + nm} disabled=${it.n >= 20} onClick=${() => change(c => { c[i].n = clampSets(c[i].n + 1); })}>+</button></span>
+            <button type="button" class="btn ghost" aria-label=${'طلّع ' + nm + ' لفوق'} disabled=${i === 0} onClick=${() => move(i, -1)}>↑</button>
+            <button type="button" class="btn ghost" aria-label=${'نزّل ' + nm + ' لتحت'} disabled=${i === items.length - 1} onClick=${() => move(i, 1)}>↓</button>
+            <button type="button" class="btn ghost" aria-label=${'شيل ' + nm} onClick=${() => change(c => { c.splice(i, 1); })}>شيل</button>
+          </span>
+        </div>`; }) : html`<p class="empty">لسه مفيش تمارين في السبليت.</p>`}
+      </div>
+      ${items.length < 40 ? html`<button type="button" class="btn" onClick=${() => setPicking(true)}><${Plus} />ضيف تمرين</button>` : null}
+    </div>`;
+  }
+
+  function WorkoutView({wk, showToast}){
     const {data, update, tooNew, saveFailed} = wk;
     const cur = data.current;
     const all = useMemo(() => STARTER_EXERCISES.concat(data.custom), [data.custom]);
@@ -2467,18 +2649,49 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       const go = sc => { setScreen(sc); top(); };
       const nameOf = id => names[id] || ((data.workouts.map(w => w.exercises.find(e => e.exId === id)).filter(Boolean)[0] || {}).name) || id;
       const found = screen.id && data.workouts.find(x => x.id === screen.id);
-      if (screen.n === 'detail' && found) return html`<${WorkoutDetail} w=${found} rec=${rec} onExercise=${id => go({n: 'exercise', id, back: screen})} onBack=${() => go({n: 'history'})} />`;
+      // Records are never stored, so a correction or a delete shows its effect on the next render.
+      const correct = (ei, si, fields) => {
+        const r = correctSet(found, ei, si, fields);
+        if (r.ok) update(d => { d.workouts = d.workouts.map(x => x.id === found.id ? r.workout : x); return d; });
+        return r;
+      };
+      const del = () => {
+        const r = removeWorkout(data.workouts, found.id);
+        if (!r.removed) return;
+        update(d => { d.workouts = removeWorkout(d.workouts, found.id).workouts; return d; });
+        go({n: 'history'});
+        showToast('اتمسحت التمرينة', () => update(d => { d.workouts = putBackWorkout(d.workouts, r.removed, r.index); return d; }));
+      };
+      if (screen.n === 'detail' && found) return html`<${WorkoutDetail} key=${found.id} w=${found} rec=${rec} onExercise=${id => go({n: 'exercise', id, back: screen})} onBack=${() => go({n: 'history'})} onCorrect=${correct} onDelete=${del} />`;
       if (screen.n === 'exercise') return html`<${ExerciseScreen} exId=${screen.id} name=${nameOf(screen.id)} rec=${rec} workouts=${data.workouts} onOpen=${id => go({n: 'detail', id})} onBack=${() => go(screen.back || {n: 'history'})} />`;
       const inHistory = screen.n === 'history', inExs = screen.n === 'exercises';
-      const addOwn = name => {
+      const addOwnCheck = name => {
         const nm = String(name).trim().replace(/\s+/g, ' ');
         if (!nm) return 'اكتب اسم التمرين';
         if (nm.length > 60) return 'الاسم لحد 60 حرف';
         if (isNameTaken(nm, all)) return 'الاسم ده موجود';
-        update(d => { d.custom.push({id: uid36(), name: nm}); return d; });
         return null;
       };
+      const addOwn = name => {
+        const e = addOwnCheck(name);
+        if (!e) update(d => { d.custom.push({id: uid36(), name: String(name).trim().replace(/\s+/g, ' ')}); return d; });
+        return e;
+      };
       const delOwn = id => update(d => { if (canDeleteExercise(id, d.workouts, d.routines).ok) d.custom = d.custom.filter(x => x.id !== id); return d; });
+      // Routines. Starting copies the routine into a new open workout; changing that workout never changes the routine.
+      const routine = screen.rid && data.routines.find(x => x.id === screen.rid);
+      const startRoutine = r => { setScreen({n: 'home'}); update(d => { if (!d.current) d.current = startFromRoutine(r, names, Date.now(), uid36); return d; }); top(); };
+      const saveRoutine = r => { update(d => { const i = d.routines.findIndex(x => x.id === r.id); if (i >= 0) d.routines[i] = r; else d.routines.push(r); return d; }); go({n: 'routine', rid: r.id}); };
+      const delRoutine = id => update(d => { d.routines = d.routines.filter(x => x.id !== id); return d; });
+      const newExercise = q => {
+        const e = addOwnCheck(q);
+        if (e) return {error: e};
+        const ex = {id: uid36(), name: String(q).trim().replace(/\s+/g, ' ')};
+        update(d => { d.custom.push(ex); return d; });
+        return {id: ex.id};
+      };
+      if (screen.n === 'redit') return html`<${RoutineEditor} key=${screen.rid || 'new'} r=${routine || null} all=${all} routines=${data.routines} onSave=${saveRoutine} onCreateExercise=${newExercise} onCancel=${() => go(routine ? {n: 'routine', rid: routine.id} : {n: 'home'})} />`;
+      if (screen.n === 'routine' && routine) return html`<${RoutinePage} r=${routine} names=${names} workouts=${data.workouts} onStart=${() => startRoutine(routine)} onEdit=${() => go({n: 'redit', rid: routine.id})} onBack=${() => go({n: 'home'})} />`;
       return html`<div class="wkv">
         <div class="top"><div class="top-meta"><h1>تمارين</h1><p class="sub">سجّل الأوزان والتكرارات، وكله على جهازك بس.</p></div></div>
         <${WkSwitch} cur=${inHistory ? 'history' : inExs ? 'exercises' : 'home'} go=${go} />
@@ -2486,7 +2699,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         ${inHistory ? html`<${HistoryScreen} workouts=${data.workouts} rec=${rec} onOpen=${id => go({n: 'detail', id})} />` : inExs ? html`<${ExercisesScreen} all=${all} workouts=${data.workouts} routines=${data.routines} onOpen=${id => go({n: 'exercise', id, back: screen})} onAdd=${addOwn} onDelete=${delOwn} />` : html`<div class="panel wk-home">
           <button type="button" class="btn primary" id="wk-start" onClick=${startEmpty}>ابدأ تمرينة فاضية</button>
           <p class="small muted">${n ? html`تمرينات محفوظة: <bdi>${n}</bdi>` : 'لسه مفيش تمرينات محفوظة.'}</p>
-        </div>`}
+        </div>
+        <${RoutineCards} routines=${data.routines} workouts=${data.workouts} names=${names} onOpen=${rid => go({n: 'routine', rid})} onNew=${() => go({n: 'redit'})} onEdit=${rid => go({n: 'redit', rid})} onDelete=${delRoutine} />`}
       </div>`;
     }
 
@@ -2649,13 +2863,19 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       setToast({text, undo: () => update(undoFn)});
       toastTimer.current = setTimeout(() => setToast(null), 7000);
     };
+    // The same toast for the workout log, which has its own store; the caller already made the change.
+    const showToast = (text, undoFn) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({text, undo: undoFn});
+      toastTimer.current = setTimeout(() => setToast(null), 7000);
+    };
     MAIN_NAME = mainCourse(store).name;
 
     let view;
     if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} />`;
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
-    else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} />`;
+    else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} showToast=${showToast} />`;
     else if (tab === 'settings') view = html`<${SettingsView} />`;
     else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
 

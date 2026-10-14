@@ -11,7 +11,7 @@ phone's Arabic-Indic digits; this app keeps Latin digits (as everywhere else in 
 | # | Strong screenshot shows | This contract |
 |---|---|---|
 | 1 | Separate bottom tabs: Workout, History, Exercises | One bottom tab «تمارين» with a three-part switch at its top: «تمرين» · «السجل» · «التمارين» (the tab bar already has six items) |
-| 2 | Workout screen: quick start button, then "My Templates" as cards (name, first exercises, last date) | Home: «ابدأ تمرينة فاضية», then «روتيناتي» as cards: name, first exercises, date of last use |
+| 2 | Workout screen: quick start button, then "My Templates" as cards (name, first exercises, last date) | Home: «ابدأ تمرينة فاضية», then «سبليتاتي» as cards: name, first exercises, date of last use |
 | 3 | Tapping a template opens a page: "Last performed", the exercises with set counts, a wide START button | Routine page: «آخر مرة: <تاريخ>», the exercises in order by name (no set counts: a routine plans no sets, per the spec), wide «ابدأ التمرينة» |
 | 4 | Open workout is full screen, top bar: FINISH, workout timer, rest-timer button | Same header: «خلّص», the workout timer, a stopwatch button for the rest setting; the three-part switch is hidden while a workout is open (the app's own bottom bar stays) |
 | 5 | Set row order: check, reps, kg, previous, set number | Right to left in our layout: set number, previous, weight, reps, done (the same order, mirrored) |
@@ -29,16 +29,17 @@ phone's Arabic-Indic digits; this app keeps Latin digits (as everywhere else in 
 ## Home (no open workout)
 
 - «ابدأ تمرينة فاضية», a primary button.
-- «روتيناتي (N)»: a card per routine with its name, its first exercises as text (cut with an ellipsis), the date
-  it was last used, and a `⋯` menu (rename, edit, delete). A «+ روتين جديد» button. Tapping a card opens the
+- «سبليتاتي (N)»: a card per routine with its name, its first exercises as text with their set counts
+  (`4 × <name>`, cut with an ellipsis), the date
+  it was last used, and a `⋯` menu (rename, edit, delete). A «+ سبليت جديد» button. Tapping a card opens the
   routine page.
 - If a workout is open instead: a banner «تمرينة شغّالة منذ m:ss» that opens it.
 
 ## Routine page
 
-- Name, «آخر مرة: <تاريخ>» (or nothing if never used), the exercises in order by name, and a wide
-  «ابدأ التمرينة». Editing: rename, add, remove, move up and down, delete. It plans nothing (no planned sets,
-  weights or times, as in the spec).
+- Name, «آخر مرة: <تاريخ>» (or nothing if never used), the exercises in order as `<N> × <name>`, and a wide
+  «ابدأ التمرينة». Editing: rename, add, remove, move up and down, the number of sets (−/+, 1 to 20), delete.
+  It plans no weights or times.
 
 ## Open workout
 
@@ -112,7 +113,7 @@ to the spec first.
 | A workout is already open | «فيه تمرينة شغّالة. خلّصها أو الغيها الأول» |
 | Finish with no done set | «سجّل مجموعة واحدة على الأقل» |
 | Name already used | «الاسم ده موجود» |
-| Exercise cannot be deleted | «التمرين ده ليه سجل» / «التمرين ده في روتين: <اسم>» |
+| Exercise cannot be deleted | «التمرين ده ليه سجل» / «التمرين ده في سبليت: <اسم>» |
 | Storage unavailable | the app's existing warning that changes are not kept |
 
 ## Guarantees (testable)

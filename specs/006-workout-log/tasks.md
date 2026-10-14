@@ -100,7 +100,7 @@
 **Independent Test**: [quickstart.md](quickstart.md) section 5.
 
 - [x] T027 [US4] Add the «التمارين» screen outside a workout: a searchable list of every exercise (starter first, then own), tapping one opens its exercise page (T025), and «ضيف تمرين» for a new own exercise with the name rules of T013.
-- [x] T028 [US4] Add deleting: «امسح» only on own exercises with no history and in no routine, using `canDeleteExercise`; otherwise the reason is shown (`التمرين ده ليه سجل` or `التمرين ده في روتين: <اسم>`); starter exercises are never deletable.
+- [x] T028 [US4] Add deleting: «امسح» only on own exercises with no history and in no routine, using `canDeleteExercise`; otherwise the reason is shown (`التمرين ده ليه سجل` or `التمرين ده في سبليت: <اسم>`); starter exercises are never deletable.
 - [x] T029 [US4] Verify per quickstart section 5: search narrows, a duplicate name in another case or with extra spaces is refused, an exercise with history shows why it cannot be deleted; run all checks.
 
 **Checkpoint (cut B)**: history, records and the exercise list work; a second pull request can ship here. Commit as `feat(workout): exercise list and delete rules (006, US4)`.
@@ -113,10 +113,10 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 6.
 
-- [ ] T030 [US5] Add the routines on Home («روتيناتي» cards: name, first exercises, date last used, `⋯` menu; last use is read from finished workouts by `routineName`, so renaming a routine starts its "last used" afresh) and the routine page («ابدأ التمرينة», names only): a list with «روتين جديد»; a routine has a name "1 to 40 characters after trimming, unique ignoring case" and an ordered list of exercises "no repeats, at most 40" picked with the picker of T013; rename, add, remove, move up and down, and delete (deleting never touches finished workouts).
-- [ ] T031 [US5] Add «ابدأ <اسم الروتين>» on Home and on the routine: `startFromRoutine` creates the open workout with the routine's exercises in order, each with one empty set row and last time's values; changing the workout never changes the routine; a finished workout keeps the routine's name as `routineName`.
-- [ ] T032 [US5] Wire the refusal of T028 to routines: an exercise that is in a routine cannot be deleted and the message names the routine; removing it from the routine allows the delete.
-- [ ] T033 [US5] Verify per quickstart section 6: create "Push" and "Legs", start from "Push", add an exercise inside the workout, finish, and confirm the routine is unchanged (SC-009); try the refusal.
+- [x] T030 [US5] Add the routines on Home («سبليتاتي» cards: name, first exercises, date last used, `⋯` menu; last use is read from finished workouts by `routineName`, so renaming a routine starts its "last used" afresh) and the routine page («ابدأ التمرينة», names only): a list with «سبليت جديد»; a routine has a name "1 to 40 characters after trimming, unique ignoring case" and an ordered list of exercises "no repeats, at most 40", each with a set count "1 to 20, default 1" (−/+), picked with the picker of T013; rename, add, remove, move up and down, and delete (deleting never touches finished workouts).
+- [x] T031 [US5] Add «ابدأ <اسم السبليت>» on Home and on the routine: `startFromRoutine` creates the open workout with the routine's exercises in order, each with as many empty set rows as the routine plans and last time's values; changing the workout never changes the routine; a finished workout keeps the routine's name as `routineName`.
+- [x] T032 [US5] Wire the refusal of T028 to routines: an exercise that is in a routine cannot be deleted and the message names the routine; removing it from the routine allows the delete.
+- [x] T033 [US5] Verify per quickstart section 6: create "Push" and "Legs", start from "Push", add an exercise inside the workout, finish, and confirm the routine is unchanged (SC-009); try the refusal.
 
 **Checkpoint**: routines work. Commit as `feat(workout): routines and starting from a routine (006, US5)`.
 
@@ -128,9 +128,9 @@
 
 **Independent Test**: [quickstart.md](quickstart.md) section 7.
 
-- [ ] T034 [US6] Add «امسح التمرينة» on a finished workout with the app's 7-second undo toast: extend `App` with a small `showToast(text, undoFn)` that shows the existing toast for the workout hook (the existing `actEdit` works on the progress store and must not be used or changed), and pass it to `WorkoutView`; undo restores the workout exactly and in its place.
-- [ ] T035 [US6] Add correcting a finished set (weight and repetitions) with `validateSet`; saving recomputes records and previous values from the whole history on the next render, so no stored record can go stale.
-- [ ] T036 [US6] Verify per quickstart section 7: edit and remove a set in an open workout, discard asks first, delete and undo a finished workout, correct a weight and watch a record mark appear or disappear.
+- [x] T034 [US6] Add «امسح التمرينة» on a finished workout with the app's 7-second undo toast: extend `App` with a small `showToast(text, undoFn)` that shows the existing toast for the workout hook (the existing `actEdit` works on the progress store and must not be used or changed), and pass it to `WorkoutView`; undo restores the workout exactly and in its place.
+- [x] T035 [US6] Add correcting a finished set (weight and repetitions) with `validateSet`; saving recomputes records and previous values from the whole history on the next render, so no stored record can go stale.
+- [x] T036 [US6] Verify per quickstart section 7: edit and remove a set in an open workout, discard asks first, delete and undo a finished workout, correct a weight and watch a record mark appear or disappear.
 
 **Checkpoint (cut C)**: all six stories pass; a third pull request can ship here. Commit as `feat(workout): delete and correct finished workouts (006, US6)`.
 
@@ -138,11 +138,11 @@
 
 ## Phase 9: Polish and ship
 
-- [ ] T037 Run the layout, keyboard and screen-reader pass per [quickstart.md](quickstart.md) section 8 at 375 px: the six-item bar, no horizontal scroll on any screen, tap targets at least 44 px, numeric keypad inputs, Arabic-Indic digits accepted, right-to-left with Latin digits in `<bdi>`, every control named, Tab order logical, Escape closes dialogs and returns focus.
-- [ ] T038 [P] Document the feature: a short section in `README.md` (the tab, kilograms, rest timer, routines, data stays on the device and is lost if the browser data is cleared) and one line in `PRODUCT.md` capabilities; generic copy only (Principle VI).
-- [ ] T039 Run the full [quickstart.md](quickstart.md) at 375 px including the network panel (0 requests, SC-007), a reload with an open workout, and that Settings "رجّع المثال" and a settings import leave the workout data untouched; report honestly what only a real phone can show (lock behaviour, vibration, sound, wake lock, offline cold start).
-- [ ] T040 Search the diff for the guarantees: `git diff main -- src/planner.html` MUST show no use of `useStore`, `fall26-planner-v1`, `checks`, `modules`, tasks or appointments inside the workout code, no `fetch`, `XMLHttp`, `sendBeacon`, or notification permission request, and no personal exercise, weight or routine; list what you checked in the commit message (Principles II, III and VI).
-- [ ] T041 Rebuild, run `node tools/check-workout.js`, `--self-test`, `check-paste.js`, `check-edit.js`, `check-settings.js --self-test`, `check-anchors.js --require-fit`, `check-private.js` with the files staged, and the parity check of T008 again (0 differences for a file used without opening the new tab); report any skipped check honestly.
+- [x] T037 Run the layout, keyboard and screen-reader pass per [quickstart.md](quickstart.md) section 8 at 375 px: the six-item bar, no horizontal scroll on any screen, tap targets at least 44 px, numeric keypad inputs, Arabic-Indic digits accepted, right-to-left with Latin digits in `<bdi>`, every control named, Tab order logical, Escape closes dialogs and returns focus.
+- [x] T038 [P] Document the feature: a short section in `README.md` (the tab, kilograms, rest timer, routines, data stays on the device and is lost if the browser data is cleared) and one line in `PRODUCT.md` capabilities; generic copy only (Principle VI).
+- [x] T039 Run the full [quickstart.md](quickstart.md) at 375 px including the network panel (0 requests, SC-007), a reload with an open workout, and that Settings "رجّع المثال" and a settings import leave the workout data untouched; report honestly what only a real phone can show (lock behaviour, vibration, sound, wake lock, offline cold start).
+- [x] T040 Search the diff for the guarantees: `git diff main -- src/planner.html` MUST show no use of `useStore`, `fall26-planner-v1`, `checks`, `modules`, tasks or appointments inside the workout code, no `fetch`, `XMLHttp`, `sendBeacon`, or notification permission request, and no personal exercise, weight or routine; list what you checked in the commit message (Principles II, III and VI).
+- [x] T041 Rebuild, run `node tools/check-workout.js`, `--self-test`, `check-paste.js`, `check-edit.js`, `check-settings.js --self-test`, `check-anchors.js --require-fit`, `check-private.js` with the files staged, and the parity check of T008 again (0 differences for a file used without opening the new tab); report any skipped check honestly.
 - [ ] T042 Tick completed tasks here, show the owner the final diff, and wait for explicit approval before any push or PR (AGENTS.md rule 5).
 
 ---

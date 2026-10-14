@@ -136,8 +136,9 @@ a workout; the custom one appears in the list next time.
 
 Like Strong, the user decides how their training is split. They create routines with names they choose (for
 example "Push", "Pull", "Legs", or "Upper" and "Lower", or anything else), and for each routine they pick the
-exercises it holds, in order. When they start a workout they can start an empty one or start from a routine:
-all the routine's exercises are added at once, each with an empty set row and the values from last time.
+exercises it holds, in order, with how many sets each one gets (like Strong's `4 ×`). When they start a workout they
+can start an empty one or start from a routine: all the routine's exercises are added at once, each with that many
+empty set rows and the values from last time.
 
 **Why this priority**: The owner named this by description: choosing which exercises belong to push, pull
 and legs (or any split) is how they train, and it saves re-adding the same exercises every session.
@@ -149,11 +150,13 @@ unchanged.
 **Acceptance Scenarios**:
 
 1. **Given** the routines screen, **When** the user creates a routine with a name and picks exercises from the
-   list, **Then** it is saved with those exercises in the order picked.
+   list, **Then** it is saved with those exercises in the order picked, each with 1 set unless the user changes
+   the count (1 to 20).
 2. **Given** a routine, **When** the user renames it, adds, removes or reorders its exercises, or deletes it,
    **Then** the change is saved; deleting a routine never deletes workouts already finished from it.
 3. **Given** the start screen, **When** the user starts a workout from a routine, **Then** an open workout
-   appears with the routine's exercises in order, each with one empty set row and the previous values.
+   appears with the routine's exercises in order, each with as many empty set rows as the routine plans and the
+   previous values.
 4. **Given** a workout started from a routine, **When** the user adds, removes or changes exercises in this
    workout, **Then** the routine itself does not change.
 5. **Given** an exercise used by a routine, **When** the user tries to delete it, **Then** it is refused with
@@ -238,9 +241,11 @@ delete a finished workout and undo within a few seconds.
   names, a search box, the user's own exercises, and a way to browse the whole list at any time; an exercise
   with history, or one used by a routine, MUST NOT be deletable.
 - **FR-019**: The user MUST be able to create routines with a name of their choice (no fixed split is imposed)
-  and an ordered list of exercises, and rename, edit, reorder, and delete them.
+  and an ordered list of exercises, each with a planned number of sets (1 to 20), and rename, edit, reorder, and
+  delete them.
 - **FR-020**: Starting a workout MUST offer an empty workout and each routine; starting from a routine MUST
-  add all its exercises in order, each with an empty set row and the previous values (FR-006), and MUST NOT
+  add all its exercises in order, each with its planned number of empty set rows and the previous values (FR-006),
+  and MUST NOT
   change the routine afterwards.
 - **FR-021**: Routines MUST be stored only on the device with the rest of the workout data and MUST NOT affect
   the schedule, tasks or settings (Principles II and III).
@@ -258,7 +263,8 @@ delete a finished workout and undo within a few seconds.
 
 ### Key Entities
 
-- **Routine**: a name chosen by the user and an ordered list of exercises; a template for starting a workout.
+- **Routine**: a name chosen by the user and an ordered list of exercises with a planned number of sets each; a
+  template for starting a workout.
 - **Exercise**: a name (from the starter list or the user's own); has history if any workout used it.
 - **Set**: a weight in kilograms and repetitions, belonging to one exercise in one workout, done or not yet.
 - **Workout**: a start time, an end time once finished, an ordered list of exercises each with its sets; open or
@@ -300,7 +306,8 @@ delete a finished workout and undo within a few seconds.
   as separate truth.
 - Charts and graphs, exporting data, and syncing between devices are out of scope for this feature; they can
   follow as separate features. Routines are in scope (US5) but stay simple: a name and an ordered list of
-  exercises, with no planned weights, sets or rest times per routine.
+  exercises with a number of sets each (changed 2026-10-14 with the owner, after the Strong screenshots), with no
+  planned weights or rest times per routine.
 - The starter list names are in English. The language of an exercise name is the user's choice for their own
   exercises; this can be revisited if the owner prefers Arabic names.
 - The app cannot make a sound or vibrate while the browser is in the background or the screen is locked on

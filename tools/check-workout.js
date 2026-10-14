@@ -24,7 +24,7 @@ function block(source) {
   return source.slice(a, b);
 }
 function load(source) {
-  return new Function(block(source) + '\nreturn {WORKOUTS_KEY, STARTER_EXERCISES, EMPTY_WORKOUTS, parseNumber, validateSet, normName, isNameTaken, elapsedMs, restLeft, formatClock, restLabel, previousSets, computeRecords, bestSet, volumeOf, recordCount, finishWorkout, startFromRoutine, canDeleteExercise, normalizeRoot};')();
+  return new Function(block(source) + '\nreturn {WORKOUTS_KEY, STARTER_EXERCISES, EMPTY_WORKOUTS, parseNumber, validateSet, normName, isNameTaken, elapsedMs, restLeft, formatClock, restLabel, previousSets, computeRecords, bestSet, volumeOf, recordCount, finishWorkout, clampSets, validateRoutineName, routineLastUsed, startFromRoutine, canDeleteExercise, removeWorkout, putBackWorkout, correctSet, normalizeRoot};')();
 }
 
 const clone = x => JSON.parse(JSON.stringify(x));
@@ -178,6 +178,28 @@ function runChecks(h, source) {
     let n = 0; const w = h.startFromRoutine(routine, {x: {id: 'x'}, y: {id: 'y'}}, 777, () => 'new' + (++n));
     return w.id === 'new1' && w.startedAt === 777 && w.routineId === 'r1' && w.routineName === 'Push' && w.rest === null && eq(w.exercises, [{exId: 'x', sets: [{w: '', r: '', done: false}]}, {exId: 'y', sets: [{w: '', r: '', done: false}]}]);
   });
+  check('a routine plans its set counts: each exercise starts with that many empty rows, 1 when missing or bad', () => {
+    const routine = deepFreeze({id: 'r1', name: 'Pull', exIds: ['x', 'gone', 'y', 'z'], sets: [4, 2, 3, 99]});
+    const w = h.startFromRoutine(routine, {x: 1, y: 1, z: 1}, 5, () => 'n');
+    const plain = h.startFromRoutine({id: 'r2', name: 'P', exIds: ['x']}, {x: 1}, 5, () => 'm');
+    return eq(w.exercises.map(e => e.sets.length), [4, 3, 20]) && w.exercises.every(e => e.sets.every(s => eq(s, {w: '', r: '', done: false}))) && plain.exercises[0].sets.length === 1
+      && h.clampSets(0) === 1 && h.clampSets(2.5) === 1 && h.clampSets('3') === 1 && h.clampSets(7) === 7 && h.clampSets(21) === 20;
+  });
+  check('stored routines: repeats dropped, at most 40 exercises, set counts follow their exercise and are clamped', () => {
+    const many = Array.from({length: 45}, (_, i) => 'e' + i);
+    const r = h.normalizeRoot({v: 1, routines: [{id: 'r', name: ' Push ', exIds: ['a', 'b', 'a', 7, 'c'], sets: [3, 0, 5, 2, 25]}, {id: 'q', name: 'Big', exIds: many}]}).root.routines;
+    return eq(r[0], {id: 'r', name: 'Push', exIds: ['a', 'b', 'c'], sets: [3, 1, 20]}) && r[1].exIds.length === 40 && r[1].sets.length === 40 && r[1].sets.every(n => n === 1);
+  });
+  check('routine names: 1 to 40 characters, unique ignoring case, trimmed; its own name is allowed when editing', () => {
+    const rs = [{id: 'a', name: 'Push'}];
+    const blank = h.validateRoutineName('  ', rs), long = h.validateRoutineName('x'.repeat(41), rs), dup = h.validateRoutineName(' push ', rs), ok = h.validateRoutineName('  Pull   day ', rs);
+    return !blank.ok && blank.error === 'اكتب اسم السبليت' && !long.ok && long.error === 'الاسم لحد 40 حرف' && !dup.ok && dup.error === 'فيه سبليت بالاسم ده'
+      && ok.ok && ok.value === 'Pull day' && h.validateRoutineName('PUSH', rs, 'a').ok && h.validateRoutineName('x'.repeat(40), rs).ok;
+  });
+  check('a routine was last used at its latest finished workout with the same name, or never', () => {
+    const ws = [{id: 'a', startedAt: 300, routineName: 'Push'}, {id: 'b', startedAt: 500, routineName: 'Pull'}, {id: 'c', startedAt: 100, routineName: 'Push'}, {id: 'd', startedAt: 900}];
+    return h.routineLastUsed('Push', ws) === 300 && h.routineLastUsed('Pull', ws) === 500 && h.routineLastUsed('Legs', ws) === null && h.routineLastUsed('push', ws) === null;
+  });
   check('delete rules: starter never, history blocks, a routine blocks and names it, otherwise allowed', () => {
     const ws = [{id: 'a', startedAt: 1, endedAt: 2, exercises: [{exId: 'c1', name: 'c1', sets: [{w: 1, r: 1}]}]}];
     const rs = [{id: 'r', name: 'Legs', exIds: ['c2']}];
@@ -190,7 +212,7 @@ function runChecks(h, source) {
     return cases.every(c => { const r = h.normalizeRoot(c); return !r.tooNew && eq(r.root, empty); });
   });
   check('a newer data version is reported and not read; the stored text round-trips unchanged', () => {
-    const newer = h.normalizeRoot({v: 2, workouts: [{id: 'a'}]}), text = JSON.stringify({v: 1, custom: [{id: 'c', name: 'My lift'}], routines: [{id: 'r', name: 'Legs', exIds: ['c']}], workouts: [{id: 'w', startedAt: 1, endedAt: 2, exercises: [{exId: 'c', name: 'My lift', sets: [{w: 20, r: 5}]}]}], current: null, prefs: {restSeconds: 120, sound: false}});
+    const newer = h.normalizeRoot({v: 2, workouts: [{id: 'a'}]}), text = JSON.stringify({v: 1, custom: [{id: 'c', name: 'My lift'}], routines: [{id: 'r', name: 'Legs', exIds: ['c'], sets: [3]}], workouts: [{id: 'w', startedAt: 1, endedAt: 2, exercises: [{exId: 'c', name: 'My lift', sets: [{w: 20, r: 5}]}]}], current: null, prefs: {restSeconds: 120, sound: false}});
     const round = h.normalizeRoot(text);
     return newer.tooNew === true && eq(newer.root, h.EMPTY_WORKOUTS()) && !round.tooNew && eq(round.root, JSON.parse(text));
   });
@@ -206,7 +228,7 @@ function runChecks(h, source) {
   check('damaged records inside valid data are dropped, valid ones kept', () => {
     const r = h.normalizeRoot({v: 1, custom: [{id: 'a', name: ' Ok '}, {id: 'b', name: ''}, null, {name: 'x'}], routines: [{id: 'r', name: 'R', exIds: ['a', 5]}, {id: 'q', name: ''}],
       workouts: [{id: 'w', startedAt: 1, endedAt: 0, exercises: [{exId: 'a', sets: [{w: 1, r: 1}, {w: 'x', r: 1}]}, {exId: 'b', sets: []}]}, {id: 'v'}]});
-    return eq(r.root.custom, [{id: 'a', name: 'Ok'}]) && eq(r.root.routines, [{id: 'r', name: 'R', exIds: ['a']}]) && r.root.workouts.length === 1 && r.root.workouts[0].endedAt === 1 && eq(r.root.workouts[0].exercises, [{exId: 'a', name: 'a', sets: [{w: 1, r: 1}]}]);
+    return eq(r.root.custom, [{id: 'a', name: 'Ok'}]) && eq(r.root.routines, [{id: 'r', name: 'R', exIds: ['a'], sets: [1]}]) && r.root.workouts.length === 1 && r.root.workouts[0].endedAt === 1 && eq(r.root.workouts[0].exercises, [{exId: 'a', name: 'a', sets: [{w: 1, r: 1}]}]);
   });
   check('the best set is the heaviest, a tie goes to more repetitions, and no sets gives none', () => {
     return eq(h.bestSet([{w: 20, r: 15}, {w: 20, r: 12}, {w: 15, r: 20}]), {w: 20, r: 15}) && eq(h.bestSet([{w: 20, r: 8}, {w: 20, r: 12}]), {w: 20, r: 12})
@@ -220,6 +242,24 @@ function runChecks(h, source) {
       {id: 'b', startedAt: 3, endedAt: 4, exercises: [{exId: 'x', name: 'x', sets: [{w: 60, r: 6}, {w: 50, r: 5}, {w: 60, r: 6}]}, {exId: 'y', name: 'y', sets: [{w: 10, r: 10}]}]}];
     const rec = h.computeRecords(ws);
     return h.recordCount(ws[0], rec.flags) === 0 && h.recordCount(ws[1], rec.flags) === 1 && Object.keys(rec.flags).filter(k => k.indexOf('b:') === 0).length === 1;
+  });
+  check('deleting a finished workout and putting it back gives the same list in the same order, once', () => {
+    const ws = deepFreeze([{id: 'a', startedAt: 1, endedAt: 2, exercises: []}, {id: 'b', startedAt: 3, endedAt: 4, exercises: []}, {id: 'c', startedAt: 5, endedAt: 6, exercises: []}]);
+    const r = h.removeWorkout(ws, 'b'), back = h.putBackWorkout(r.workouts, r.removed, r.index), none = h.removeWorkout(ws, 'zz');
+    return r.index === 1 && r.removed === ws[1] && eq(r.workouts.map(w => w.id), ['a', 'c']) && eq(back, ws)
+      && eq(h.putBackWorkout(back, r.removed, r.index), ws) && none.removed === null && none.index === -1 && eq(none.workouts, ws)
+      && eq(h.putBackWorkout([], ws[0], 9).map(w => w.id), ['a']) && eq(h.putBackWorkout(r.workouts, null, 0), r.workouts);
+  });
+  check('correcting a finished set changes only that set, uses the logging limits and leaves the input alone', () => {
+    const w = deepFreeze({id: 'a', startedAt: 1, endedAt: 2, exercises: [{exId: 'x', name: 'x', sets: [{w: 50, r: 5}, {w: 55, r: 5}]}, {exId: 'y', name: 'y', sets: [{w: 10, r: 10}]}]});
+    const ok = h.correctSet(w, 0, 1, {w: '٥٧٫٥', r: '6'}), bad = h.correctSet(w, 0, 0, {w: '1000', r: '5'}), blank = h.correctSet(w, 1, 0, {w: '10', r: ''}), gone = h.correctSet(w, 0, 5, {w: 1, r: 1});
+    return ok.ok && eq(ok.workout.exercises[0].sets, [{w: 50, r: 5}, {w: 57.5, r: 6}]) && eq(ok.workout.exercises[1], w.exercises[1]) && ok.workout.id === 'a'
+      && !bad.ok && bad.field === 'w' && bad.error === 'الوزن من 0 لـ 999.9' && !blank.ok && blank.field === 'r' && !gone.ok && !h.correctSet(w, 3, 0, {w: 1, r: 1}).ok;
+  });
+  check('a correction makes a record appear and taking it back makes it disappear', () => {
+    const ws = [{id: 'a', startedAt: 1, endedAt: 2, exercises: [{exId: 'x', name: 'x', sets: [{w: 50, r: 5}]}]}, {id: 'b', startedAt: 3, endedAt: 4, exercises: [{exId: 'x', name: 'x', sets: [{w: 45, r: 5}]}]}];
+    const up = h.correctSet(ws[1], 0, 0, {w: 60, r: 5}).workout, down = h.correctSet(up, 0, 0, {w: 45, r: 5}).workout;
+    return !h.computeRecords(ws).flags['b:0:0'] && h.computeRecords([ws[0], up]).flags['b:0:0'].weight === true && !h.computeRecords([ws[0], down]).flags['b:0:0'];
   });
   check('the rules block knows nothing about the progress store, the schedule, tasks, settings or the network', () => {
     const b = block(source).split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');   // comments may name what the code must not touch
@@ -251,7 +291,16 @@ if (process.argv.includes('--self-test')) {
     ['a tie for best set goes to fewer repetitions', s => s.replace('(s.w === b.w && s.r > b.r)', '(s.w === b.w && s.r < b.r)')],
     ['volume adds weight and repetitions instead of multiplying', s => s.replace('n + s.w * s.r', 'n + s.w + s.r')],
     ['a record set that is both weight and reps is counted twice', s => s.replace('if (f && (f.weight || f.reps)) n++;', 'if (f) { if (f.weight) n++; if (f.reps) n++; }')],
-    ['a newer data version is read', s => s.replace('if (typeof v.v === \'number\' && v.v > 1) return {root, tooNew: true};', '')]
+    ['a newer data version is read', s => s.replace('if (typeof v.v === \'number\' && v.v > 1) return {root, tooNew: true};', '')],
+    ['an undo puts the workout back at the end', s => s.replace('const i = Math.max(0, Math.min(workouts.length, index | 0));', 'const i = workouts.length;')],
+    ['an undo can add a workout twice', s => s.replace('if (!w || workouts.some(x => x.id === w.id)) return workouts.slice();', 'if (!w) return workouts.slice();')],
+    ['a correction skips the logging limits', s => s.replace('const v = validateSet(fields);\n', 'const v = {ok: true, value: {w: Number(fields.w), r: Number(fields.r)}};\n')],
+    ['deleting removes the wrong workout', s => s.replace('workouts.slice(0, index).concat(workouts.slice(index + 1))', 'workouts.slice(0, index + 1).concat(workouts.slice(index + 2))')],
+    ['a routine starts with one set per exercise', s => s.replace('Array.from({length: x.n}, () => ({w: \'\', r: \'\', done: false}))', '[{w: \'\', r: \'\', done: false}]')],
+    ['set counts are not capped at 20', s => s.replace('n >= 1 ? Math.min(20, n) : 1', 'n >= 1 ? n : 1')],
+    ['two routines can share a name', s => s.replace("if (isNameTaken(nm, routines, exceptId)) return {ok: false, error: 'فيه سبليت بالاسم ده'};", '')],
+    ['a stored routine keeps repeated exercises', s => s.replace("if (typeof id === 'string' && exIds.indexOf(id) < 0 && exIds.length < 40)", "if (typeof id === 'string' && exIds.length < 40)")],
+    ['last use picks the earliest workout', s => s.replace('(t === null || w.startedAt > t)', '(t === null || w.startedAt < t)')]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {
