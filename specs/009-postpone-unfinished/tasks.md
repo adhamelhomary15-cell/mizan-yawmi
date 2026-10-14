@@ -114,12 +114,12 @@ self-test, run in CI, plus `check-settings.js` cases.
 
 ## Phase 6: Ship
 
-- [ ] T017 Tick the tasks, push, open the PR, and merge when CI passes. The owner asked on 2026-10-14 to
+- [x] T017 Tick the tasks, push, open the PR, and merge when CI passes. The owner asked on 2026-10-14 to
   continue the whole process.
 
 ## Phase 7: The owner's file (outside the repo)
 
-- [ ] T018 Back up `.private/settings.json`. Set `postpone` on study, course and quran, and `free` on personal.
+- [x] T018 Back up `.private/settings.json`. Set `postpone` on study, course and quran, and `free` on personal.
   Validate it. The owner re-imports.
 
 ## Summary
