@@ -1198,13 +1198,17 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return {v:1, checks: d.checks && typeof d.checks === 'object' ? d.checks : {}, modules: d.modules && typeof d.modules === 'object' ? d.modules : {}, tasks: Array.isArray(d.tasks) ? d.tasks : [], appts: Array.isArray(d.appts) ? d.appts : [], courses, mainCourse: main, extras, phaseSeen: d.phaseSeen === 'A' || d.phaseSeen === 'B' ? d.phaseSeen : null};
   }
   function loadLocal(){ try { const r = localStorage.getItem(LOCAL_KEY); return r ? normalize(JSON.parse(r)) : null; } catch(e){ return null; } }
-  function saveLocal(s){ try { localStorage.setItem(LOCAL_KEY, JSON.stringify(s)); } catch(e){} }
+  // true when the write went through, false when the browser refused it (storage full, private mode, blocked)
+  function saveLocal(s){ try { localStorage.setItem(LOCAL_KEY, JSON.stringify(s)); return true; } catch(e){ return false; } }
   const hasData = s => Object.keys(s.checks).length || Object.keys(s.modules).length || s.tasks.length || s.appts.length || s.courses.length || Object.keys(s.extras).length;
   const uid36 = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
   function useStore(){
     const [store, setStore] = useState(() => loadLocal() || EMPTY());
     const [sync, setSync] = useState('local');
+    // true after a write to this device failed, until the next one succeeds (the notice in App reads it)
+    const [saveFailed, setSaveFailed] = useState(!LOCAL_OK);
+    const noteSave = ok => setSaveFailed(f => f === !ok ? f : !ok);
     const latest = useRef(store), ref = useRef(null), timer = useRef(null), chain = useRef(Promise.resolve());
 
     function flush(){
@@ -1223,14 +1227,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     }
     function update(fn){
       const next = normalize(fn(JSON.parse(JSON.stringify(latest.current))));
-      latest.current = next; setStore(next); saveLocal(next);
+      latest.current = next; setStore(next); noteSave(saveLocal(next));
       if (ref.current) queue();
     }
     // A restore: the whole progress at once, and, when a synced copy is active, written there now rather than
     // after the usual delay. Resolves true when that write finished (or there is no synced copy), false if it failed.
     function replaceAll(nextRaw){
       const next = normalize(nextRaw);
-      latest.current = next; setStore(next); saveLocal(next);
+      latest.current = next; setStore(next); noteSave(saveLocal(next));
       if (timer.current) { clearTimeout(timer.current); timer.current = null; }
       const r = ref.current;
       if (!r) return Promise.resolve(true);
@@ -1262,7 +1266,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
             if (!snap.exists) return;
             const next = normalize(snap.data());
             if (JSON.stringify(next) !== JSON.stringify(latest.current)){
-              latest.current = next; setStore(next); saveLocal(next);
+              latest.current = next; setStore(next); noteSave(saveLocal(next));
             }
           }, () => { ref.current = null; setSync('local'); });
         } catch(e){ setSync('local'); }
@@ -1270,7 +1274,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       return () => { dead = true; if (unsub) unsub(); };
     }, []);
 
-    return [store, update, sync, replaceAll];
+    return [store, update, sync, replaceAll, saveFailed];
   }
 
   /* ---------------- day model: schedule + one-off blocks + status ---------------- */
@@ -2704,29 +2708,39 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
+  const BACKUP_FAILED = 'مقدرتش أحفظ الملف. افتح التطبيق في المتصفح العادي وجرّب تاني';
+  function buildBackup(store, wk){
+    const now = Date.now(), b = makeBackup(backupParts(store, wk), now, cairoParts(new Date(now)).iso);
+    return {b, now, file: new File([b.text], b.name, {type: 'application/json'})};
+  }
+  // Records the time of the last backup; returns it as ISO text.
+  function rememberBackup(now){
+    const at = new Date(now).toISOString();
+    try { localStorage.setItem(BACKUP_META_KEY, JSON.stringify({lastBackupAt: at})); } catch(e){}
+    return at;
+  }
+  // Saves a backup file of what is on screen. Used by the backup section and by the save-failure notice in App.
+  function downloadBackup(store, wk){
+    try {
+      const {b, now, file} = buildBackup(store, wk);
+      const url = URL.createObjectURL(file), a = document.createElement('a');
+      a.href = url; a.download = b.name; a.style.display = 'none';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return {ok: true, name: b.name, at: rememberBackup(now)};
+    } catch(e){ return {ok: false}; }
+  }
   function BackupSection({store, wk, sync, replaceAll}){
     const [last, setLast] = useState(readBackupMeta);
     const [msg, setMsg] = useState(null);   // {ok, text}
-    const build = () => {
-      const now = Date.now(), b = makeBackup(backupParts(store, wk), now, cairoParts(new Date(now)).iso);
-      return {b, now, file: new File([b.text], b.name, {type: 'application/json'})};
-    };
-    const remember = now => {
-      const at = new Date(now).toISOString();
-      try { localStorage.setItem(BACKUP_META_KEY, JSON.stringify({lastBackupAt: at})); } catch(e){}
-      setLast(at);
-    };
-    const failed = () => setMsg({ok: false, text: 'مقدرتش أحفظ الملف. افتح التطبيق في المتصفح العادي وجرّب تاني'});
+    const build = () => buildBackup(store, wk);
+    const remember = now => setLast(rememberBackup(now));
+    const failed = () => setMsg({ok: false, text: BACKUP_FAILED});
     const save = () => {
-      try {
-        const {b, now, file} = build();
-        const url = URL.createObjectURL(file), a = document.createElement('a');
-        a.href = url; a.download = b.name; a.style.display = 'none';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        remember(now);
-        setMsg({ok: true, name: b.name});
-      } catch(e){ failed(); }
+      const r = downloadBackup(store, wk);
+      if (!r.ok) { failed(); return; }
+      setLast(r.at);
+      setMsg({ok: true, name: r.name});
     };
     // The system share sheet, only where the device can share files, and only on this tap.
     let canShare = false;
@@ -3896,8 +3910,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
 
   function App(){
-    const [store, update, sync, replaceAll] = useStore();
+    const [store, update, sync, replaceAll, saveFailed] = useStore();
     const wk = useWorkouts();
+    // The save-failure notice: its own backup result, cleared once saving works again.
+    const [saveMsg, setSaveMsg] = useState(null);
+    useEffect(() => { if (!saveFailed) setSaveMsg(null); }, [saveFailed]);
+    const saveNow = () => { const r = downloadBackup(store, wk); setSaveMsg(r.ok ? {ok: true, name: r.name} : {ok: false}); };
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
     const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','tasks','workout','settings'].includes(hsh) ? hsh : 'today'; });
@@ -3968,6 +3986,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         ${LOADED.isExample ? html`<div class="notice"><p><b>${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'}</b><span class="small muted">${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات' : 'لما يبقى عندك ملف إعداداتك هتستورده من الإعدادات'}</span></p></div>` : null}
         <div aria-live="polite">${phaseNotice ? html`<div class="notice"><p>${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}</p><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></div>` : null}</div>
         ${syncLate ? html`<div class="notice" role="status"><p>النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة.</p><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></div>` : null}
+        ${saveFailed ? html`<div class="notice" role="alert"><p><b>آخر تغيير ماتحفظش على الجهاز</b><span class="small muted">${LOCAL_OK
+          ? 'مساحة التخزين ممكن تكون مليانة أو المتصفح مانع الحفظ. احفظ نسخة احتياطية دلوقتي عشان ماتضيعش حاجة.'
+          : 'المتصفح ده مش بيسمح بالحفظ، فالتقدم هيضيع لما تقفل التطبيق.'}</span>${saveMsg ? html`<span class="small">${saveMsg.ok ? html`اتحفظت النسخة: <bdi dir="ltr">${saveMsg.name}</bdi>` : BACKUP_FAILED}</span>` : null}</p><button type="button" class="btn primary" onClick=${saveNow}>احفظ نسخة احتياطية</button></div>` : null}
         ${view}
         <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
       </main>
