@@ -75,10 +75,11 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
 
 **Goal**: The constitution and docs allow the source to be the shell plus the part files it lists.
 
-- [ ] T008 [US2] Run `/speckit-constitution` for a PATCH bump of Principle V: the app is built from
+- [x] T008 [US2] Run `/speckit-constitution` for a PATCH bump of Principle V: the app is built from
   `src/planner.html` *and the part files it lists in `src/app/ORDER`*; the output stays one self-contained file.
   File: `.specify/memory/constitution.md`. Owner approves the wording.
-- [ ] T009 [P] [US2] Update `AGENTS.md` ("Edit `src/planner.html` only" → the shell and `src/app/*`) and the file map
+- [ ] T009 [US2] (Moved into T013 by the owner on 2026-10-15, so the docs never describe files that do not exist
+  yet.) Update `AGENTS.md` ("Edit `src/planner.html` only" → the shell and `src/app/*`) and the file map
   in `README.md` to match T008.
 
 ## Phase 2b: User Story 2 - Shared source helper (Priority: P2)

@@ -45,8 +45,9 @@ Rationale: the product is used outdoors on a phone with unreliable connectivity,
 app cannot assume one person's city.
 
 ### V. Simple, Single-File, Egyptian Arabic
-The app stays one self-contained HTML file built by `tools/build.py` from `src/planner.html`;
-no new build step or framework without a recorded justification. The default UI language is
+The app stays one self-contained HTML file built by `tools/build.py` from `src/planner.html`
+and the script parts it lists in `src/app/ORDER`, joined in that order with no bundler or module
+system; no new build step or framework without a recorded justification. The default UI language is
 Egyptian colloquial Arabic, right-to-left; the language is a setting, so a general user can switch
 it, and adding a language MUST NOT break the single-file build or the right-to-left layout. Course
 and subject names stay as the user writes them. Generated files (`index.html`, `sw.js`, manifest,
@@ -103,4 +104,4 @@ PATCH for clarifications. Principles I and II are non-negotiable and can be rela
 MAJOR amendment. Every plan and review MUST verify compliance; any deviation MUST be justified
 in writing in the plan. Runtime guidance lives in `PRODUCT.md`, `DESIGN.md`, and `README.md`.
 
-**Version**: 2.0.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-14
+**Version**: 2.0.1 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-15
