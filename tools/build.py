@@ -46,7 +46,20 @@ if not links:
     raise SystemExit('Google Fonts links not found')
 src = src.replace(links.group(0), '<style>' + ''.join(faces) + '</style>')
 
-# 3. Wrap in a full document with the app manifest and service worker.
+# 3. Inline the exercise drawings of the built-in exercises only. The others stay as files on the site and are
+#    downloaded when the user taps for one (feature 011).
+GUIDES = VENDOR / 'workout-guide' / 'frames'
+builtin = re.search(r'const WORKOUT_GUIDE_BUILTIN_SLUGS = \{(.*?)\};', src, re.S)
+if not builtin or 'const WORKOUT_GUIDE_ASSETS = {};' not in src:
+    raise SystemExit('exercise drawing tables not found')
+slugs = sorted(set(re.findall(r':\s*"([a-z0-9-]+)"', builtin.group(1))))
+missing = [s for s in slugs if not (GUIDES / f'{s}.json.gz').is_file()]
+if missing:
+    raise SystemExit('missing exercise drawings: ' + ', '.join(missing))
+assets = ','.join(f'"{s}":"{base64.b64encode((GUIDES / f"{s}.json.gz").read_bytes()).decode()}"' for s in slugs)
+src = src.replace('const WORKOUT_GUIDE_ASSETS = {};', 'const WORKOUT_GUIDE_ASSETS = {' + assets + '};', 1)
+
+# 4. Wrap in a full document with the app manifest and service worker.
 title = re.search(r'<title>.*?</title>', src).group(0)
 src = src.replace(title, '', 1)
 head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
@@ -61,7 +74,7 @@ sw_reg = ("<script>if('serviceWorker' in navigator){addEventListener('load',func
 page = head + title + '</head><body>' + src + sw_reg + '</body></html>'
 write('index.html', page)
 
-# 4. Manifest.
+# 5. Manifest.
 manifest = {
     "name": "ميزان يومي", "short_name": "ميزان",
     "description": "يومك موزون بين مذاكرتك وشغلك والتزاماتك",
@@ -72,23 +85,26 @@ manifest = {
               {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]}
 write('manifest.webmanifest', json.dumps(manifest, ensure_ascii=False, indent=2))
 
-# 5. Service worker. The cache name changes with every build, so phones drop the old copy.
+# 6. Service worker. The cache name changes with every build, so phones drop the old copy; downloaded
+#    exercise drawings live in mizan-guides-* and survive updates.
 version = hashlib.sha1(page.encode()).hexdigest()[:10]
 write('sw.js', f"""const CACHE = 'mizan-{version}';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {{ e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); }});
-self.addEventListener('activate', e => {{ e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); }});
+self.addEventListener('activate', e => {{ e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && !k.startsWith('mizan-guides-')).map(k => caches.delete(k)))).then(() => self.clients.claim())); }});
 // Network first, so a new version shows up as soon as the app opens online; the cached copy serves offline.
 self.addEventListener('fetch', e => {{
   const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const url = new URL(req.url);
+  // Exercise drawings the user downloads are kept by the app in its own cache (mizan-guides-*), not here.
+  if (req.method !== 'GET' || url.origin !== location.origin || url.pathname.includes('/tools/vendor/workout-guide/')) return;
   e.respondWith(fetch(req, {{cache: 'no-cache'}})
     .then(r => {{ if (r.ok) {{ const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }} return r; }})
     .catch(() => caches.match(req).then(r => r || caches.match('./index.html'))));
 }});
 """)
 
-# 6. Icons: the guilloche rosette in paper ink on the oxblood shell colour.
+# 7. Icons: the guilloche rosette in paper ink on the oxblood shell colour.
 ICONS = ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png']
 want_icons = '--icons' in sys.argv[1:] or not all((ROOT / n).exists() for n in ICONS)
 try:
