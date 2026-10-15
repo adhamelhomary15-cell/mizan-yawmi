@@ -67,6 +67,11 @@ jobs:
           node tools/check-postpone.js
           node tools/check-postpone.js --self-test
 
+      - name: Exercise art
+        run: |
+          node tools/check-guides.js
+          node tools/check-guides.js --self-test
+
       - name: Privacy check works
         # The owner's private settings are not in the repo, so CI can only prove the checker itself works.
         # The real scan runs locally before each commit (AGENTS.md).
