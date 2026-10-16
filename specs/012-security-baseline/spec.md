@@ -152,7 +152,8 @@ current address for now, and the two ways to close it before the app opens to ot
 
 ### Functional Requirements
 
-- **FR-001**: The built page MUST carry a CSP `<meta>` tag as the first element in `<head>`. It allows:
+- **FR-001**: The built page MUST carry a CSP `<meta>` tag right after `<meta charset>`, before any script or style.
+  It allows:
   - `default-src 'none'`;
   - `script-src` with only the SHA-256 hashes of the page's inline scripts;
   - `style-src` with only the hashes of its inline `<style>` blocks;
