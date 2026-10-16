@@ -41,7 +41,6 @@ h3{font-family:var(--font-display);font-weight:500;font-size:16px;line-height:1.
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--course);outline-offset:2px}
 .num{font-variant-numeric:tabular-nums}
-.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 .small{font-size:13px}
 .sec{display:flex;flex-direction:column;gap:var(--s3)}
@@ -938,9 +937,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const DAY_SHORT = {6:'سبت',0:'حد',1:'اتنين',2:'تلات',3:'أربع',4:'خميس',5:'جمعة'};
   const WEEK_ORDER = [6,0,1,2,3,4,5];
 
-  // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
-  // Each block ends where the next starts; the last ends at the end of the day.
-
   /* ---------------- data derived from settings ---------------- */
   // Missing categories fall back to these generic labels so every category id always has a label.
   const DEFAULT_CATS = {
@@ -957,6 +953,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const CATS = {};
   Object.keys(DEFAULT_CATS).forEach(k => { CATS[k] = Object.assign({}, DEFAULT_CATS[k], (CFG.categories || {})[k]); });
   const SUBJ = CFG.subjects || {};
+  // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
+  // Each block ends where the next starts; the last ends at the end of the day.
   const SCHED = CFG.week || {};
   const COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : {name:'Course', sub:''};
   const PLAN = CFG.course ? CFG.course.plan : [];

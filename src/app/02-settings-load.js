@@ -20,9 +20,6 @@
   const DAY_SHORT = {6:'سبت',0:'حد',1:'اتنين',2:'تلات',3:'أربع',4:'خميس',5:'جمعة'};
   const WEEK_ORDER = [6,0,1,2,3,4,5];
 
-  // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
-  // Each block ends where the next starts; the last ends at the end of the day.
-
   /* ---------------- data derived from settings ---------------- */
   // Missing categories fall back to these generic labels so every category id always has a label.
   const DEFAULT_CATS = {
@@ -39,6 +36,8 @@
   const CATS = {};
   Object.keys(DEFAULT_CATS).forEach(k => { CATS[k] = Object.assign({}, DEFAULT_CATS[k], (CFG.categories || {})[k]); });
   const SUBJ = CFG.subjects || {};
+  // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
+  // Each block ends where the next starts; the last ends at the end of the day.
   const SCHED = CFG.week || {};
   const COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : {name:'Course', sub:''};
   const PLAN = CFG.course ? CFG.course.plan : [];
