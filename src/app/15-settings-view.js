@@ -26,17 +26,19 @@
   /* backup: saving a file to the owner's own device (the rules are in the "backup rules" block) */
   const BACKUP_META_KEY = 'mizan-backup-meta-v1';
   function readBackupMeta(){
-    try { const m = JSON.parse(localStorage.getItem(BACKUP_META_KEY) || 'null'); return m && typeof m.lastBackupAt === 'string' && !Number.isNaN(Date.parse(m.lastBackupAt)) ? m.lastBackupAt : null; } catch(e){ return null; }
+    const m = readJSON(BACKUP_META_KEY);
+    return m && typeof m.lastBackupAt === 'string' && !Number.isNaN(Date.parse(m.lastBackupAt)) ? m.lastBackupAt : null;
   }
   // What goes in a backup: the progress as the app holds it, the workout log (as stored, if a newer app wrote it, so
   // it is never lost), and the imported settings only when they exist and are valid; the example is never saved.
   function backupParts(store, wk){
     let settings = null;
     if (!LOADED.isExample) {
-      try { const r = validateSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY))); if (r.ok) settings = r.settings; } catch(e){}
+      const r = validateSettings(readJSON(SETTINGS_KEY));
+      if (r.ok) settings = r.settings;
     }
     let workouts = wk.data;
-    if (wk.tooNew) { try { workouts = JSON.parse(localStorage.getItem(WORKOUTS_KEY)); } catch(e){} }
+    if (wk.tooNew) workouts = readJSON(WORKOUTS_KEY, workouts);
     return {progress: store, workouts, settings};
   }
   // Asking the browser to keep this site's data. Reading the state never prompts. Chromium and Safari decide a
@@ -161,7 +163,7 @@
   // Records the time of the last backup; returns it as ISO text.
   function rememberBackup(now){
     const at = new Date(now).toISOString();
-    try { localStorage.setItem(BACKUP_META_KEY, JSON.stringify({lastBackupAt: at})); } catch(e){}
+    writeJSON(BACKUP_META_KEY, {lastBackupAt: at});
     return at;
   }
   // Saves a backup file of what is on screen. Used by the backup section and by the save-failure notice in App.
@@ -232,8 +234,7 @@
       r.readAsText(f);
     };
     const apply = () => {
-      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(pending.settings)); }
-      catch(err){ setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
+      if (!writeJSON(SETTINGS_KEY, pending.settings)) { setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
       location.reload();
     };
     const reset = () => {

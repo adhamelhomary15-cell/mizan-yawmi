@@ -5,7 +5,7 @@
 00-boot.js
 # settings: format check (pure)
 01-settings-validate.js
-# settings: load, fixed weekday names, data derived from settings
+# device storage helpers; settings: load, fixed weekday names, data derived from settings
 02-settings-load.js
 # time helpers
 03-time.js

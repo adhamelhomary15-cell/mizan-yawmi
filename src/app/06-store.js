@@ -18,9 +18,8 @@
     });
     return {v:1, checks: d.checks && typeof d.checks === 'object' ? d.checks : {}, modules: d.modules && typeof d.modules === 'object' ? d.modules : {}, tasks: Array.isArray(d.tasks) ? d.tasks : [], appts: Array.isArray(d.appts) ? d.appts : [], courses, mainCourse: main, extras, phaseSeen: d.phaseSeen === 'A' || d.phaseSeen === 'B' ? d.phaseSeen : null};
   }
-  function loadLocal(){ try { const r = localStorage.getItem(LOCAL_KEY); return r ? normalize(JSON.parse(r)) : null; } catch(e){ return null; } }
-  // true when the write went through, false when the browser refused it (storage full, private mode, blocked)
-  function saveLocal(s){ try { localStorage.setItem(LOCAL_KEY, JSON.stringify(s)); return true; } catch(e){ return false; } }
+  function loadLocal(){ const d = readJSON(LOCAL_KEY); return d === null ? null : normalize(d); }
+  const saveLocal = s => writeJSON(LOCAL_KEY, s);
   const hasData = s => Object.keys(s.checks).length || Object.keys(s.modules).length || s.tasks.length || s.appts.length || s.courses.length || Object.keys(s.extras).length;
   const uid36 = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 

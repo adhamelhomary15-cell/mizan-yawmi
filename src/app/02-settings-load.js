@@ -1,11 +1,22 @@
+  /* ---------------- device storage: one stored value at a time (restore writes its keys together, on its own) ---------------- */
+  // The stored text, or null when the key is missing or the browser blocks storage.
+  function readRaw(key){ try { return localStorage.getItem(key); } catch(e){ return null; } }
+  // The stored value, or fallback when it is missing, blocked or not valid JSON.
+  function readJSON(key, fallback = null){
+    const raw = readRaw(key);
+    if (raw === null) return fallback;
+    try { return JSON.parse(raw); } catch(e){ return fallback; }
+  }
+  // true when the write went through, false when the browser refused it (storage full, private mode, blocked).
+  function writeJSON(key, value){ try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch(e){ return false; } }
+
   /* ---------------- settings: load (stored file, else the embedded example) ---------------- */
   const SETTINGS_KEY = 'mizan-settings-v1';
   const LOADED = (() => {
     let example = null;
     try { example = validateSettings(JSON.parse(document.getElementById('example-settings').textContent)).settings; } catch(e){}
     if (!example) example = {format:'mizan-settings', version:1, language:'ar', prayerMethod:'Egyptian', timezone:'Africa/Cairo', location:{lat:30.0444, lng:31.2357, label:'Sample city'}, categories:{rest:{label:'راحة', track:false}}, week:{0:{blocks:[['08:00','rest','مثال']]}}};
-    let raw = null;
-    try { raw = localStorage.getItem(SETTINGS_KEY); } catch(e){}
+    const raw = readRaw(SETTINGS_KEY);
     if (!raw) return {settings: example, isExample: true, problem: false};
     try {
       const res = validateSettings(JSON.parse(raw));

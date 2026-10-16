@@ -1,5 +1,5 @@
   /* ---------------- Workouts (own storage key and hook; knows nothing of the progress store) ---------------- */
-  function loadWorkouts(){ try { return normalizeRoot(localStorage.getItem(WORKOUTS_KEY)); } catch(e){ return {root: EMPTY_WORKOUTS(), tooNew: false}; } }
+  function loadWorkouts(){ try { return normalizeRoot(readRaw(WORKOUTS_KEY)); } catch(e){ return {root: EMPTY_WORKOUTS(), tooNew: false}; } }
   function useWorkouts(){
     const first = useRef(null);
     if (!first.current) first.current = loadWorkouts();
@@ -12,7 +12,7 @@
       if (tooNew) return;
       const next = normalizeRoot(fn(JSON.parse(JSON.stringify(latest.current)))).root;
       latest.current = next; setData(next);
-      try { localStorage.setItem(WORKOUTS_KEY, JSON.stringify(next)); setSaveFailed(false); } catch(e){ setSaveFailed(true); }
+      setSaveFailed(!writeJSON(WORKOUTS_KEY, next));
     };
     return {data, update, tooNew, saveFailed};
   }

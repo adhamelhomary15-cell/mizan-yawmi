@@ -143,6 +143,9 @@ design and architecture. Remove junk code, and replace unclear code with clean c
   - for user-visible screens, passes a browser check at 375 px.
 
   A fix that changes behaviour is not a clean-up. It gets its own spec instead.
+  - 2026-10-16: A1, A2, A4, A7, A8, A9 and A10 done, one commit each. Every check passes, parity is 0, and the
+    browser at 375 px was checked: icons, cancel and undo, tick, postpone, reload, backup date, workout save, and
+    the save-failure notice. A3, A5 and A6 are still open.
 - [ ] T021 Add a dev check `tools/check-code.js`, with no new libraries, to CI. It fails when:
   - a part file goes over 600 lines;
   - a top-level function or const in `src/app` is never used;
