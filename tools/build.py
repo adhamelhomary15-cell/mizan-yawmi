@@ -87,6 +87,12 @@ if missing:
     raise SystemExit('missing exercise drawings: ' + ', '.join(missing))
 assets = ','.join(f'"{s}":"{base64.b64encode((GUIDES / f"{s}.json.gz").read_bytes()).decode()}"' for s in slugs)
 src = src.replace('const WORKOUT_GUIDE_ASSETS = {};', 'const WORKOUT_GUIDE_ASSETS = {' + assets + '};', 1)
+# The English names that have a drawing (a data table, kept out of the code).
+names = json.loads((VENDOR / 'workout-guide' / 'names.json').read_text(encoding='utf-8'))
+if 'const WORKOUT_GUIDE_NAME_TO_SLUG = {};' not in src:
+    raise SystemExit('exercise name table not found')
+src = src.replace('const WORKOUT_GUIDE_NAME_TO_SLUG = {};',
+                  'const WORKOUT_GUIDE_NAME_TO_SLUG = ' + json.dumps(names, ensure_ascii=False, separators=(',', ':')) + ';', 1)
 
 # 4. Wrap in a full document with the app manifest and service worker.
 title = re.search(r'<title>.*?</title>', src).group(0)

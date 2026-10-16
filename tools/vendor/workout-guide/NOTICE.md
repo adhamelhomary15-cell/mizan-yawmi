@@ -17,5 +17,7 @@ These files are distributed under the same license, CC BY-SA 4.0.
 ## How the app uses them
 
 - `tools/build.py` inlines only the drawings named in `WORKOUT_GUIDE_BUILTIN_SLUGS` (the built-in exercises).
+- `names.json` maps English exercise names (lower case) to drawing names; the build inlines it, so a custom
+  exercise with a known name can offer its drawing.
 - Any other drawing is served from this folder by the app's own site. It is downloaded only when the user taps
   «نزّل الرسمة» on an exercise's page (feature 011).
