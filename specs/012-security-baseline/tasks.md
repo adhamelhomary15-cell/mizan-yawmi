@@ -31,22 +31,28 @@ description: "Task list for feature 012: security baseline"
 
 ## Phase 2: User Story 1 - The page only runs what we shipped (Priority: P1) 🎯 MVP
 
-- [ ] T003 [US1] In `tools/build.py`, after the page is put together:
+- [x] T003 [US1] In `tools/build.py`, after the page is put together:
   - hash every inline JavaScript `<script>` and every `<style>`, skipping `type="application/json"`;
   - insert the CSP `<meta>` from plan.md right after `<meta charset="utf-8">`.
-- [ ] T004 [US1] Extend `tools/check-security.js` with the CSP checks from plan.md:
+- [x] T004 [US1] Extend `tools/check-security.js` with the CSP checks from plan.md:
   - exactly one CSP meta, before every script and style;
   - the exact set of directives, with no unsafe tokens, wildcards or other origins;
   - every inline block hashed, and no hash left over.
 
   Add the mutations: CSP removed; `'unsafe-inline'` added; a script changed after hashing; an extra origin.
-- [ ] T005 [US1] Rebuild and run every check. Parity: 0.
-- [ ] T006 [US1] Browser at 375 px, as in plan.md:
+- [x] T005 [US1] Rebuild and run every check. Parity: 0.
+- [x] T006 [US1] Browser at 375 px, as in plan.md:
   - a full session with 0 violations;
   - injected script, inline handler, `eval`, an outside `fetch` and an outside image all blocked;
   - the drawing download still works.
 
   **Commit**: `feat(security): hash-based CSP in the built page (012, US1)`.
+  - Done 2026-10-17 in the browser pane at 375 px.
+    - 0 violations through: load, all six tabs, a tick, a postpone, starting a workout, a backup save, the restore
+      preview, the settings import preview, and a drawing download (3 frames).
+    - Blocked, with nothing run: an injected `<script>`, an inline `onclick`, `eval`, a `fetch` to another origin,
+      an image from another origin, an injected `<style>`, and an outside script file.
+    - The service worker could not be checked in the pane, which refuses to register one. It is left for the phone.
 
 ## Phase 3: User Story 4 - The shared-origin risk is written down (Priority: P3)
 

@@ -107,6 +107,33 @@ head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
 sw_reg = ("<script>if('serviceWorker' in navigator){addEventListener('load',function(){"
           "navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){});});}</script>")
 page = head + title + '</head><body>' + src + sw_reg + '</body></html>'
+
+# 4b. Content-Security-Policy (feature 012): the browser runs only the inline scripts and styles hashed here, and
+#     the page may talk only to its own site. A <meta> policy, because GitHub Pages cannot send headers.
+def inline_blocks(html):
+    """(tag, opening tag, text) of every <script> and <style>, cut the way the browser cuts them."""
+    blocks, at = [], 0
+    while True:
+        m = re.compile(r'<(script|style)\b[^>]*>', re.I).search(html, at)
+        if not m:
+            return blocks
+        end = html.lower().find('</' + m.group(1).lower(), m.end())
+        blocks.append((m.group(1).lower(), m.group(0), html[m.end():end]))
+        at = end
+
+def csp_for(html):
+    sha = lambda text: "'sha256-" + base64.b64encode(hashlib.sha256(text.encode()).digest()).decode() + "'"
+    scripts = [t for tag, open_tag, t in inline_blocks(html) if tag == 'script' and 'type=' not in open_tag]
+    styles = [t for tag, _, t in inline_blocks(html) if tag == 'style']
+    return '; '.join([
+        "default-src 'none'",
+        'script-src ' + ' '.join(sha(t) for t in scripts),
+        'style-src ' + ' '.join(sha(t) for t in styles),
+        "img-src 'self' data:", 'font-src data:', "connect-src 'self'", "worker-src 'self'", "manifest-src 'self'",
+        "base-uri 'none'", "form-action 'none'", "object-src 'none'"])
+
+CHARSET = '<meta charset="utf-8">'
+page = page.replace(CHARSET, CHARSET + '<meta http-equiv="Content-Security-Policy" content="' + csp_for(page) + '">', 1)
 write('index.html', page)
 
 # 5. Manifest.
