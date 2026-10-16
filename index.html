@@ -3531,27 +3531,23 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const install = async () => { if (!installEvt) return; try { await installEvt.prompt(); } catch(e){} setInstallEvt(null); };
     const goTab = t => { setTab(t); try { window.scrollTo(0, 0); } catch(e){} };
     const goDay = d => { setIso(d); goTab('today'); };
-    // Deletions apply at once and offer an undo for a few seconds.
+    // A message with an undo button for 7 seconds. The caller has already made the change.
+    const showToast = (text, undo) => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast({text, undo});
+      toastTimer.current = setTimeout(() => setToast(null), 7000);
+    };
+    // Deletions apply at once; undo puts the whole store back as it was.
     const act = (text, fn) => {
       const snap = JSON.stringify(store);
       update(fn);
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({text, undo: () => update(() => JSON.parse(snap))});
-      toastTimer.current = setTimeout(() => setToast(null), 7000);
+      showToast(text, () => update(() => JSON.parse(snap)));
     };
     const remove = act;
     // Edits undo only the edited record (undoFn), never the whole store, so a tick made in the meantime stays.
     const actEdit = (text, fn, undoFn) => {
       update(fn);
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({text, undo: () => update(undoFn)});
-      toastTimer.current = setTimeout(() => setToast(null), 7000);
-    };
-    // The same toast for the workout log, which has its own store; the caller already made the change.
-    const showToast = (text, undoFn) => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToast({text, undo: undoFn});
-      toastTimer.current = setTimeout(() => setToast(null), 7000);
+      showToast(text, () => update(undoFn));
     };
     MAIN_NAME = mainCourse(store).name;
 
