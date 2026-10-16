@@ -1,7 +1,7 @@
   /* history, workout detail and exercise page: read-only views over the finished workouts */
   const monthFmt = new Intl.DateTimeFormat('ar-EG-u-nu-latn', {month: 'long', year: 'numeric', timeZone: 'UTC'});
-  const wkWhen = w => { const c = cairoParts(new Date(w.startedAt)); return DAY_NAMES[weekday(c.iso)] + '، ' + dateLabel(c.iso) + ' · ' + fmtStr(c.min); };
-  const wkDay = ts => dateLabel(cairoParts(new Date(ts)).iso);
+  const wkWhen = w => { const c = zoneParts(new Date(w.startedAt)); return DAY_NAMES[weekday(c.iso)] + '، ' + dateLabel(c.iso) + ' · ' + fmtStr(c.min); };
+  const wkDay = ts => dateLabel(zoneParts(new Date(ts)).iso);
   const wkTitle = w => w.routineName || 'تمرينة';
   const allSets = w => w.exercises.reduce((a, e) => a.concat(e.sets), []);
   const recWords = f => f.weight && f.reps ? 'وزن وتكرارات' : f.weight ? 'وزن' : 'تكرارات';
@@ -20,7 +20,7 @@
     const groups = useMemo(() => {
       const g = [];
       byNewest(workouts).forEach(w => {
-        const key = cairoParts(new Date(w.startedAt)).iso.slice(0, 7);
+        const key = zoneParts(new Date(w.startedAt)).iso.slice(0, 7);
         let x = g[g.length - 1];
         if (!x || x.key !== key) { x = {key, items: []}; g.push(x); }
         x.items.push(w);

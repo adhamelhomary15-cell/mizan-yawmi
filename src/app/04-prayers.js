@@ -16,7 +16,7 @@
         const [y,m,d] = iso.split('-').map(Number);
         const t = new adhan.PrayerTimes(adhanCoords, new Date(y, m-1, d), adhanParams);
         r = {};
-        PRAYERS.forEach(([k]) => { r[k] = cairoParts(t[k]).min; });
+        PRAYERS.forEach(([k]) => { r[k] = zoneParts(t[k]).min; });
       } catch(e){ r = null; }
     }
     ptCache[iso] = r;

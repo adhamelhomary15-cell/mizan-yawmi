@@ -24,9 +24,10 @@
     return mm ? hh + ' س و ' + mm + ' د' : hh + ' س';
   }
 
-  const cairoFmt = new Intl.DateTimeFormat('en-CA',{timeZone:CFG.timezone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
-  function cairoParts(d){
-    const o = {}; cairoFmt.formatToParts(d).forEach(p => { o[p.type] = p.value; });
+  // Date and minute of a moment in the time zone from the settings.
+  const zoneFmt = new Intl.DateTimeFormat('en-CA',{timeZone:CFG.timezone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+  function zoneParts(d){
+    const o = {}; zoneFmt.formatToParts(d).forEach(p => { o[p.type] = p.value; });
     return {iso: o.year + '-' + o.month + '-' + o.day, min: (Number(o.hour) % 24)*60 + Number(o.minute)};
   }
   function addDays(iso, n){
@@ -39,7 +40,7 @@
   const dateFmt = new Intl.DateTimeFormat('ar-EG-u-nu-latn',{day:'numeric',month:'long',timeZone:'UTC'});
   function dateLabel(iso){ const [y,m,d] = iso.split('-').map(Number); return dateFmt.format(new Date(Date.UTC(y,m-1,d))); }
   function effectiveNow(){
-    const p = cairoParts(new Date());
+    const p = zoneParts(new Date());
     // The schedule's day runs until 1:00am, so between midnight and 1:00 it still shows the previous day.
     if (p.min < 60) return {iso: addDays(p.iso, -1), min: p.min + 1440};
     return p;

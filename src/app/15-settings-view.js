@@ -155,7 +155,7 @@
 
   const BACKUP_FAILED = 'مقدرتش أحفظ الملف. افتح التطبيق في المتصفح العادي وجرّب تاني';
   function buildBackup(store, wk){
-    const now = Date.now(), b = makeBackup(backupParts(store, wk), now, cairoParts(new Date(now)).iso);
+    const now = Date.now(), b = makeBackup(backupParts(store, wk), now, zoneParts(new Date(now)).iso);
     return {b, now, file: new File([b.text], b.name, {type: 'application/json'})};
   }
   // Records the time of the last backup; returns it as ISO text.
@@ -196,7 +196,7 @@
       try { await navigator.share({files: [built.file]}); remember(built.now); setMsg({ok: true, name: built.b.name}); }
       catch(e){ if (!e || e.name !== 'AbortError') failed(); }
     };
-    const when = iso => { const p = cairoParts(new Date(iso)); return dateLabel(p.iso) + ' · ' + fmtStr(p.min); };
+    const when = iso => { const p = zoneParts(new Date(iso)); return dateLabel(p.iso) + ' · ' + fmtStr(p.min); };
     return html`<div class="sec">
       <div class="sec-head"><h2>نسخة احتياطية</h2></div>
       <div class="panel form">
