@@ -10,6 +10,8 @@
  *   5. Stop, naming the file, when a listed file is missing, a .js file in src/app is not listed, or a name
  *      repeats.
  * Without the placeholder (the source still in one file), the text comes back unchanged.
+ *
+ *   node tools/lib/source.js --print-sha   SHA-1 of the joined source; CI compares it with tools/build.py's
  */
 const fs = require('fs');
 const path = require('path');
@@ -47,3 +49,8 @@ function readSource() {
 }
 
 module.exports = {readSource, joinParts, partNames, PLACEHOLDER};
+
+if (require.main === module && process.argv.includes('--print-sha')) {
+  try { console.log(require('crypto').createHash('sha1').update(readSource()).digest('hex')); }
+  catch (e) { console.error(e.message); process.exit(1); }
+}

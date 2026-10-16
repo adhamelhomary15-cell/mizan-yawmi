@@ -116,7 +116,7 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
 
 ## Phase 2d: User Story 2 - CI guard (Priority: P2)
 
-- [ ] T016 [US2] Add `--print-source-sha` to `tools/build.py`. Add a step to `.github/workflows/checks.yml` that
+- [x] T016 [US2] Add `--print-source-sha` to `tools/build.py`. Add a step to `.github/workflows/checks.yml` that
   checks `ORDER` lists every `src/app/*.js` exactly once, and that Node's `joinParts` and Python's join give the
   same SHA.
 - [ ] T017 [US2] CI green on the branch. **Commit**: `ci: guard the part order and the join (010, US2)`.
