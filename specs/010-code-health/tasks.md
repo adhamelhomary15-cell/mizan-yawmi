@@ -126,7 +126,7 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
 **Goal**: Go through every part in `src/app/` against the code standards in `AGENTS.md`: clean code, system
 design and architecture. Remove junk code, and replace unclear code with clean code. Behaviour stays the same.
 
-- [ ] T019 Review every part file and write the findings in `specs/010-code-health/review.md`. One line each,
+- [x] T019 Review every part file and write the findings in `specs/010-code-health/review.md`. One line each,
   with file, what is wrong, and the fix, grouped as:
   - dead code;
   - duplication;
