@@ -1,0 +1,47 @@
+# The app script, in the order tools/build.py and tools/lib/source.js join it (feature 010).
+# One file per line; lines starting with # are notes. Each file holds whole sections, unedited.
+
+# IIFE opening, library check, Preact and htm bindings
+00-boot.js
+# settings: format check (pure)
+01-settings-validate.js
+# settings: load, fixed weekday names, data derived from settings
+02-settings-load.js
+# time helpers
+03-time.js
+# prayer times, day versions, prayer-anchored layout
+04-prayers.js
+# courses
+05-courses.js
+# progress storage (useStore), synced copy, save-failure state
+06-store.js
+# day model: schedule, one-off blocks, status
+07-day-model.js
+# small UI pieces
+08-ui-small.js
+# Today screen
+09-today.js
+# postponing in the day review
+10-postpone-ui.js
+# Week screen
+11-week.js
+# Course screen
+12-course-view.js
+# pure rule blocks: edit, task paste, workout, backup, postpone, guide (markers used by tools/check-*.js)
+13-rules.js
+# task and appointment form, paste tasks UI, Tasks screen
+14-tasks-view.js
+# Settings screen: import, status, reset, backup and restore
+15-settings-view.js
+# workout log storage hook, timers, confirm dialog, exercise picker
+16-workouts.js
+# exercise drawings: tables, loading, download on tap
+17-exercise-art.js
+# workout history, workout detail, exercise page
+18-workout-history.js
+# splits (routines) and their editor
+19-routines.js
+# Workouts screen
+20-workout-view.js
+# shell: tabs, App, render, IIFE end
+21-shell.js

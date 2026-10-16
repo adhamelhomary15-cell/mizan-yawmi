@@ -1,6 +1,6 @@
-"""Build the installable app from src/planner.html.
+"""Build the installable app from src/planner.html and the script parts listed in src/app/ORDER.
 
-Run from the repo root:  python3 tools/build.py [--icons]
+Run from the repo root:  python3 tools/build.py [--icons] [--print-source-sha]
 Writes index.html, manifest.webmanifest and sw.js at the repo root, which is what GitHub Pages serves.
 The output is the same on every OS (LF line endings), so CI can rebuild and compare.
 The icons are only redrawn with --icons, or when one is missing (needs Pillow): the drawing is not
@@ -10,7 +10,36 @@ import base64, hashlib, json, pathlib, re, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 VENDOR = ROOT / 'tools' / 'vendor'
-src = (ROOT / 'src' / 'planner.html').read_text(encoding='utf-8')
+APP = ROOT / 'src' / 'app'
+PLACEHOLDER = '/* @app-parts */\n'
+
+def join_parts(text):
+    """Put the script parts in place of the placeholder. Same rule as tools/lib/source.js."""
+    if PLACEHOLDER not in text:
+        return text
+    if text.count(PLACEHOLDER) > 1:
+        raise SystemExit('src/planner.html has the parts placeholder twice')
+    order = APP / 'ORDER'
+    if not order.is_file():
+        raise SystemExit('src/app/ORDER is missing')
+    names = [l.strip() for l in order.read_text(encoding='utf-8').splitlines() if l.strip() and not l.strip().startswith('#')]
+    seen = set()
+    for n in names:
+        if n in seen:
+            raise SystemExit(f'src/app/ORDER lists {n} twice')
+        seen.add(n)
+        if not (APP / n).is_file():
+            raise SystemExit(f'src/app/ORDER lists {n}, which does not exist')
+    for f in sorted(p.name for p in APP.glob('*.js')):
+        if f not in seen:
+            raise SystemExit(f'src/app/{f} is not listed in src/app/ORDER')
+    body = ''.join((APP / n).read_text(encoding='utf-8').replace('\r\n', '\n') for n in names)
+    return text.replace(PLACEHOLDER, body, 1)
+
+src = join_parts((ROOT / 'src' / 'planner.html').read_text(encoding='utf-8').replace('\r\n', '\n'))
+if '--print-source-sha' in sys.argv[1:]:
+    print(hashlib.sha1(src.encode()).hexdigest())
+    sys.exit(0)
 
 def write(name, text):
     (ROOT / name).write_text(text, encoding='utf-8', newline='\n')

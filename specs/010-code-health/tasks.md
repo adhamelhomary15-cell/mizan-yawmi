@@ -78,7 +78,7 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
 - [x] T008 [US2] Run `/speckit-constitution` for a PATCH bump of Principle V: the app is built from
   `src/planner.html` *and the part files it lists in `src/app/ORDER`*; the output stays one self-contained file.
   File: `.specify/memory/constitution.md`. Owner approves the wording.
-- [ ] T009 [US2] (Moved into T013 by the owner on 2026-10-15, so the docs never describe files that do not exist
+- [x] T009 [US2] (Moved into T013 by the owner on 2026-10-15, so the docs never describe files that do not exist
   yet.) Update `AGENTS.md` ("Edit `src/planner.html` only" → the shell and `src/app/*`) and the file map
   in `README.md` to match T008.
 
@@ -99,19 +99,19 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
 
 **Independent Test**: plan.md quickstart 2. Both `cmp` commands print nothing, and parity reports 0 differences.
 
-- [ ] T012 [US2] Map the real section headers (`/* ---------------- … ---------------- */`) on the updated `main`
+- [x] T012 [US2] Map the real section headers (`/* ---------------- … ---------------- */`) on the updated `main`
   to the part list in plan.md. Adjust the map so each part holds whole sections and is at most about 600 lines
   (SC-003).
-- [ ] T013 [US2] Create `src/app/ORDER` and the part files `src/app/NN-name.js`. Each part is a pure move of whole
+- [x] T013 [US2] Create `src/app/ORDER` and the part files `src/app/NN-name.js`. Each part is a pure move of whole
   sections that starts with a one-line comment saying what it holds. Replace the script body in `src/planner.html`
   with the line `/* @app-parts */`.
 
   Note: the one-line comment adds bytes. Either keep it in the part and strip it in the join, or skip it where
   byte-identity needs that. Decide here and write the decision in plan.md.
-- [ ] T014 [US2] In `tools/build.py`, join the parts by the plan's join rule (ORDER, LF, no separator, replace the
+- [x] T014 [US2] In `tools/build.py`, join the parts by the plan's join rule (ORDER, LF, no separator, replace the
   placeholder line). Stop with the file name on a missing, unlisted or repeated part, and write nothing. Apply
   the same rule in `joinParts` in `tools/lib/source.js`.
-- [ ] T015 [US2] Verify byte-identity with the `cmp` commands in plan.md, run every check and `--self-test`, then
+- [x] T015 [US2] Verify byte-identity with the `cmp` commands in plan.md, run every check and `--self-test`, then
   parity. **Commit**: `refactor(src): split the app script into ordered parts (010, US2)`.
 
 ## Phase 2d: User Story 2 - CI guard (Priority: P2)
@@ -120,6 +120,35 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
   checks `ORDER` lists every `src/app/*.js` exactly once, and that Node's `joinParts` and Python's join give the
   same SHA.
 - [ ] T017 [US2] CI green on the branch. **Commit**: `ci: guard the part order and the join (010, US2)`.
+
+## Phase 2e: Review and clean-up (owner's request, 2026-10-16)
+
+**Goal**: Go through every part in `src/app/` against the code standards in `AGENTS.md`: clean code, system
+design and architecture. Remove junk code, and replace unclear code with clean code. Behaviour stays the same.
+
+- [ ] T019 Review every part file and write the findings in `specs/010-code-health/review.md`. One line each,
+  with file, what is wrong, and the fix, grouped as:
+  - dead code;
+  - duplication;
+  - needless complexity;
+  - unclear names;
+  - wrong layer (logic inside screens);
+  - hidden coupling between parts;
+  - data or security risks.
+
+  Rank them by value against risk. Show the owner before any change.
+- [ ] T020 For each approved group, one commit: remove or replace the code. Each commit:
+  - runs every check and `--self-test`;
+  - has parity 0;
+  - for user-visible screens, passes a browser check at 375 px.
+
+  A fix that changes behaviour is not a clean-up. It gets its own spec instead.
+- [ ] T021 Add a dev check `tools/check-code.js`, with no new libraries, to CI. It fails when:
+  - a part file goes over 600 lines;
+  - a top-level function or const in `src/app` is never used;
+  - `ORDER` and `src/app` disagree.
+
+  Add `--self-test` mutations.
 
 ---
 
@@ -148,8 +177,9 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
 
 ## Summary
 
-- Total: 18 tasks.
+- Total: 21 tasks.
   - US1: 7 (T001–T007).
   - US2: 10 (T008–T017).
+  - Review and clean-up: 3 (T019–T021).
   - Polish: 1.
 - MVP: Phase 1.

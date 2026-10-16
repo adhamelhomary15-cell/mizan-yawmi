@@ -122,6 +122,12 @@ to the real line positions after the drawings work lands, keeping whole sections
 | `15-workouts.js` | Workouts |
 | `16-shell.js` | shell (`TABS`, `App`), render, `})();` |
 
+**Decision (2026-10-15, T013): no added header lines.** A one-line comment at the top of each part would add bytes
+and break byte-identity, unless the join stripped it, and a strip rule is one more thing that can go wrong.
+Instead, each file's description is a `#` note above its name in `src/app/ORDER`. Every part except
+`00-boot.js` already starts with its original section header. The real cut is 22 files (Workouts is split
+into 5 at its existing sub-headers); the largest is `13-rules.js` with 425 lines.
+
 The cut is a pure move: no reformatting, no renamed identifiers, no added `export`/`import`. All parts share the
 one IIFE scope exactly as today. Turning parts into real ES modules is a possible later feature, not this one.
 
