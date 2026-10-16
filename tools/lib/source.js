@@ -1,0 +1,56 @@
+/*
+ * The app source as the dev checks see it: src/planner.html with the script parts from src/app joined in
+ * (feature 010). tools/build.py joins them by the same rule, so the checks test exactly what ships.
+ *
+ * Join rule:
+ *   1. Read src/app/ORDER; skip blank lines and lines starting with '#'.
+ *   2. Read each listed file as UTF-8 and turn CRLF into LF.
+ *   3. Put the contents one after another, with nothing between them.
+ *   4. Replace the placeholder line (with its newline) with the result.
+ *   5. Stop, naming the file, when a listed file is missing, a .js file in src/app is not listed, or a name
+ *      repeats.
+ * Without the placeholder (the source still in one file), the text comes back unchanged.
+ *
+ *   node tools/lib/source.js --print-sha   SHA-1 of the joined source; CI compares it with tools/build.py's
+ */
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..', '..');
+const APP = path.join(ROOT, 'src', 'app');
+const PLACEHOLDER = '/* @app-parts */\n';
+
+function partNames() {
+  const order = path.join(APP, 'ORDER');
+  if (!fs.existsSync(order)) throw new Error('src/app/ORDER is missing');
+  const names = fs.readFileSync(order, 'utf8').replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  const seen = new Set();
+  names.forEach(n => {
+    if (seen.has(n)) throw new Error('src/app/ORDER lists ' + n + ' twice');
+    seen.add(n);
+    if (!fs.existsSync(path.join(APP, n))) throw new Error('src/app/ORDER lists ' + n + ', which does not exist');
+  });
+  fs.readdirSync(APP).filter(f => f.endsWith('.js')).forEach(f => {
+    if (!seen.has(f)) throw new Error('src/app/' + f + ' is not listed in src/app/ORDER');
+  });
+  return names;
+}
+
+function joinParts(text) {
+  const at = text.indexOf(PLACEHOLDER);
+  if (at < 0) return text;
+  if (text.indexOf(PLACEHOLDER, at + 1) >= 0) throw new Error('src/planner.html has the parts placeholder twice');
+  const body = partNames().map(n => fs.readFileSync(path.join(APP, n), 'utf8').replace(/\r\n/g, '\n')).join('');
+  return text.slice(0, at) + body + text.slice(at + PLACEHOLDER.length);
+}
+
+function readSource() {
+  return joinParts(fs.readFileSync(path.join(ROOT, 'src', 'planner.html'), 'utf8').replace(/\r\n/g, '\n'));
+}
+
+module.exports = {readSource, joinParts, partNames, PLACEHOLDER};
+
+if (require.main === module && process.argv.includes('--print-sha')) {
+  try { console.log(require('crypto').createHash('sha1').update(readSource()).digest('hex')); }
+  catch (e) { console.error(e.message); process.exit(1); }
+}

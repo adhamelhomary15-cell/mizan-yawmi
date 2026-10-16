@@ -15,7 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'planner.html'), 'utf8');
+const html = require('./lib/source.js').readSource();
 
 function between(source, start, end) {
   const a = source.indexOf(start), b = source.indexOf(end);

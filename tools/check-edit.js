@@ -13,7 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'planner.html'), 'utf8');
+const html = require('./lib/source.js').readSource();
 const START = '// start of edit rules', END = '// end of edit rules';
 
 function load(source) {

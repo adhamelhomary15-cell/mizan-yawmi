@@ -50,6 +50,7 @@ function fnBody(source, name) {
 const files = fs.readdirSync(FRAMES).filter(f => f.endsWith('.json.gz')).sort();
 const vendored = files.map(f => ({slug: f.slice(0, -8), frames: JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(FRAMES, f))).toString('utf8'))}));
 const svg = body => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">' + body + '</svg>';
+const NAMES = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'vendor', 'workout-guide', 'names.json'), 'utf8'));
 const ok3 = [svg('<path d="M0 0L9 9"/>'), svg('<use href="#a"/>'), svg('<g id="a"/>')];
 
 function runChecks(src, app, sw) {
@@ -72,7 +73,7 @@ function runChecks(src, app, sw) {
     return h.checkGuideFrames(ok3).ok && bad.every(f => !h.checkGuideFrames(f).ok);
   });
   check('the vendor folder has exactly the drawings the app names', () => {
-    const named = new Set([...slugsOf(src, 'WORKOUT_GUIDE_BUILTIN_SLUGS'), ...slugsOf(src, 'WORKOUT_GUIDE_NAME_TO_SLUG')]);
+    const named = new Set([...slugsOf(src, 'WORKOUT_GUIDE_BUILTIN_SLUGS'), ...Object.values(NAMES)]);
     const have = new Set(vendored.map(v => v.slug));
     return [...named].every(s => have.has(s)) && [...have].every(s => named.has(s));
   });
@@ -86,7 +87,12 @@ function runChecks(src, app, sw) {
     return /\.match\(url\)/.test(kept) && !/fetch\(|downloadGuide/.test(kept + loadFn)
       && /onClick=\$\{download\}/.test(fnBody(src, 'ExerciseArt')) && (src.match(/downloadGuide\(/g) || []).length === 2;
   });
-  check('the source leaves the built-in drawings to the build', () => src.includes('const WORKOUT_GUIDE_ASSETS = {};'));
+  check('the source leaves the built-in drawings and the name table to the build', () =>
+    src.includes('const WORKOUT_GUIDE_ASSETS = {};') && src.includes('const WORKOUT_GUIDE_NAME_TO_SLUG = {};'));
+  check('the built app holds the whole name table, and every name is plain lower-case text', () => {
+    const m = app.match(/const WORKOUT_GUIDE_NAME_TO_SLUG = (\{[^;]*\});/);
+    return m && JSON.stringify(JSON.parse(m[1])) === JSON.stringify(NAMES) && Object.keys(NAMES).every(k => /^[a-z0-9]+( [a-z0-9]+)*$/.test(k));
+  });
   check('the built app inlines exactly the built-in drawings and stays under 2 MB', () => {
     const m = app.match(/const WORKOUT_GUIDE_ASSETS = \{([^}]*)\}/);
     const inl = new Set([...m[1].matchAll(/"([a-z0-9-]+)":"H4sI/g)].map(x => x[1])), want = slugsOf(src, 'WORKOUT_GUIDE_BUILTIN_SLUGS');
@@ -110,7 +116,7 @@ function report(results) {
 }
 
 let src, app, sw;
-try { src = read('src/planner.html'); app = read('index.html'); sw = read('sw.js'); } catch (e) { console.error(e.message); process.exit(2); }
+try { src = require('./lib/source.js').readSource(); app = read('index.html'); sw = read('sw.js'); } catch (e) { console.error(e.message); process.exit(2); }
 
 if (process.argv.includes('--self-test')) {
   // [name, which file, mutation]
@@ -122,6 +128,7 @@ if (process.argv.includes('--self-test')) {
     ['the frame count is not checked', 'src', s => s.replace('frames.length !== 3', 'frames.length < 1')],
     ['a kept drawing is fetched instead of looked up', 'src', s => s.replace('.match(url);', '.match(url) || await fetch(url);')],
     ['a built-in drawing is left out of the build', 'app', s => s.replace('"bench-press":"H4sI', '"bench-pressx":"H4sI')],
+    ['the name table is left out of the build', 'app', s => s.replace(/const WORKOUT_GUIDE_NAME_TO_SLUG = \{[^;]*\};/, 'const WORKOUT_GUIDE_NAME_TO_SLUG = {};')],
     ['the service worker deletes downloaded drawings', 'sw', s => s.replace(" && !k.startsWith('mizan-guides-')", '')],
     ['the service worker caches drawings itself', 'sw', s => s.replace(" || url.pathname.includes('/tools/vendor/workout-guide/')", '')]
   ];

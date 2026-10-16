@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'planner.html'), 'utf8');
+const html = require('./lib/source.js').readSource();
 const START_MARK = '// start of postpone rules', END_MARK = '// end of postpone rules';
 function block(source) {
   const a = source.indexOf(START_MARK), b = source.indexOf(END_MARK);

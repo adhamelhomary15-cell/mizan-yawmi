@@ -1,0 +1,10 @@
+(function(){
+  const root = document.getElementById('app');
+  if (!window.preact || !window.preactHooks || !window.htm){
+    root.innerHTML = '<p class="fail">الصفحة مقدرتش تحمّل مكتبة التشغيل. جرّب تفتحها تاني بعد شوية.</p>';
+    return;
+  }
+  const { h, render } = preact;
+  const { useState, useEffect, useRef, useMemo } = preactHooks;
+  const html = htm.bind(h);
+

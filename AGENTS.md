@@ -57,9 +57,13 @@ If any of these is missing or unreadable, stop and tell the owner. Do not guess.
 
 ## Project facts that constrain edits
 
-- The app is one self-contained HTML file. Edit **`src/planner.html`** only. The schedule and all
+- The app is one self-contained HTML file, built from **`src/planner.html`** (page shell, CSS, the
+  embedded example settings) and **`src/app/*.js`** (the app script, joined in the order listed in
+  `src/app/ORDER`). Edit those files only. Every part shares one script scope: no `import`/`export`,
+  no bundler. A new part needs a line in `ORDER`, or the build stops. Checks read the joined source
+  through `tools/lib/source.js`. The schedule and all
   user data come from a **settings object**: the stored settings file if the user imported one, else
-  the generic example embedded in that file. A day can have two versions chosen by a prayer-time
+  the generic example embedded in `src/planner.html`. A day can have two versions chosen by a prayer-time
   threshold from the settings.
 - **This is a public, general app.** Never put a real person's schedule, routine, institution,
   employer, location, or course in any tracked file, specs and docs included (constitution
@@ -77,6 +81,24 @@ If any of these is missing or unreadable, stop and tell the owner. Do not guess.
 - Prayer times use the Egyptian General Authority of Survey method by default; the method and
   the location come from the user's settings. Never hard-code a city.
 - Do not invent users, testimonials, usage data, or midterm dates.
+
+## Code standards
+
+Clean, readable code with the least code that does the job. The aim is clarity, not fewer lines.
+
+- **One job per file and per function.** A part file stays under about 600 lines; a function does one
+  thing, and its name says what.
+- **Rules apart from screens.** Calculations live in pure functions inside a marked rules block with a
+  dev check; screens only read state and render.
+- **No duplication.** When the same markup or logic appears a third time, make it one component or
+  function.
+- **No dead code.** Remove what nothing uses. No "maybe later" code, options or flags.
+- **No new library or build tool** without a written reason in the plan and the owner's approval.
+- **Comments say why**, not what; the code says what.
+- **Small PRs, one purpose each.** A pure move (like the 010 split) changes no code. Cleanups come in
+  their own commits, each verified by every check and parity.
+- **Review before merge** for clean code, system design and architecture: duplication, dead code,
+  needless complexity, wrong layer, hidden coupling, and data or security risks.
 
 ## Security checklist for plugins, skills, hooks, MCP servers, automations
 

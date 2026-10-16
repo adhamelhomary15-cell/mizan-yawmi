@@ -32,6 +32,18 @@ jobs:
           git diff --exit-code -- index.html sw.js manifest.webmanifest settings.example.json \
             || { echo "::error::Run 'python3 tools/build.py' and 'node tools/check-settings.js --write-example', then commit the result."; exit 1; }
 
+      - name: Script parts join the same way in Python and Node
+        # Both stop on a missing, unlisted or repeated part in src/app/ORDER.
+        run: |
+          py_sha=$(python3 tools/build.py --print-source-sha)
+          node_sha=$(node tools/lib/source.js --print-sha)
+          [ "$py_sha" = "$node_sha" ] || { echo "::error::tools/build.py and tools/lib/source.js join src/app differently"; exit 1; }
+
+      - name: Code standards
+        run: |
+          node tools/check-code.js
+          node tools/check-code.js --self-test
+
       - name: Settings
         run: |
           node tools/check-settings.js
