@@ -162,7 +162,7 @@ design and architecture. Remove junk code, and replace unclear code with clean c
 
 ## Phase 3: Polish & ship
 
-- [ ] T018 Tick the tasks and update `README.md` if anything user-visible changed (US1 notice). Push and open the PR
+- [x] T018 Tick the tasks and update `README.md` if anything user-visible changed (US1 notice). Push and open the PR
   only when the owner asks.
 
 ## Dependencies
