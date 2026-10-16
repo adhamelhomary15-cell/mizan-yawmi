@@ -86,9 +86,9 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
 
 **Goal**: Every check reads the source through one helper, while the source is still one file.
 
-- [ ] T010 [US2] Create `tools/lib/source.js` exporting `readSource()` (returns `src/planner.html` as text for now)
+- [x] T010 [US2] Create `tools/lib/source.js` exporting `readSource()` (returns `src/planner.html` as text for now)
   and `joinParts(text)` (identity for now).
-- [ ] T011 [US2] Switch every `tools/check-*.js` that reads `src/planner.html` to `readSource()` (one-line change
+- [x] T011 [US2] Switch every `tools/check-*.js` that reads `src/planner.html` to `readSource()` (one-line change
   each; `check-settings.js --write-example` keeps reading and writing the example block in `src/planner.html`).
   Every check and `--self-test` passes with unchanged output. **Commit**:
   `refactor(tools): read the app source through one helper (010, US2)`.

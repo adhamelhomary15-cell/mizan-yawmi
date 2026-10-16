@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'planner.html'), 'utf8');
+const html = require('./lib/source.js').readSource();
 const BLOCKS = [['// start of edit rules', '// end of edit rules'], ['// start of task paste', '// end of task paste']];
 
 function pasteBlock(source) {

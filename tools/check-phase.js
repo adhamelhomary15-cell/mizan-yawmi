@@ -36,7 +36,7 @@ const mod = { exports: {} };
 new Function('module', 'exports', 'self', 'window', adhanSrc)(mod, mod.exports, globalThis, globalThis);
 const adhan = mod.exports.Coordinates ? mod.exports : globalThis.adhan;
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'planner.html'), 'utf8');
+const html = require('./lib/source.js').readSource();
 const a = ['/* ---------------- settings: format check', '/* ---------------- settings: load'].map(m => html.indexOf(m)).filter(i => i >= 0).sort((x, y) => x - y)[0];
 const b = html.indexOf('/* ---------------- courses ---------------- */');
 if (a === undefined || b < 0) { console.error('cannot find the settings/data section in src/planner.html'); process.exit(2); }

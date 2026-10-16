@@ -110,7 +110,7 @@ function report(results) {
 }
 
 let src, app, sw;
-try { src = read('src/planner.html'); app = read('index.html'); sw = read('sw.js'); } catch (e) { console.error(e.message); process.exit(2); }
+try { src = require('./lib/source.js').readSource(); app = read('index.html'); sw = read('sw.js'); } catch (e) { console.error(e.message); process.exit(2); }
 
 if (process.argv.includes('--self-test')) {
   // [name, which file, mutation]

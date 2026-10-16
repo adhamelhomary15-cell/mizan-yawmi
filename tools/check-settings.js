@@ -16,7 +16,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const MAX_BYTES = 1024 * 1024;
-const html = fs.readFileSync(path.join(ROOT, 'src', 'planner.html'), 'utf8');
+const html = require('./lib/source.js').readSource();
 
 function grabFunction(name) {
   const start = html.indexOf('function ' + name + '(');
