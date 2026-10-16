@@ -140,7 +140,7 @@
     return html`<div class="restore">
       <label class="field wide" for="backup-file">اختار ملف النسخة الاحتياطية<input id="backup-file" ref=${inputRef} type="file" accept=".json,application/json" disabled=${busy} onChange=${onFile} /></label>
       <div aria-live="polite">
-        ${err ? html`<div class="notice" role="alert" tabindex="-1" ref=${errRef}><p>${err}</p></div>` : null}
+        ${err ? html`<${Notice} role="alert" focusRef=${errRef} text=${err} />` : null}
         ${pv ? html`<div class="notice restore-preview" role="group" aria-label="معاينة النسخة الاحتياطية"><p>
             <b>نسخة من <bdi>${when(pv.createdAt)}</bdi></b>
             <span class="small"><bdi>${pv.tasks}</bdi> مهمة · <bdi>${pv.appts}</bdi> ميعاد · <bdi>${pv.courses}</bdi> كورس · <bdi>${pv.tickDays}</bdi> يوم فيه علامات · <bdi>${pv.workouts}</bdi> تمرينة</span>
@@ -206,7 +206,7 @@
         <p class="small">${last ? html`آخر نسخة: <bdi>${when(last)}</bdi>` : 'لسه ما عملتش نسخة احتياطية على الجهاز ده'}</p>
         <span class="backup-act"><button type="button" class="btn primary" onClick=${save}>احفظ نسخة احتياطية</button>${canShare ? html`<button type="button" class="btn" onClick=${share}>ابعتها لمكان تاني</button>` : null}</span>
         <p class="small muted">الملف فيه بياناتك الشخصية. خليه في مكان آمن ومتبعتهوش لحد.</p>
-        <div aria-live="polite">${msg ? (msg.ok ? html`<p class="small">اتحفظت النسخة: <bdi dir="ltr">${msg.name}</bdi></p>` : html`<div class="notice" role="alert"><p>${msg.text}</p></div>`) : null}</div>
+        <div aria-live="polite">${msg ? (msg.ok ? html`<p class="small">اتحفظت النسخة: <bdi dir="ltr">${msg.name}</bdi></p>` : html`<${Notice} role="alert" text=${msg.text} />`) : null}</div>
         <${RestorePart} wk=${wk} sync=${sync} replaceAll=${replaceAll} when=${when} />
       </div>
     </div>`;
@@ -258,7 +258,7 @@
           <label class="field wide" for="settings-file">اختار ملف الإعدادات (JSON)<input id="settings-file" type="file" accept=".json,application/json" onChange=${onFile} /></label>
           <p class="small muted">الملف بيتقرا على جهازك بس ومبيتبعتش لأي مكان. التقدم والعلامات والمهام مش بتتأثر.</p>
           <div aria-live="polite">
-            ${msgs.length ? html`<div class="notice" role="alert" tabindex="-1" ref=${msgRef}><p><b>مقدرتش أستورد الملف</b>${msgs.map(m => html`<span class="small"><bdi>${m}</bdi></span>`)}</p></div>` : null}
+            ${msgs.length ? html`<${Notice} role="alert" focusRef=${msgRef} title="مقدرتش أستورد الملف" text=${msgs.map(m => html`<span class="small"><bdi>${m}</bdi></span>`)} />` : null}
             ${sm ? html`<div class="notice"><p><b>جاهز للاستيراد: ${pending.settings.name || 'من غير اسم'}</b>
               <span class="small">${sm.days} أيام · ${sm.blocks} بلوك${sm.anchored ? ' · ' + sm.anchored + ' بلوك مربوط بالصلاة' : ''}${sm.absorbing ? ' · ' + sm.absorbing + ' بلوك بياخد فرق الصلاة' : ''}${sm.course ? ' · كورس: ' : ''}${sm.course ? html`<bdi>${sm.course}</bdi>` : null} · الموقع: <bdi>${sm.place || '—'}</bdi> · اللغة: <bdi>${sm.language}</bdi>${pending.warnings ? ' · فيه ' + pending.warnings + ' حقول مش معروفة هتتجاهل' : ''}</span>
               <span class="small muted">${LOADED.isExample ? 'هيحل محل المثال.' : 'هيحل محل الإعدادات الحالية (' + (CFG.name || 'من غير اسم') + ').'}</span></p>
@@ -278,7 +278,7 @@
         <div class="sec-head"><h2>رجوع للمثال</h2></div>
         <div class="panel">
           <p class="small muted">بيمسح الإعدادات المتخزنة بس. علاماتك ومهامك وتقدمك بيفضلوا زي ما هم.</p>
-          ${askReset ? html`<div class="notice"><p><b>تأكيد: ترجع للجدول المثال؟</b></p><span><button type="button" class="btn danger" onClick=${reset}>أيوه، ارجع للمثال</button> <button type="button" class="btn ghost" onClick=${() => setAskReset(false)}>لأ</button></span></div>`
+          ${askReset ? html`<${Notice} title="تأكيد: ترجع للجدول المثال؟"><span><button type="button" class="btn danger" onClick=${reset}>أيوه، ارجع للمثال</button> <button type="button" class="btn ghost" onClick=${() => setAskReset(false)}>لأ</button></span></${Notice}>`
             : html`<button type="button" class="btn" onClick=${() => setAskReset(true)}>رجّع المثال</button>`}
         </div>
       </div>`}

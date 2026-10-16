@@ -80,12 +80,13 @@
       </nav>
       <main class="wrap">
         ${installEvt ? html`<div class="install"><p><b>ثبّت ميزان يومي</b><span class="small muted">أيقونة على الشاشة الرئيسية، ويشتغل من غير نت</span></p><button type="button" class="btn primary" onClick=${install}>ثبّت</button></div>` : null}
-        ${LOADED.isExample ? html`<div class="notice"><p><b>${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'}</b><span class="small muted">${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات' : 'لما يبقى عندك ملف إعداداتك هتستورده من الإعدادات'}</span></p></div>` : null}
-        <div aria-live="polite">${phaseNotice ? html`<div class="notice"><p>${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}</p><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></div>` : null}</div>
-        ${syncLate ? html`<div class="notice" role="status"><p>النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة.</p><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></div>` : null}
-        ${saveFailed ? html`<div class="notice" role="alert"><p><b>آخر تغيير ماتحفظش على الجهاز</b><span class="small muted">${LOCAL_OK
+        ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات' : 'لما يبقى عندك ملف إعداداتك هتستورده من الإعدادات'} />` : null}
+        <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
+        ${syncLate ? html`<${Notice} role="status" text="النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة."><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></${Notice}>` : null}
+        ${saveFailed ? html`<${Notice} role="alert" title="آخر تغيير ماتحفظش على الجهاز" line=${LOCAL_OK
           ? 'مساحة التخزين ممكن تكون مليانة أو المتصفح مانع الحفظ. احفظ نسخة احتياطية دلوقتي عشان ماتضيعش حاجة.'
-          : 'المتصفح ده مش بيسمح بالحفظ، فالتقدم هيضيع لما تقفل التطبيق.'}</span>${saveMsg ? html`<span class="small">${saveMsg.ok ? html`اتحفظت النسخة: <bdi dir="ltr">${saveMsg.name}</bdi>` : BACKUP_FAILED}</span>` : null}</p><button type="button" class="btn primary" onClick=${saveNow}>احفظ نسخة احتياطية</button></div>` : null}
+          : 'المتصفح ده مش بيسمح بالحفظ، فالتقدم هيضيع لما تقفل التطبيق.'}
+          text=${saveMsg ? html`<span class="small">${saveMsg.ok ? html`اتحفظت النسخة: <bdi dir="ltr">${saveMsg.name}</bdi>` : BACKUP_FAILED}</span>` : null}><button type="button" class="btn primary" onClick=${saveNow}>احفظ نسخة احتياطية</button></${Notice}>` : null}
         ${view}
         <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
       </main>

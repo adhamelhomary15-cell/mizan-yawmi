@@ -10,9 +10,9 @@
     const rec = useMemo(() => computeRecords(data.workouts), [data.workouts]);
     const top = () => { try { window.scrollTo(0, 0); } catch(e){} };
 
-    if (tooNew) return html`<div class="wkv"><div class="notice"><p><b>بيانات التمارين دي اتحفظت بنسخة أحدث من التطبيق</b><span class="small muted">مش هنفتحها ولا نعدّل عليها هنا عشان ما نبوّظهاش. حدّث التطبيق.</span></p></div></div>`;
+    if (tooNew) return html`<div class="wkv"><${Notice} title="بيانات التمارين دي اتحفظت بنسخة أحدث من التطبيق" line="مش هنفتحها ولا نعدّل عليها هنا عشان ما نبوّظهاش. حدّث التطبيق." /></div>`;
 
-    const warn = (!LOCAL_OK || saveFailed) ? html`<div class="notice"><p><b>المتصفح ده مش بيسمح بالحفظ</b><span class="small muted">التمرينات هتتمسح لما تقفل الصفحة.</span></p></div>` : null;
+    const warn = (!LOCAL_OK || saveFailed) ? html`<${Notice} title="المتصفح ده مش بيسمح بالحفظ" line="التمرينات هتتمسح لما تقفل الصفحة." />` : null;
     const startEmpty = () => { setScreen({n: 'home'}); update(d => { if (!d.current) d.current = {id: uid36(), startedAt: Date.now(), exercises: [], rest: null}; return d; }); };
     const patch = fn => update(d => { if (d.current) fn(d.current); return d; });
 

@@ -100,7 +100,7 @@
       ${result ? html`<div class="paste-preview">
         <p class="small" role="status"><b>${result.items.length} مهمة في المعاينة، ${result.rejected.length} سطر مش مفهوم</b></p>
         ${result.leftOut ? html`<p class="small">${'سيبت ' + result.leftOut + ' سطر زيادة عن الحد (' + PASTE_MAX_LINES + ')'}</p>` : null}
-        ${!result.items.length ? html`<div class="notice"><p><b>مفيش سطر اتفهم.</b><span class="small">التطبيق فاهم الصيغة دي بس، سطر لكل مهمة: <bdi>النوع | نص المهمة | آخر ميعاد</bdi></span></p></div>` : null}
+        ${!result.items.length ? html`<${Notice} title="مفيش سطر اتفهم." text=${html`<span class="small">التطبيق فاهم الصيغة دي بس، سطر لكل مهمة: <bdi>النوع | نص المهمة | آخر ميعاد</bdi></span>`} />` : null}
         ${result.items.map(i => html`<div class="paste-row" key=${i.n}>
           <input type="checkbox" id=${'paste-i-' + i.n} checked=${!!sel[i.n]} disabled=${!tagOf(i)} onChange=${e => { const on = e.target.checked; setSel(p => Object.assign({}, p, {[i.n]: on})); }} />
           <span class="paste-main"><label for=${'paste-i-' + i.n} class="paste-text"><bdi>${i.text}</bdi></label>

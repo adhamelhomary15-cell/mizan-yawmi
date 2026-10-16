@@ -137,7 +137,7 @@ design and architecture. Remove junk code, and replace unclear code with clean c
   - data or security risks.
 
   Rank them by value against risk. Show the owner before any change.
-- [ ] T020 For each approved group, one commit: remove or replace the code. Each commit:
+- [x] T020 For each approved group, one commit: remove or replace the code. Each commit:
   - runs every check and `--self-test`;
   - has parity 0;
   - for user-visible screens, passes a browser check at 375 px.
@@ -145,7 +145,12 @@ design and architecture. Remove junk code, and replace unclear code with clean c
   A fix that changes behaviour is not a clean-up. It gets its own spec instead.
   - 2026-10-16: A1, A2, A4, A7, A8, A9 and A10 done, one commit each. Every check passes, parity is 0, and the
     browser at 375 px was checked: icons, cancel and undo, tick, postpone, reload, backup date, workout save, and
-    the save-failure notice. A3, A5 and A6 are still open.
+    the save-failure notice.
+  - 2026-10-17: A5, A6 and A3 done.
+    - A6: computed styles are equal at 375 px.
+    - A3: 11 notices use `Notice`. The notice HTML of the old and new builds is identical in 6 states: start, failed
+      save, workouts, paste, bad settings file and bad backup file.
+    - The three special panels (postpone, restore preview, ready to import) keep their own markup.
 - [ ] T021 Add a dev check `tools/check-code.js`, with no new libraries, to CI. It fails when:
   - a part file goes over 600 lines;
   - a top-level function or const in `src/app` is never used;
