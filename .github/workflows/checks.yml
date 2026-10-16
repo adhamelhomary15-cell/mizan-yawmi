@@ -39,6 +39,11 @@ jobs:
           node_sha=$(node tools/lib/source.js --print-sha)
           [ "$py_sha" = "$node_sha" ] || { echo "::error::tools/build.py and tools/lib/source.js join src/app differently"; exit 1; }
 
+      - name: Code standards
+        run: |
+          node tools/check-code.js
+          node tools/check-code.js --self-test
+
       - name: Settings
         run: |
           node tools/check-settings.js

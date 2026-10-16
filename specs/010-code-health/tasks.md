@@ -119,7 +119,7 @@ on every tab; «احفظ نسخة احتياطية» downloads a file that holds
 - [x] T016 [US2] Add `--print-source-sha` to `tools/build.py`. Add a step to `.github/workflows/checks.yml` that
   checks `ORDER` lists every `src/app/*.js` exactly once, and that Node's `joinParts` and Python's join give the
   same SHA.
-- [ ] T017 [US2] CI green on the branch. **Commit**: `ci: guard the part order and the join (010, US2)`.
+- [x] T017 [US2] CI green on the branch. **Commit**: `ci: guard the part order and the join (010, US2)`.
 
 ## Phase 2e: Review and clean-up (owner's request, 2026-10-16)
 
@@ -151,7 +151,7 @@ design and architecture. Remove junk code, and replace unclear code with clean c
     - A3: 11 notices use `Notice`. The notice HTML of the old and new builds is identical in 6 states: start, failed
       save, workouts, paste, bad settings file and bad backup file.
     - The three special panels (postpone, restore preview, ready to import) keep their own markup.
-- [ ] T021 Add a dev check `tools/check-code.js`, with no new libraries, to CI. It fails when:
+- [x] T021 Add a dev check `tools/check-code.js`, with no new libraries, to CI. It fails when:
   - a part file goes over 600 lines;
   - a top-level function or const in `src/app` is never used;
   - `ORDER` and `src/app` disagree.

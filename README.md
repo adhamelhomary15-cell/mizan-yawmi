@@ -108,7 +108,7 @@ AI ولا بيبعت حاجة لأي مكان: إنت اللي بتنسخ وتل
 - `index.html`, `manifest.webmanifest`, `sw.js`, والأيقونات: الملفات اللي GitHub Pages بينشرها. دي بتتعمل أوتوماتيك من الـ build، متعدّلش فيها بإيدك. الأيقونات بتترسم تاني بس مع `--icons` (محتاجة Pillow).
 - `tools/check-settings.js`: بيتأكد إن ملف إعدادات صالح (`node tools/check-settings.js ملفك.json`).
 - `tools/check-private.js`: بيتأكد إن ملفك الخاص متجاهَل ومفيش قيمة منه اتكتبت في ملف متتبَّع.
-- `tools/check-paste.js` (فحص لصق المهام)، و`tools/check-anchors.js` (فحص البلوكات المربوطة بالصلاة طول سنين)، و`tools/check-workout.js` (فحص قواعد التمارين)، و`tools/check-backup.js` (فحص قواعد النسخة الاحتياطية)، و`tools/check-guides.js` (فحص رسومات التمارين وطلب النت الوحيد وحجم التطبيق)، و`tools/check-edit.js`، و`tools/check-parity.js`، و`tools/check-phase.js`: فحوصات للمطورين.
+- `tools/check-paste.js` (فحص لصق المهام)، و`tools/check-anchors.js` (فحص البلوكات المربوطة بالصلاة طول سنين)، و`tools/check-workout.js` (فحص قواعد التمارين)، و`tools/check-backup.js` (فحص قواعد النسخة الاحتياطية)، و`tools/check-guides.js` (فحص رسومات التمارين وطلب النت الوحيد وحجم التطبيق)، و`tools/check-code.js` (فحص قواعد الكود: طول الملفات، ومفيش كود مش مستخدم)، و`tools/check-edit.js`، و`tools/check-parity.js`، و`tools/check-phase.js`: فحوصات للمطورين.
 - `.github/workflows/checks.yml`: بيشغّل الفحوصات دي على كل PR وعلى `main`، وبيتأكد إن الملفات المولّدة متطابقة مع المصدر. مبيرفعش ولا بينشر حاجة.
 
 ## التحديث
