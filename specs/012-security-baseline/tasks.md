@@ -22,11 +22,11 @@ description: "Task list for feature 012: security baseline"
 
 ## Phase 1: User Story 3 - CI runs exactly the reviewed code (Priority: P2)
 
-- [ ] T001 [US3] In `.github/workflows/checks.yml`, pin each `uses:` to its SHA, with the version in a comment:
+- [x] T001 [US3] In `.github/workflows/checks.yml`, pin each `uses:` to its SHA, with the version in a comment:
   - `actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4`
   - `actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4`
   - `actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5`
-- [ ] T002 [US3] Create `tools/check-security.js` with the workflow check (every `uses:` is `owner/repo@<40-hex>`)
+- [x] T002 [US3] Create `tools/check-security.js` with the workflow check (every `uses:` is `owner/repo@<40-hex>`)
   and its `--self-test` mutation. Add a «Security» step to CI. **Commit**: `ci: pin actions to commit SHAs (012, US3)`.
 
 ## Phase 2: User Story 1 - The page only runs what we shipped (Priority: P1) 🎯 MVP
