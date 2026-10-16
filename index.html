@@ -273,6 +273,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .form-row{display:flex;flex-wrap:wrap;gap:var(--s2)}
 .field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);flex:1 1 9rem;min-width:0}
 .field.wide{flex-basis:100%}
+/* layout tweaks that used to be inline styles */
+.panel.tight{padding:10px}
+.panel.tlist{padding-block:4px}
+.prog.plain{--c:var(--fg)}
+.form-row.to-end{align-items:flex-end}
+.field.narrow{flex:0 1 8rem}
+.tlist.spaced{margin-top:6px}
+.form-above{margin-bottom:10px}
+.form-below{margin-top:12px}
+.shrink{min-width:0}
 .field input,.field select,.field textarea{font:inherit;font-size:15px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0;width:100%;min-height:44px;box-sizing:border-box}
 .field textarea{min-height:9rem;resize:vertical;line-height:1.7}
 ::placeholder{color:var(--muted);opacity:1}
@@ -1397,7 +1407,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const fri = weekday(iso) === 5;
     let nextKey = null;
     if (isToday){ const nx = PRAYERS.find(([k]) => p[k] > now.min); nextKey = nx ? nx[0] : null; }
-    return html`<div class="panel" style="padding:10px" aria-label="مواعيد الصلاة">
+    return html`<div class="panel tight" aria-label="مواعيد الصلاة">
       <div class="prayers">
         ${PRAYERS.map(([k, name]) => html`<div class=${'pr' + (k === nextKey ? ' next' : '') + (isToday && p[k] <= now.min ? ' past' : '')}>
           <span class="pn">${fri && k === 'dhuhr' ? 'الجمعة' : name}</span>
@@ -1427,7 +1437,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   function DayProgress({iso, store}){
     const k = dayCounts(iso, store);
     const pct = k.total ? Math.round(k.done / k.total * 100) : 0;
-    return html`<div class="prog" style="--c:var(--fg)">
+    return html`<div class="prog plain">
       <div class="prog-row"><span>خلّصت <bdi class="num">${k.done}</bdi> من <bdi class="num">${k.total}</bdi>${k.skip ? html`<span class="muted"> · اتلغى <bdi class="num">${k.skip}</bdi></span>` : null}${k.moved ? html`<span class="muted"> · اتأجل <bdi class="num">${k.moved}</bdi></span>` : null}</span><span class="muted small"><bdi class="num">${hoursText(k.doneMin)}</bdi> س متعلّمة</span></div>
       <div class="track"><div class="fill" style=${{width: pct + '%'}}></div></div>
     </div>`;
@@ -1696,7 +1706,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         <div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
-          <div class="panel tlist" style="padding-block:4px">
+          <div class="panel tlist">
             ${dayTasks.map(t => html`<div class=${'titem c-' + t.tag}>
               <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })} />
               <span class="ttext">${t.text}</span>
@@ -1755,7 +1765,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
       <div class="sec a-strips">
         <div class="sec-head"><h2>شكل الأسبوع</h2><p class="small muted">دوس على يوم تفتحه</p></div>
-        <div class="panel" style="padding:10px">
+        <div class="panel tight">
           <div class="strips">
             ${days.map(d => {
               const p = prayers(d);
@@ -1849,8 +1859,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       <label class="field wide" for="cf-mods">الموديولات أو الدروس، كل واحد في سطر
         <textarea id="cf-mods" value=${mods} onInput=${e => setMods(e.target.value)} placeholder=${'Intro & Setup\nCore Concepts\nFirst Project'}></textarea>
       </label>
-      <div class="form-row" style="align-items:flex-end">
-        <label class="field" for="cf-count" style="flex:0 1 8rem">عدد الموديولات<input id="cf-count" type="number" min="1" max="60" value=${count} onInput=${e => setCount(e.target.value)} /></label>
+      <div class="form-row to-end">
+        <label class="field narrow" for="cf-count">عدد الموديولات<input id="cf-count" type="number" min="1" max="60" value=${count} onInput=${e => setCount(e.target.value)} /></label>
         <button type="button" class="btn" onClick=${fillNumbers}>اعمل قايمة بالأرقام</button>
       </div>
       <p class="small muted">التطبيق بيوزّع الموديولات على الأسابيع من البداية لحد الهدف لوحده.</p>
@@ -1892,7 +1902,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           ${x.id === store.mainCourse ? html`<${Star} />` : null}<bdi>${x.name}</bdi></button>`)}
       </div>` : null}
 
-      <div class="prog" style="--c:var(--course)">
+      <div class="prog c-course">
         <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${c.builtin ? 'موديولين كل أسبوع تقريباً' : 'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
         <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
       </div>
@@ -2526,13 +2536,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           </div>
         </div>
         <div class="panel">
-          ${taskForm ? html`<div style="margin-bottom:10px"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : pasteOpen ? html`<${PasteTasks} now=${now} store=${store} update=${update} actEdit=${actEdit} onClose=${closePaste} />` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button><button type="button" id="paste-open-btn" class="btn add-task paste-open" onClick=${openPaste}>الصق مهام من AI</button>`}
-          <div class="tlist" style="margin-top:6px">
+          ${taskForm ? html`<div class="form-above"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : pasteOpen ? html`<${PasteTasks} now=${now} store=${store} update=${update} actEdit=${actEdit} onClose=${closePaste} />` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button><button type="button" id="paste-open-btn" class="btn add-task paste-open" onClick=${openPaste}>الصق مهام من AI</button>`}
+          <div class="tlist spaced">
             ${shown.length ? shown.map(t => editing && editing.kind === 'task' && editing.id === t.id
               ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`
               : html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : '')} key=${t.id}>
               <${Check} on=${!!t.done} cat=${t.tag} label=${(t.done ? 'رجّع: ' : 'خلّص: ') + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = !x.done; return s; })} />
-              <div style="min-width:0"><p class="ttext">${t.text}</p>
+              <div class="shrink"><p class="ttext">${t.text}</p>
                 <p class="small"><span class="ttag">${TASK_TAGS[t.tag]}</span>${t.due ? html` · <span class=${'tdue' + (!t.done && t.due < now.iso ? ' late' : '')}>${dateLabel(t.due)}</span>` : null}</p></div>
               <div class="tact">
                 <button type="button" class="edit" id=${'edit-btn-' + t.id} aria-label=${'عدّل ' + t.text} title="عدّل" onClick=${() => openEdit('task', t.id)}><${Pencil} /></button>
@@ -2556,7 +2566,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
               </div>
             </div>`)}</div>`
             : html`<p class="empty">المواعيد الأساسية متحطة في الجدول خلاص. أي ميعاد ثابت تاني، زي ميتنج شغل أسبوعي، ضيفه من "+ ميعاد" وهيظهر جوه يومه.</p>`}
-          ${apptForm ? html`<div style="margin-top:12px"><${ItemForm} kind="appt" initial=${{label: '', day: 5, time: ''}} idPrefix="appt" textLabel="الميعاد" submitLabel="ضيف الميعاد" focusFirst=${false} onSubmit=${addAppt} onCancel=${() => setApptForm(false)} /></div>` : null}
+          ${apptForm ? html`<div class="form-below"><${ItemForm} kind="appt" initial=${{label: '', day: 5, time: ''}} idPrefix="appt" textLabel="الميعاد" submitLabel="ضيف الميعاد" focusFirst=${false} onSubmit=${addAppt} onCancel=${() => setApptForm(false)} /></div>` : null}
         </div>
       </div>
 

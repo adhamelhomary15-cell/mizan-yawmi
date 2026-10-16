@@ -224,7 +224,7 @@
         <div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
-          <div class="panel tlist" style="padding-block:4px">
+          <div class="panel tlist">
             ${dayTasks.map(t => html`<div class=${'titem c-' + t.tag}>
               <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })} />
               <span class="ttext">${t.text}</span>

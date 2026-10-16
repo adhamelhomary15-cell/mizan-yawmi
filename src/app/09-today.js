@@ -23,7 +23,7 @@
     const fri = weekday(iso) === 5;
     let nextKey = null;
     if (isToday){ const nx = PRAYERS.find(([k]) => p[k] > now.min); nextKey = nx ? nx[0] : null; }
-    return html`<div class="panel" style="padding:10px" aria-label="مواعيد الصلاة">
+    return html`<div class="panel tight" aria-label="مواعيد الصلاة">
       <div class="prayers">
         ${PRAYERS.map(([k, name]) => html`<div class=${'pr' + (k === nextKey ? ' next' : '') + (isToday && p[k] <= now.min ? ' past' : '')}>
           <span class="pn">${fri && k === 'dhuhr' ? 'الجمعة' : name}</span>
@@ -53,7 +53,7 @@
   function DayProgress({iso, store}){
     const k = dayCounts(iso, store);
     const pct = k.total ? Math.round(k.done / k.total * 100) : 0;
-    return html`<div class="prog" style="--c:var(--fg)">
+    return html`<div class="prog plain">
       <div class="prog-row"><span>خلّصت <bdi class="num">${k.done}</bdi> من <bdi class="num">${k.total}</bdi>${k.skip ? html`<span class="muted"> · اتلغى <bdi class="num">${k.skip}</bdi></span>` : null}${k.moved ? html`<span class="muted"> · اتأجل <bdi class="num">${k.moved}</bdi></span>` : null}</span><span class="muted small"><bdi class="num">${hoursText(k.doneMin)}</bdi> س متعلّمة</span></div>
       <div class="track"><div class="fill" style=${{width: pct + '%'}}></div></div>
     </div>`;

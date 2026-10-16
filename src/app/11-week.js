@@ -43,7 +43,7 @@
 
       <div class="sec a-strips">
         <div class="sec-head"><h2>شكل الأسبوع</h2><p class="small muted">دوس على يوم تفتحه</p></div>
-        <div class="panel" style="padding:10px">
+        <div class="panel tight">
           <div class="strips">
             ${days.map(d => {
               const p = prayers(d);

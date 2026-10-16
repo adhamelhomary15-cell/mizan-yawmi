@@ -32,8 +32,8 @@
       <label class="field wide" for="cf-mods">الموديولات أو الدروس، كل واحد في سطر
         <textarea id="cf-mods" value=${mods} onInput=${e => setMods(e.target.value)} placeholder=${'Intro & Setup\nCore Concepts\nFirst Project'}></textarea>
       </label>
-      <div class="form-row" style="align-items:flex-end">
-        <label class="field" for="cf-count" style="flex:0 1 8rem">عدد الموديولات<input id="cf-count" type="number" min="1" max="60" value=${count} onInput=${e => setCount(e.target.value)} /></label>
+      <div class="form-row to-end">
+        <label class="field narrow" for="cf-count">عدد الموديولات<input id="cf-count" type="number" min="1" max="60" value=${count} onInput=${e => setCount(e.target.value)} /></label>
         <button type="button" class="btn" onClick=${fillNumbers}>اعمل قايمة بالأرقام</button>
       </div>
       <p class="small muted">التطبيق بيوزّع الموديولات على الأسابيع من البداية لحد الهدف لوحده.</p>
@@ -75,7 +75,7 @@
           ${x.id === store.mainCourse ? html`<${Star} />` : null}<bdi>${x.name}</bdi></button>`)}
       </div>` : null}
 
-      <div class="prog" style="--c:var(--course)">
+      <div class="prog c-course">
         <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${c.builtin ? 'موديولين كل أسبوع تقريباً' : 'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
         <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
       </div>
