@@ -44,4 +44,23 @@ test('it opens offline, and an update keeps downloaded drawings', async ({page, 
   });
   await expect.poll(async () => (await cacheNames(page)).includes('mizan-0000000000')).toBe(false);
   expect(await cacheNames(page)).toContain('mizan-guides-v1');
+  // the page that was open offers the new version
+  await expect(page.locator('.notice', {hasText: 'فيه نسخة جديدة من التطبيق'})).toBeVisible();
+});
+
+test('once installed, it opens at once on a weak signal, without waiting for the network', async ({page, context, browserName}) => {
+  // Playwright's WebKit holds a routed request before the service worker sees it, so the delay below would stall the
+  // page there whatever the worker does. Chromium routes the worker's own requests, which is what this test needs.
+  test.skip(browserName === 'webkit', 'Playwright WebKit routes requests before the service worker');
+  await openApp(page);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  // every answer from the network now takes 20 seconds
+  await context.route('**/*', async r => { await new Promise(d => setTimeout(d, 20000)); await r.continue().catch(() => {}); });
+  const started = Date.now();
+  await page.reload();
+  await expect(page.locator('nav button').first()).toBeVisible();
+  expect(Date.now() - started).toBeLessThan(5000);
+  await context.unrouteAll({behavior: 'ignoreErrors'});
 });

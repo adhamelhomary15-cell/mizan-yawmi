@@ -101,6 +101,9 @@ function runChecks(src, app, sw) {
   check('the service worker leaves drawings to the app and keeps their cache on update', () =>
     sw.includes("url.pathname.includes('/tools/vendor/workout-guide/')) return;") && sw.includes("!k.startsWith('mizan-guides-')")
     && /const GUIDE_CACHE = 'mizan-guides-v\d+';/.test(src));
+  // Network first made the installed app wait for the whole page on every open, 40 s on a weak signal (2026-10-18).
+  check('the service worker answers from its cache first, and a new worker stores fresh files', () =>
+    sw.includes('.then(hit => hit || fetch(req)') && sw.includes("FILES.map(f => new Request(f, {cache: 'no-cache'}))"));
   check('the rules block never mentions storage, the page or the network', () => {
     const b = block(src).split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');
     return !/localStorage|caches\.|fetch\(|XMLHttp|document\.|window\.|navigator\./.test(b);
@@ -130,7 +133,9 @@ if (process.argv.includes('--self-test')) {
     ['a built-in drawing is left out of the build', 'app', s => s.replace('"bench-press":"H4sI', '"bench-pressx":"H4sI')],
     ['the name table is left out of the build', 'app', s => s.replace(/const WORKOUT_GUIDE_NAME_TO_SLUG = \{[^;]*\};/, 'const WORKOUT_GUIDE_NAME_TO_SLUG = {};')],
     ['the service worker deletes downloaded drawings', 'sw', s => s.replace(" && !k.startsWith('mizan-guides-')", '')],
-    ['the service worker caches drawings itself', 'sw', s => s.replace(" || url.pathname.includes('/tools/vendor/workout-guide/')", '')]
+    ['the service worker caches drawings itself', 'sw', s => s.replace(" || url.pathname.includes('/tools/vendor/workout-guide/')", '')],
+    ['the service worker waits for the network first', 'sw', s => s.replace('.then(hit => hit || fetch(req)', '.then(hit => fetch(req)')],
+    ['a new worker stores what the browser kept', 'sw', s => s.replace(", {cache: 'no-cache'}", '')]
   ];
   let missed = 0;
   mutations.forEach(([name, which, mutate]) => {

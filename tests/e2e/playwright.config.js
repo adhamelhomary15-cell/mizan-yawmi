@@ -21,7 +21,7 @@ module.exports = defineConfig({
     {name: 'webkit', use: {browserName: 'webkit'}}
   ],
   webServer: {
-    command: (process.env.PYTHON || 'python3') + ' -m http.server ' + PORT + ' --bind 127.0.0.1 --directory ../..',
+    command: (process.env.PYTHON || 'python3') + ' serve.py ' + PORT + ' ../..',
     url: 'http://127.0.0.1:' + PORT + '/index.html',
     reuseExistingServer: !process.env.CI
   }

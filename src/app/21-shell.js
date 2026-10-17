@@ -48,6 +48,15 @@
       return () => { window.removeEventListener('beforeinstallprompt', onPrompt); window.removeEventListener('appinstalled', onDone); };
     }, []);
     const install = async () => { if (!installEvt) return; try { await installEvt.prompt(); } catch(e){} setInstallEvt(null); };
+    // A new version took over in the background (see sw.js): offer to open it now; the next open shows it anyway.
+    const [newVersion, setNewVersion] = useState(false);
+    useEffect(() => {
+      const sw = navigator.serviceWorker;
+      if (!sw || !sw.controller) return;   // the first install is not an update
+      const onChange = () => setNewVersion(true);
+      sw.addEventListener('controllerchange', onChange);
+      return () => sw.removeEventListener('controllerchange', onChange);
+    }, []);
     const goTab = t => { setTab(t); try { window.scrollTo(0, 0); } catch(e){} };
     const goDay = d => { setIso(d); goTab('today'); };
     // «اعمل جدولك» opens Settings on the guide; a new key opens it fresh even when Settings is already showing.
@@ -90,6 +99,7 @@
       </nav>
       <main class="wrap">
         ${installEvt ? html`<div class="install"><p><b>ثبّت ميزان يومي</b><span class="small muted">أيقونة على الشاشة الرئيسية، ويشتغل من غير نت</span></p><button type="button" class="btn primary" onClick=${install}>ثبّت</button></div>` : null}
+        ${newVersion ? html`<${Notice} role="status" title="فيه نسخة جديدة من التطبيق" line="هتفتح لوحدها المرة الجاية، أو افتحها دلوقتي."><button type="button" class="btn primary" onClick=${() => location.reload()}>افتحها</button></${Notice}>` : null}
         ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات، أو اعمل جدولك من هنا.' : 'اعمل جدولك من هنا في دقايق، أو استورد ملف إعدادات من الإعدادات.'}><button type="button" class="btn primary" onClick=${startGuide}>اعمل جدولك</button></${Notice}>` : null}
         <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
         ${syncLate ? html`<${Notice} role="status" text="النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة."><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></${Notice}>` : null}
