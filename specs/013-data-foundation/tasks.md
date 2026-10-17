@@ -151,12 +151,14 @@ description: "Task list for feature 013: data foundation"
       new script URL while an old app cache exists. Activate deletes the old cache and keeps `mizan-guides-v1`.
     - A broken tick (onClick removed) failed «a tick is saved» and nothing else, then was restored.
     - The artifact keeps the screenshots and Playwright's error notes. The console log is not collected.
-- [ ] T013 [US3] Show the owner the change that adds `e2e` to the required checks in `branch-protection.json`, and
+- [x] T013 [US3] Show the owner the change that adds `e2e` to the required checks in `branch-protection.json`, and
   apply it after their yes.
+  - 2026-10-17: `e2e` ran green on PR #30 (82 s). The owner said yes, and the rule was applied and read back:
+    `checks` and `e2e` are required; PR, admins, no force-push and no deletion are unchanged.
 
 ## Phase 5: Docs and ship
 
-- [ ] T014 [P] README: where data is kept (the copies, the snapshots, what iOS can clear), and how to run the E2E
+- [x] T014 [P] README: where data is kept (the copies, the snapshots, what iOS can clear), and how to run the E2E
   tests. PRODUCT: the snapshots. Review: mark B6 and B7 done.
 - [ ] T015 Tick the tasks, push, and open the PR. Before merging, remind the owner to save a backup file on the phone.
   Merge when the owner asks.

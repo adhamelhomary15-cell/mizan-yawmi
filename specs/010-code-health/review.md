@@ -49,8 +49,8 @@ Ranked by value against risk.
 | B3 | `02-settings-load.js` (`CFG`, `CATS`, `SCHED`, …) | Settings become constants when the page loads, so any change needs a reload. | An in-app editor needs settings as state that the screens follow. | Editor (first) |
 | B4 | `03-time.js` (`START`, `END`), `11-week.js` (the axis labels 7ص to 10م at fixed positions) | The day is fixed from 07:00 to 01:00. | Night-shift workers and early risers cannot fit their days. | Editor / settings |
 | B5 | `05-courses.js` (`MAIN_NAME`), `21-shell.js` | A global variable is changed during render. | Hidden coupling between parts, and a source of render-order bugs. | Course model |
-| B6 | `06-store.js` | The key is named after a term (`fall26-planner-v1`), and stored data has no versions or migrations. `normalize` keeps `tasks`, `appts` and check values without checking their shape. | Any change to the data shape risks the data of existing users. | Data versioning |
-| B7 | `06`, `16`, `02`, `15` | Three stores (progress, workouts, settings), each with its own load, save and failure logic, and two separate save-failure notices. | This is the multi-store layer the owner chose: one save path, several copies. | Storage layer |
+| B6 | `06-store.js` | The key is named after a term (`fall26-planner-v1`), and stored data has no versions or migrations. `normalize` keeps `tasks`, `appts` and check values without checking their shape. | Any change to the data shape risks the data of existing users. | Data versioning (done in 013) |
+| B7 | `06`, `16`, `02`, `15` | Three stores (progress, workouts, settings), each with its own load, save and failure logic, and two separate save-failure notices. | This is the multi-store layer the owner chose: one save path, several copies. | Storage layer (done in 013) |
 | B8 | `04-prayers.js` (`lastThursdayOfOctober`) | The fallback for missing prayer times assumes one country's clock change. | It is wrong in other countries. | Settings |
 
 ## C. Security (security phase)
