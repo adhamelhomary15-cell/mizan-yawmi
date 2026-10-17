@@ -6,3 +6,8 @@
 # private / personal files, never tracked
 .private/
 *.settings.local.json
+
+# end-to-end tests (dev-only)
+tests/e2e/node_modules/
+tests/e2e/test-results/
+tests/e2e/playwright-report/

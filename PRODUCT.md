@@ -47,7 +47,10 @@ The prayer location and method come from the user's settings, not from a fixed c
   workout with undo; kept under its own key, separate from progress and settings), Settings
   (what is in use, import a settings file, reset to the example, save a backup file of all the data to the
   device and restore it after a preview, all or nothing, and whether the browser agreed to keep the data). If the browser refuses to save a change to progress, a notice on every tab says so and offers a backup
-  of what is on screen, until a later save succeeds.
+  of what is on screen, until a later save succeeds. Every save also goes to a second copy on the device (IndexedDB), and the first
+  save of each day keeps a snapshot of the last 7 days; a wiped or damaged copy comes back on its own, and a day can
+  be restored from Settings with the same preview as a backup file. Stored data carries a version and is brought
+  forward on update without loss; broken entries are set aside, never deleted.
 - The schedule, subjects, category labels, course plan, rules text, time zone, prayer location and method, the
   day-version rule, and language all come from a settings object: the stored settings file if there is one,
   otherwise the embedded example. A day can have two versions that switch by a prayer-time threshold, and a block can be tied to a prayer
