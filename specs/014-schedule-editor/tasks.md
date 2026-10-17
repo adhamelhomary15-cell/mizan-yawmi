@@ -109,7 +109,7 @@ description: "Task list for feature 014: build and edit the schedule in the app"
 
 ## Phase 6: Tests, docs and ship
 
-- [ ] T013 Write `tests/e2e/schedule.spec.js`:
+- [x] T013 Write `tests/e2e/schedule.spec.js`:
   - the guide with a fixed city;
   - geolocation granted and refused;
   - edit, copy and save;
@@ -118,7 +118,7 @@ description: "Task list for feature 014: build and edit the schedule in the app"
   - export, then import.
 
   Every E2E test stays green.
-- [ ] T014 [P] Update the README (making and editing the schedule, the city list and its license) and PRODUCT. In the
+- [x] T014 [P] Update the README (making and editing the schedule, the city list and its license) and PRODUCT. In the
   review, note B1 as still open.
 - [ ] T015 Tick the tasks, push, and open the PR. Merge when the owner asks.
 

@@ -317,10 +317,11 @@
         </div>
       </div>
       <div class="sec">
-        <div class="sec-head"><h2>مصدر رسومات التمارين</h2></div>
+        <div class="sec-head"><h2>المصادر</h2></div>
         <div class="panel">
           <p class="small">رسومات التمارين الأصلية من <a href="https://github.com/bryllim/workout-guide" target="_blank" rel="noopener noreferrer">Workout Guide</a>، للفنان Bryl Lim، وبعض الأطر مبنية على أعمال Everkinetic. الرسومات مرخصة بموجب <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. الكود والوثائق من Workout Guide مرخصة <a href="https://github.com/bryllim/workout-guide/blob/main/LICENSES.md" target="_blank" rel="noopener noreferrer">MIT</a>.</p>
           <p class="small muted">نسب المصدر: Original exercise artwork by Everkinetic, expanded by Bryl Lim, licensed under CC BY-SA 4.0.</p>
+          <p class="small">قايمة المدن من <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a>، مرخصة بموجب <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. ميزان يومي خد منها مدن الدول الإسلامية بس، بالاسم والإحداثيات والمنطقة الزمنية.</p>
         </div>
       </div>
       <${BackupSection} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />
