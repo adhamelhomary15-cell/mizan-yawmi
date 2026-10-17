@@ -116,8 +116,20 @@ description: "Task list for feature 013: data foundation"
 
 - [x] T008 [US2] The first save of each day writes the day's snapshot, and `keepSnapshots` prunes to 7. Done in
   phase 2. Still open for phase 3: reporting a snapshot that did not fit (today it is skipped quietly).
-- [ ] T009 [US2] Add «نسخ الأيام اللي فاتت» in Settings: a date list, the same preview as a backup file, and an
+- [x] T009 [US2] Add «نسخ الأيام اللي فاتت» in Settings: a date list, the same preview as a backup file, and an
   all-or-nothing restore. If both copies are damaged, the app offers the newest snapshot. Browser check. **Commit**.
+  - Done 2026-10-17.
+    - A snapshot is turned into backup-file text (`makeBackup`) and goes through `readBackup`, so it gets the same
+      checks, preview and all-or-nothing restore, with no second restore path.
+    - Browser at 375 px:
+      - three days are listed, newest first, with 44 px buttons;
+      - the preview of the 15th is right, and the restore gives exactly that snapshot;
+      - with both copies damaged, the notice names the newest snapshot day;
+      - the damaged text is now kept exactly as it was.
+    - **Known limit:** after a damaged start with no valid mirror, the app goes on from empty, and its first
+      automatic save writes that empty state to the mirror too. Nothing is lost: the damaged text and the snapshots
+      stay. But a later recovery from the mirror brings back the empty state.
+    - A failed snapshot write shows as the extra copy failing in the storage line (the rest of T008).
 
 ## Phase 4: End-to-end tests with Playwright (US3)
 

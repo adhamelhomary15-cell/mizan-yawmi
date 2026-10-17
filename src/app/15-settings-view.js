@@ -95,6 +95,12 @@
   };
   // Restore: read and check the file, show what it holds, and only on «استرجع» replace the device's data with it,
   // all or nothing. The progress goes in exactly as the file has it; no mark is made here.
+  // A daily snapshot as backup-file text, so it goes through the same checks, preview and restore as a file.
+  function snapshotAsBackup(snap){
+    const data = n => { const c = openEnvelope(snap.stores[n], n); return c.ok ? c.data : null; };
+    const at = Date.parse((snap.stores.progress || {}).savedAt) || Date.now();
+    return makeBackup({progress: data('progress') || EMPTY(), workouts: data('workouts') || EMPTY_WORKOUTS(), settings: data('settings')}, at, snap.day).text;
+  }
   function RestorePart({wk, sync, replaceAll, when}){
     const [pending, setPending] = useState(null);   // the result of readBackup when it is ok
     const [err, setErr] = useState('');
@@ -110,16 +116,20 @@
       return () => document.removeEventListener('keydown', key);
     }, [pending, busy]);
     const refuse = code => { setPending(null); setErr(BACKUP_REFUSALS[code] || BACKUP_REFUSALS['not-backup']); if (inputRef.current) inputRef.current.value = ''; };
+    const consider = text => {
+      const res = readBackup(text, {normalize, normalizeRoot, validateSettings});
+      if (res.ok) setPending(res); else refuse(res.code);
+    };
+    const [days, setDays] = useState([]);
+    useEffect(() => { let live = true; listSnapshots().then(l => { if (live) setDays(l); }); return () => { live = false; }; }, []);
+    const fromDay = snap => { setErr(''); consider(snapshotAsBackup(snap)); };
     const onFile = e => {
       const f = e.target.files && e.target.files[0];
       setPending(null); setErr('');
       if (!f) return;
       if (f.size > BACKUP_MAX_BYTES) { refuse('too-large'); return; }
       const r = new FileReader();
-      r.onload = () => {
-        const res = readBackup(String(r.result || ''), {normalize, normalizeRoot, validateSettings});
-        if (res.ok) setPending(res); else refuse(res.code);
-      };
+      r.onload = () => consider(String(r.result || ''));
       r.onerror = () => refuse('not-backup');
       r.readAsText(f);
     };
@@ -153,6 +163,8 @@
     const pv = pending && pending.preview;
     return html`<div class="restore">
       <label class="field wide" for="backup-file">اختار ملف النسخة الاحتياطية<input id="backup-file" ref=${inputRef} type="file" accept=".json,application/json" disabled=${busy} onChange=${onFile} /></label>
+      ${days.length ? html`<div class="snap-days"><p class="small"><b>نسخ الأيام اللي فاتت</b> · نسخة من بداية كل يوم من آخر 7 أيام. اختار يوم تشوف اللي فيه قبل ما ترجّعه.</p>
+        <span class="backup-act">${days.map(d => html`<button type="button" class="btn" key=${d.day} disabled=${busy} onClick=${() => fromDay(d)}>${dateLabel(d.day)}</button>`)}</span></div>` : null}
       <div aria-live="polite">
         ${err ? html`<${Notice} role="alert" focusRef=${errRef} text=${err} />` : null}
         ${pv ? html`<div class="notice restore-preview" role="group" aria-label="معاينة النسخة الاحتياطية"><p>

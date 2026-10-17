@@ -17,6 +17,9 @@
     const [settingsBack, setSettingsBack] = useState(() => { try { const v = sessionStorage.getItem(RECOVERED_KEY); sessionStorage.removeItem(RECOVERED_KEY); return !!v; } catch(e){ return false; } });
     const recovered = health.problem === 'recovered' || wk.recovered || settingsBack;
     const dismissRecovered = () => { health.dismiss(); wk.dismissRecovered(); setSettingsBack(false); };
+    // When the local copy is damaged and the mirror could not help, point to the newest daily snapshot.
+    const [lastDay, setLastDay] = useState(null);
+    useEffect(() => { if (health.problem === 'damaged') listSnapshots().then(l => setLastDay(l.length ? l[0].day : null)); }, [health.problem]);
     // The save-failure notice: its own backup result, cleared once saving works again.
     const [saveMsg, setSaveMsg] = useState(null);
     useEffect(() => { if (!saveFailed) setSaveMsg(null); }, [saveFailed]);
@@ -88,7 +91,7 @@
         <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
         ${syncLate ? html`<${Notice} role="status" text="النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة."><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></${Notice}>` : null}
         ${recovered ? html`<${Notice} role="status" text="رجّعنا بياناتك من النسخة المحفوظة على الجهاز."><button type="button" class="btn primary" onClick=${dismissRecovered}>تمام</button></${Notice}>` : null}
-        ${health.problem === 'damaged' ? html`<${Notice} role="alert" title="نسخة بياناتك على الجهاز بايظة" line="حطيناها على جنب ومامسحناهاش. لو عندك نسخة احتياطية، رجّعها من الإعدادات."><button type="button" class="btn" onClick=${health.dismiss}>تمام</button></${Notice}>` : null}
+        ${health.problem === 'damaged' ? html`<${Notice} role="alert" title="نسخة بياناتك على الجهاز بايظة" line=${'حطيناها على جنب ومامسحناهاش. ' + (lastDay ? 'تقدر ترجّع نسخة يوم ' + dateLabel(lastDay) + ' أو نسخة احتياطية من الإعدادات.' : 'لو عندك نسخة احتياطية، رجّعها من الإعدادات.')}><button type="button" class="btn" onClick=${health.dismiss}>تمام</button></${Notice}>` : null}
         ${health.problem === 'too-new' ? html`<${Notice} role="alert" title="بياناتك اتحفظت بنسخة أحدث من التطبيق" line="مش هنعدّل عليها هنا عشان ما نبوّظهاش. حدّث التطبيق." />` : null}
         ${health.problem === 'failed' ? html`<${Notice} role="alert" title="النسخة دي مش قادرة تفتح بياناتك" line="بياناتك محفوظة زي ما هي. احفظ نسخة احتياطية وحدّث التطبيق."><button type="button" class="btn primary" onClick=${saveNow}>احفظ نسخة احتياطية</button></${Notice}>` : null}
         ${health.setAside ? html`<${Notice} role="status" title=${'فيه ' + health.setAside + ' حاجة في بياناتك شكلها بايظ'} line="اتحطت على جنب ومامسحناهاش، وهي موجودة في النسخة الاحتياطية."><button type="button" class="btn" onClick=${health.dismiss}>تمام</button></${Notice}>` : null}

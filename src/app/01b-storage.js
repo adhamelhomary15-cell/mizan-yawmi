@@ -25,7 +25,7 @@
   function loadStore(store){
     const raw = readRaw(STORE_KEYS[store]), copy = openEnvelope(raw, store);
     if (copy.ok) return migrated(store, copy.version, copy.data);
-    if (copy.code !== 'missing') { if (readRaw(STORE_KEYS[store] + '.damaged') === null) writeJSON(STORE_KEYS[store] + '.damaged', raw); return {state: 'damaged'}; }
+    if (copy.code !== 'missing') { keepDamaged(STORE_KEYS[store] + '.damaged', raw); return {state: 'damaged'}; }
     const old = readRaw(OLD_KEYS[store]);
     if (old === null) return {state: 'empty'};
     let data;
@@ -37,6 +37,8 @@
     if (writeJSON(STORE_KEYS[store], env) && readRaw(STORE_KEYS[store]) === JSON.stringify(env)) removeKey(OLD_KEYS[store]);
     return r;
   }
+  // The damaged text exactly as it was, once, so a later save cannot write over the only copy of it.
+  function keepDamaged(key, raw){ if (readRaw(key) === null) { try { localStorage.setItem(key, raw); } catch(e){} } }
   function migrated(store, version, data){
     const m = migrate(store, version, data);
     return m.ok ? {state: 'ok', data: m.data, setAside: m.setAside} : {state: m.code};
@@ -125,7 +127,14 @@
     return () => removeEventListener('storage', listen);
   }
 
+  // The daily snapshots, newest first: [{day, stores: {progress, workouts, settings}}], each store as an envelope.
+  async function listSnapshots(){
+    const db = await openMirror();
+    const all = db ? await idb(db, 'snapshots', 'readonly', s => s.getAll()) : null;
+    return (all || []).filter(s => s && isDayText(s.day) && isPlainObject(s.stores)).sort((a, b) => (a.day < b.day ? 1 : -1));
+  }
   // The first save of each day keeps all three stores as they were just before it; the 7 most recent days stay.
+  // A snapshot that cannot be written marks the extra copy as failing (mirrorState), which the storage line shows.
   let snapshotDay = null;
   function snapshotBeforeFirstSave(){
     const day = zoneParts(new Date()).iso;
