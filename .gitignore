@@ -6,6 +6,9 @@
 # private / personal files, never tracked
 .private/
 *.settings.local.json
+# backup and schedule files the app saves, if a test download lands in the repository
+mizan-backup-*.json
+mizan-settings-*.json
 
 # end-to-end tests (dev-only)
 tests/e2e/node_modules/
