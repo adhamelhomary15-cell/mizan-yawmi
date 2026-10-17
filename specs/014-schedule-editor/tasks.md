@@ -120,7 +120,7 @@ description: "Task list for feature 014: build and edit the schedule in the app"
   Every E2E test stays green.
 - [x] T014 [P] Update the README (making and editing the schedule, the city list and its license) and PRODUCT. In the
   review, note B1 as still open.
-- [ ] T015 Tick the tasks, push, and open the PR. Merge when the owner asks.
+- [x] T015 Tick the tasks, push, and open the PR. Merge when the owner asks.
 
 ## Summary
 
