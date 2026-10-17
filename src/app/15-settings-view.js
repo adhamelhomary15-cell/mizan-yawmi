@@ -192,16 +192,25 @@
     writeJSON(BACKUP_META_KEY, {lastBackupAt: at});
     return at;
   }
+  // Saves a JSON file to the device; throws when the browser cannot.
+  function downloadText(name, text){
+    const url = URL.createObjectURL(new File([text], name, {type: 'application/json'})), a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   // Saves a backup file of what is on screen. Used by the backup section and by the save-failure notice in App.
   function downloadBackup(store, wk){
     try {
-      const {b, now, file} = buildBackup(store, wk);
-      const url = URL.createObjectURL(file), a = document.createElement('a');
-      a.href = url; a.download = b.name; a.style.display = 'none';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const {b, now} = buildBackup(store, wk);
+      downloadText(b.name, b.text);
       return {ok: true, name: b.name, at: rememberBackup(now)};
     } catch(e){ return {ok: false}; }
+  }
+  // Saves the schedule in use as a settings file that «استيراد ملف إعدادات» takes back.
+  function exportSettings(){
+    const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json';
+    try { downloadText(name, JSON.stringify(CFG, null, 2) + '\n'); return {ok: true, name}; } catch(e){ return {ok: false}; }
   }
   function BackupSection({store, wk, sync, replaceAll}){
     const [last, setLast] = useState(readBackupMeta);
@@ -243,6 +252,7 @@
     const [msgs, setMsgs] = useState([]);
     const [done, setDone] = useState('');
     const [askReset, setAskReset] = useState(false);
+    const [exported, setExported] = useState(null);   // {ok, name}
     const msgRef = useRef(null);
     useEffect(() => { if (msgs.length && msgRef.current) { try { msgRef.current.focus(); } catch(e){} } }, [msgs]);
     const onFile = e => {
@@ -288,7 +298,8 @@
         <div class="sec-head"><h2>جدولك</h2></div>
         <div class="panel">
           <p class="small muted">عدّل البلوكات والأنواع والمواد من هنا، من غير ملف. مفيش حاجة بتتغيّر غير لما تحفظ.</p>
-          <span class="backup-act"><button type="button" class="btn primary" onClick=${edit}>عدّل الجدول</button><button type="button" class="btn" onClick=${() => setScreen('guide')}>اعمل جدولك من الأول</button></span>
+          <span class="backup-act"><button type="button" class="btn primary" onClick=${edit}>عدّل الجدول</button><button type="button" class="btn" onClick=${() => setScreen('guide')}>اعمل جدولك من الأول</button><button type="button" class="btn" onClick=${() => setExported(exportSettings())}>صدّر جدولي كملف</button></span>
+          <div aria-live="polite">${exported ? (exported.ok ? html`<p class="small">اتحفظ الجدول: <bdi dir="ltr">${exported.name}</bdi>. تقدر تستورده على أي جهاز من «استيراد ملف إعدادات».</p>` : html`<${Notice} role="alert" text="المتصفح ده مش بيسمح بحفظ الملف." />`) : null}</div>
         </div>
       </div>
       <div class="sec">

@@ -104,7 +104,7 @@ description: "Task list for feature 014: build and edit the schedule in the app"
 
 ## Phase 5: Export (US5)
 
-- [ ] T012 [US5] Take `downloadText(name, text)` out of `downloadBackup`, and have the backup use it. Add «صدّر جدولي
+- [x] T012 [US5] Take `downloadText(name, text)` out of `downloadBackup`, and have the backup use it. Add «صدّر جدولي
   كملف», which saves `mizan-settings-<date>.json`. **Commit**.
 
 ## Phase 6: Tests, docs and ship
