@@ -87,17 +87,23 @@
       } catch(e){ if (mode === 'readwrite') mirrorState = 'failed'; done(undefined); }
     });
   }
+  // After a damaged start with nothing to bring back, the mirror waits until the store holds something real (see
+  // reconcile), so the empty state the app goes on from never spreads to the mirror.
+  const waitForContent = {};
   async function copyToMirror(db, store){
-    const env = readJSON(STORE_KEYS[store]);
-    if (openEnvelope(env, store).ok && await idb(db, 'copies', 'readwrite', s => s.put(env, store))) mirrorState = 'on';
+    const env = readJSON(STORE_KEYS[store]), copy = openEnvelope(env, store);
+    if (!copy.ok) return;
+    if (waitForContent[store]) { if (!waitForContent[store](copy.data)) return; delete waitForContent[store]; }
+    if (await idb(db, 'copies', 'readwrite', s => s.put(env, store))) mirrorState = 'on';
   }
 
   // Once per store and session: compare the local copy with the mirror, use the newer valid one, repair the other.
   // startedEmpty: the session began with no usable local copy, so a valid mirror wins whatever its save time (a save
-  // made in the first moments, before this ran, must not beat the real data). Resolves {recovered: data},
-  // {tooNew: true} or null.
+  // made in the first moments, before this ran, must not beat the real data). hasContent(data) says whether a store
+  // holds anything real; it decides when the mirror may be written again after a damaged start. Resolves
+  // {recovered: data}, {tooNew: true} or null.
   const reconciled = {};
-  function reconcile(store, startedEmpty = false){
+  function reconcile(store, startedEmpty = false, hasContent = null){
     return reconciled[store] || (reconciled[store] = (async () => {
       const db = await openMirror();
       if (!db) return null;
@@ -111,6 +117,9 @@
         writeJSON(STORE_KEYS[store], stored);
         return {recovered: m.data};
       }
+      if (startedEmpty && hasContent) waitForContent[store] = hasContent;
+      // a damaged mirror copy is kept aside, once, before anything can write over it
+      if (mirror.code === 'damaged' && await idb(db, 'copies', 'readonly', s => s.get(store + '.damaged')) === undefined) await idb(db, 'copies', 'readwrite', s => s.put(stored, store + '.damaged'));
       if (pick.repair === 'mirror') await copyToMirror(db, store);
       return null;
     })());

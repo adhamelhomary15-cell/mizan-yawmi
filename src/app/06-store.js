@@ -37,7 +37,7 @@
     const latest = useRef(store), ref = useRef(null), timer = useRef(null), chain = useRef(Promise.resolve());
     const take = data => { const next = normalize(data); latest.current = next; setStore(next); };
     useEffect(() => {
-      reconcile('progress', opened.state === 'empty' || opened.state === 'damaged').then(r => {
+      reconcile('progress', opened.state === 'empty' || opened.state === 'damaged', d => !!hasData(normalize(d))).then(r => {
         if (r && r.tooNew) { locked.current = true; setHealth(h => ({...h, problem: 'too-new'})); }
         else if (r && r.recovered) { take(r.recovered); setHealth(h => ({...h, problem: 'recovered'})); }
         // a damaged copy is only news once the mirror could not bring the data back

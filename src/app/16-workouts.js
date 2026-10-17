@@ -17,7 +17,7 @@
     const latest = useRef(data), locked = useRef(opened.tooNew);
     const take = raw => { const r = normalizeRoot(raw); if (r.tooNew) return; latest.current = r.root; setData(r.root); };
     useEffect(() => {
-      reconcile('workouts', opened.got.state === 'empty' || opened.got.state === 'damaged').then(r => {
+      reconcile('workouts', opened.got.state === 'empty' || opened.got.state === 'damaged', d => { const r = normalizeRoot(d).root; return !!(r.custom.length || r.routines.length || r.workouts.length || r.current); }).then(r => {
         if (r && r.tooNew) { locked.current = true; setTooNew(true); }
         else if (r && r.recovered) { take(r.recovered); setRecovered(true); }
       });
