@@ -56,13 +56,13 @@ description: "Task list for feature 012: security baseline"
 
 ## Phase 3: User Story 4 - The shared-origin risk is written down (Priority: P3)
 
-- [ ] T007 [P] [US4] In `README.md` («الخصوصية»), add:
+- [x] T007 [P] [US4] In `README.md` («الخصوصية»), add:
   - what the CSP does;
   - that `main` is protected;
   - the shared-origin risk and what closes it;
   - the frame-ancestors limit;
   - the new check in the file list.
-- [ ] T008 [P] [US4] In `specs/010-code-health/review.md`, mark C1–C3 as done in 012, and C4 as recorded.
+- [x] T008 [P] [US4] In `specs/010-code-health/review.md`, mark C1–C3 as done in 012, and C4 as recorded.
   **Commit**: `docs(012): CSP, protected main and the shared-origin risk`.
 
 ## Phase 4: User Story 2 - Nothing reaches the phones without a PR and green CI (Priority: P1)
