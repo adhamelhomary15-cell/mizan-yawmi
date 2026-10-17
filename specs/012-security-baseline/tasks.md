@@ -67,13 +67,15 @@ description: "Task list for feature 012: security baseline"
 
 ## Phase 4: User Story 2 - Nothing reaches the phones without a PR and green CI (Priority: P1)
 
-- [ ] T009 [US2] Write `specs/012-security-baseline/branch-protection.json` (from plan.md). Push the branch and open
+- [x] T009 [US2] Write `specs/012-security-baseline/branch-protection.json` (from plan.md). Push the branch and open
   the PR. Then show the owner the settings and the command, and wait for an explicit yes.
-- [ ] T010 [US2] After the yes, apply it with
+- [x] T010 [US2] After the yes, apply it with
   `gh api -X PUT repos/adhamelhomary15-cell/mizan-yawmi/branches/main/protection --input specs/012-security-baseline/branch-protection.json`.
   Verify it:
   - read the settings back;
   - the PR shows as blocked while CI runs, and as mergeable once it is green.
+  - 2026-10-17: applied after the owner's yes. Read back: `checks` required (strict), PR required with 0 approvals,
+    admins included, no force-push, no deletion.
 - [ ] T011 Tick the tasks. Merge when the owner asks, through the PR, which is now the only way.
 
 ## Dependencies
