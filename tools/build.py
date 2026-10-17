@@ -94,6 +94,12 @@ if 'const WORKOUT_GUIDE_NAME_TO_SLUG = {};' not in src:
 src = src.replace('const WORKOUT_GUIDE_NAME_TO_SLUG = {};',
                   'const WORKOUT_GUIDE_NAME_TO_SLUG = ' + json.dumps(names, ensure_ascii=False, separators=(',', ':')) + ';', 1)
 
+# The city list for the place picker (feature 014): GeoNames, CC BY 4.0, see tools/vendor/cities/NOTICE.md.
+cities = json.loads((VENDOR / 'cities' / 'cities.json').read_text(encoding='utf-8'))
+if 'const CITIES = [];' not in src:
+    raise SystemExit('city list placeholder not found')
+src = src.replace('const CITIES = [];', 'const CITIES = ' + json.dumps(cities, ensure_ascii=False, separators=(',', ':')) + ';', 1)
+
 # 4. Wrap in a full document with the app manifest and service worker.
 title = re.search(r'<title>.*?</title>', src).group(0)
 src = src.replace(title, '', 1)

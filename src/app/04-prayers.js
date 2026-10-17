@@ -1,26 +1,24 @@
   /* ---------------- prayer times (location and method come from the settings) ---------------- */
   const PRAYERS = [['fajr','الفجر'],['dhuhr','الضهر'],['asr','العصر'],['maghrib','المغرب'],['isha','العشا']];
+  // Prayer times for any place {location, prayerMethod, timezone} on a date, as minutes since midnight in that place's
+  // time zone, or null when they cannot be computed. The editor uses it for a schedule that is not saved yet.
+  const zoneMinuteFmt = {};
+  function prayerTimesFor(place, iso){
+    try {
+      if (!window.adhan) return null;
+      const fmt = zoneMinuteFmt[place.timezone] || (zoneMinuteFmt[place.timezone] = new Intl.DateTimeFormat('en-CA', {timeZone: place.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}));
+      const [y, m, d] = iso.split('-').map(Number);
+      const t = new adhan.PrayerTimes(new adhan.Coordinates(place.location.lat, place.location.lng), new Date(y, m - 1, d), adhan.CalculationMethod[place.prayerMethod]());
+      const r = {};
+      PRAYERS.forEach(([k]) => { const o = {}; fmt.formatToParts(t[k]).forEach(x => { o[x.type] = x.value; }); r[k] = (Number(o.hour) % 24) * 60 + Number(o.minute); });
+      return r;
+    } catch(e){ return null; }
+  }
+  // The saved schedule's prayer times, once per date.
   const ptCache = {};
-  let adhanCoords = null, adhanParams = null;
-  try {
-    if (window.adhan){
-      adhanCoords = new adhan.Coordinates(CFG.location.lat, CFG.location.lng);
-      adhanParams = adhan.CalculationMethod[CFG.prayerMethod]();
-    }
-  } catch(e){ adhanCoords = null; }
   function prayers(iso){
-    if (ptCache[iso] !== undefined) return ptCache[iso];
-    let r = null;
-    if (adhanCoords){
-      try {
-        const [y,m,d] = iso.split('-').map(Number);
-        const t = new adhan.PrayerTimes(adhanCoords, new Date(y, m-1, d), adhanParams);
-        r = {};
-        PRAYERS.forEach(([k]) => { r[k] = zoneParts(t[k]).min; });
-      } catch(e){ r = null; }
-    }
-    ptCache[iso] = r;
-    return r;
+    if (ptCache[iso] === undefined) ptCache[iso] = prayerTimesFor(CFG, iso);
+    return ptCache[iso];
   }
   // Last Thursday of October (the last day before the clocks go back), as an ISO date. UTC arithmetic, no local zone.
   function lastThursdayOfOctober(year){

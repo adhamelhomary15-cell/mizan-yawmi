@@ -192,16 +192,25 @@
     writeJSON(BACKUP_META_KEY, {lastBackupAt: at});
     return at;
   }
+  // Saves a JSON file to the device; throws when the browser cannot.
+  function downloadText(name, text){
+    const url = URL.createObjectURL(new File([text], name, {type: 'application/json'})), a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   // Saves a backup file of what is on screen. Used by the backup section and by the save-failure notice in App.
   function downloadBackup(store, wk){
     try {
-      const {b, now, file} = buildBackup(store, wk);
-      const url = URL.createObjectURL(file), a = document.createElement('a');
-      a.href = url; a.download = b.name; a.style.display = 'none';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const {b, now} = buildBackup(store, wk);
+      downloadText(b.name, b.text);
       return {ok: true, name: b.name, at: rememberBackup(now)};
     } catch(e){ return {ok: false}; }
+  }
+  // Saves the schedule in use as a settings file that «استيراد ملف إعدادات» takes back.
+  function exportSettings(){
+    const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json';
+    try { downloadText(name, JSON.stringify(CFG, null, 2) + '\n'); return {ok: true, name}; } catch(e){ return {ok: false}; }
   }
   function BackupSection({store, wk, sync, replaceAll}){
     const [last, setLast] = useState(readBackupMeta);
@@ -243,6 +252,7 @@
     const [msgs, setMsgs] = useState([]);
     const [done, setDone] = useState('');
     const [askReset, setAskReset] = useState(false);
+    const [exported, setExported] = useState(null);   // {ok, name}
     const msgRef = useRef(null);
     useEffect(() => { if (msgs.length && msgRef.current) { try { msgRef.current.focus(); } catch(e){} } }, [msgs]);
     const onFile = e => {
@@ -267,6 +277,12 @@
       await removeStore('settings');
       location.reload();
     };
+    // The schedule editor is a screen of Settings; an unsaved draft brings it back (see editorSession).
+    const [screen, setScreen] = useState(() => editorSession ? 'editor' : guideRequested ? 'guide' : 'main');
+    useEffect(() => { guideRequested = false; }, []);
+    const edit = () => { openEditor(); setScreen('editor'); };
+    if (screen === 'editor') return html`<${ScheduleEditor} onClose=${() => setScreen('main')} />`;
+    if (screen === 'guide') return html`<${Guide} onClose=${() => setScreen('main')} onEditor=${() => setScreen('editor')} />`;
     const sm = pending ? summaryOf(pending.settings) : null;
     return html`<div class="settingsv">
       <div class="top a-head"><div class="top-meta"><h1>الإعدادات</h1><p class="sub">جدولك ومواقيت الصلاة واللغة، بتتخزن على الجهاز ده بس</p></div></div>
@@ -276,6 +292,14 @@
           <p><b>${LOADED.isExample ? 'جدول مثال عام' : (CFG.name || 'إعداداتي')}</b></p>
           <p class="small muted">${LOADED.isExample ? 'مفيش ملف إعدادات متخزن. استورد ملفك عشان التطبيق يبقى بتاعك.' : 'الإعدادات دي متخزنة على الجهاز ده وبتشتغل من غير نت.'}${LOADED.problem ? ' (الإعدادات المتخزنة مكنتش صالحة فبنعرض المثال.)' : ''}</p>
           <p class="small muted">الموقع: <bdi>${CFG.location.label || '—'}</bdi> · الطريقة: <bdi>${CFG.prayerMethod}</bdi> · اللغة: <bdi>${CFG.language}</bdi></p>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-head"><h2>جدولك</h2></div>
+        <div class="panel">
+          <p class="small muted">عدّل البلوكات والأنواع والمواد من هنا، من غير ملف. مفيش حاجة بتتغيّر غير لما تحفظ.</p>
+          <span class="backup-act"><button type="button" class="btn primary" onClick=${edit}>عدّل الجدول</button><button type="button" class="btn" onClick=${() => setScreen('guide')}>اعمل جدولك من الأول</button><button type="button" class="btn" onClick=${() => setExported(exportSettings())}>صدّر جدولي كملف</button></span>
+          <div aria-live="polite">${exported ? (exported.ok ? html`<p class="small">اتحفظ الجدول: <bdi dir="ltr">${exported.name}</bdi>. تقدر تستورده على أي جهاز من «استيراد ملف إعدادات».</p>` : html`<${Notice} role="alert" text="المتصفح ده مش بيسمح بحفظ الملف." />`) : null}</div>
         </div>
       </div>
       <div class="sec">
@@ -293,10 +317,11 @@
         </div>
       </div>
       <div class="sec">
-        <div class="sec-head"><h2>مصدر رسومات التمارين</h2></div>
+        <div class="sec-head"><h2>المصادر</h2></div>
         <div class="panel">
           <p class="small">رسومات التمارين الأصلية من <a href="https://github.com/bryllim/workout-guide" target="_blank" rel="noopener noreferrer">Workout Guide</a>، للفنان Bryl Lim، وبعض الأطر مبنية على أعمال Everkinetic. الرسومات مرخصة بموجب <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. الكود والوثائق من Workout Guide مرخصة <a href="https://github.com/bryllim/workout-guide/blob/main/LICENSES.md" target="_blank" rel="noopener noreferrer">MIT</a>.</p>
           <p class="small muted">نسب المصدر: Original exercise artwork by Everkinetic, expanded by Bryl Lim, licensed under CC BY-SA 4.0.</p>
+          <p class="small">قايمة المدن من <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a>، مرخصة بموجب <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. ميزان يومي خد منها مدن الدول الإسلامية بس، بالاسم والإحداثيات والمنطقة الزمنية.</p>
         </div>
       </div>
       <${BackupSection} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />

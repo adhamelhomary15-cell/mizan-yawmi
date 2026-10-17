@@ -50,6 +50,9 @@
     const install = async () => { if (!installEvt) return; try { await installEvt.prompt(); } catch(e){} setInstallEvt(null); };
     const goTab = t => { setTab(t); try { window.scrollTo(0, 0); } catch(e){} };
     const goDay = d => { setIso(d); goTab('today'); };
+    // «اعمل جدولك» opens Settings on the guide; a new key opens it fresh even when Settings is already showing.
+    const [settingsOpened, setSettingsOpened] = useState(0);
+    const startGuide = () => { guideRequested = true; setSettingsOpened(n => n + 1); goTab('settings'); };
     // A message with an undo button for 7 seconds. The caller has already made the change.
     const showToast = (text, undo) => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -75,7 +78,7 @@
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
     else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} showToast=${showToast} />`;
-    else if (tab === 'settings') view = html`<${SettingsView} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />`;
+    else if (tab === 'settings') view = html`<${SettingsView} key=${settingsOpened} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />`;
     else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
 
     return html`<div class="shell">
@@ -87,7 +90,7 @@
       </nav>
       <main class="wrap">
         ${installEvt ? html`<div class="install"><p><b>ثبّت ميزان يومي</b><span class="small muted">أيقونة على الشاشة الرئيسية، ويشتغل من غير نت</span></p><button type="button" class="btn primary" onClick=${install}>ثبّت</button></div>` : null}
-        ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات' : 'لما يبقى عندك ملف إعداداتك هتستورده من الإعدادات'} />` : null}
+        ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات، أو اعمل جدولك من هنا.' : 'اعمل جدولك من هنا في دقايق، أو استورد ملف إعدادات من الإعدادات.'}><button type="button" class="btn primary" onClick=${startGuide}>اعمل جدولك</button></${Notice}>` : null}
         <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
         ${syncLate ? html`<${Notice} role="status" text="النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة."><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></${Notice}>` : null}
         ${recovered ? html`<${Notice} role="status" text="رجّعنا بياناتك من النسخة المحفوظة على الجهاز."><button type="button" class="btn primary" onClick=${dismissRecovered}>تمام</button></${Notice}>` : null}
