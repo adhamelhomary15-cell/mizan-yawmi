@@ -74,6 +74,11 @@ jobs:
           node tools/check-workout.js
           node tools/check-workout.js --self-test
 
+      - name: Schedule rules
+        run: |
+          node tools/check-schedule.js
+          node tools/check-schedule.js --self-test
+
       - name: Data rules
         run: |
           node tools/check-data.js

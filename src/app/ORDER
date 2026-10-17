@@ -33,9 +33,15 @@
 12-course-view.js
 # pure rule blocks: edit, task paste, workout, backup, postpone, guide (markers used by tools/check-*.js)
 13-rules.js
+# schedule rules: draft operations, places, week templates, change summary (pure)
+13a-schedule-rules.js
 # task and appointment form, paste tasks UI, Tasks screen
 14-tasks-view.js
 # Settings screen: import, status, reset, backup and restore
+# first-run guide and the place picker (city list, device location, coordinates)
+14a-guide-view.js
+# schedule editor: blocks, preview, prayer tie, kinds, subjects, place, save
+14b-editor-view.js
 15-settings-view.js
 # workout log storage hook, timers, confirm dialog, exercise picker
 16-workouts.js

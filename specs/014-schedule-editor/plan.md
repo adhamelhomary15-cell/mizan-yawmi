@@ -82,7 +82,7 @@ touch is kept.
 - an unknown field is dropped;
 - a two-version day is rewritten.
 
-### City data: **decision for the owner**
+### City data (owner, 2026-10-17: GeoNames approved, with the 57 OIC member states only)
 
 The source is **GeoNames**, licensed **CC BY 4.0** (attribution required). It is the standard open source of city
 coordinates and time zones, and it has Arabic names.

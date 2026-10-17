@@ -16,6 +16,9 @@ owner still needs help for every change. The owner's decisions:
   - **Day bounds:** they stay fixed (07:00–01:00) in this feature.
   - **City:** an offline list of cities, plus «استخدم موقعي» (the device's location, after permission, never sent
     anywhere), plus typing the coordinates by hand.
+  - **City list (2026-10-17):** GeoNames (CC BY 4.0) is approved. The list covers **Muslim countries only**, meaning
+    the 57 member states of the Organisation of Islamic Cooperation. A user elsewhere uses «استخدم موقعي» or the
+    coordinates.
   - **Prayer:** a block can be tied to a prayer from the editor. The two day versions (summer and winter, by a prayer
     threshold) stay file-only for now.
 

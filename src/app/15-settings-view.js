@@ -267,6 +267,12 @@
       await removeStore('settings');
       location.reload();
     };
+    // The schedule editor is a screen of Settings; an unsaved draft brings it back (see editorSession).
+    const [screen, setScreen] = useState(() => editorSession ? 'editor' : guideRequested ? 'guide' : 'main');
+    useEffect(() => { guideRequested = false; }, []);
+    const edit = () => { openEditor(); setScreen('editor'); };
+    if (screen === 'editor') return html`<${ScheduleEditor} onClose=${() => setScreen('main')} />`;
+    if (screen === 'guide') return html`<${Guide} onClose=${() => setScreen('main')} onEditor=${() => setScreen('editor')} />`;
     const sm = pending ? summaryOf(pending.settings) : null;
     return html`<div class="settingsv">
       <div class="top a-head"><div class="top-meta"><h1>الإعدادات</h1><p class="sub">جدولك ومواقيت الصلاة واللغة، بتتخزن على الجهاز ده بس</p></div></div>
@@ -276,6 +282,13 @@
           <p><b>${LOADED.isExample ? 'جدول مثال عام' : (CFG.name || 'إعداداتي')}</b></p>
           <p class="small muted">${LOADED.isExample ? 'مفيش ملف إعدادات متخزن. استورد ملفك عشان التطبيق يبقى بتاعك.' : 'الإعدادات دي متخزنة على الجهاز ده وبتشتغل من غير نت.'}${LOADED.problem ? ' (الإعدادات المتخزنة مكنتش صالحة فبنعرض المثال.)' : ''}</p>
           <p class="small muted">الموقع: <bdi>${CFG.location.label || '—'}</bdi> · الطريقة: <bdi>${CFG.prayerMethod}</bdi> · اللغة: <bdi>${CFG.language}</bdi></p>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-head"><h2>جدولك</h2></div>
+        <div class="panel">
+          <p class="small muted">عدّل البلوكات والأنواع والمواد من هنا، من غير ملف. مفيش حاجة بتتغيّر غير لما تحفظ.</p>
+          <span class="backup-act"><button type="button" class="btn primary" onClick=${edit}>عدّل الجدول</button><button type="button" class="btn" onClick=${() => setScreen('guide')}>اعمل جدولك من الأول</button></span>
         </div>
       </div>
       <div class="sec">

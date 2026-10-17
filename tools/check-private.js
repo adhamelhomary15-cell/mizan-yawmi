@@ -31,6 +31,9 @@ const { execFileSync } = require('child_process');
 const GENERIC = ['last-thursday-october', 'maghrib', 'Egyptian', 'mizan-settings', 'Africa/Cairo', 'Sample city',
   'fajr', 'dhuhr', 'asr', 'isha', 'before', 'after'];
 const SKIP_DIRS = ['tools/vendor/'];
+// Public third-party data that the build copies into a page (the GeoNames city list, feature 014). A personal value that
+// is also a public city name is not personal there; the same value anywhere else in the file is still caught.
+const INLINED_PUBLIC_DATA = [/const CITIES = \[[\s\S]*?\];/g];
 const BINARY = ['.png', '.jpg', '.jpeg', '.gif', '.ico', '.woff', '.woff2', '.zip', '.pdf'];
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -85,7 +88,7 @@ function check(repo, settingsPath, quiet) {
     const fp = path.join(repo, f);
     let st; try { st = fs.statSync(fp); } catch (e) { continue; }
     if (!st.isFile() || st.size > MAX_FILE_BYTES) continue;
-    const text = fs.readFileSync(fp, 'utf8');
+    const text = INLINED_PUBLIC_DATA.reduce((t, re) => t.replace(re, ''), fs.readFileSync(fp, 'utf8'));
     scanned++;
     const sections = {};
     let n = 0;
@@ -122,6 +125,8 @@ function selfTest() {
   mk(); expect('clean repo passes', run(), 0);
   mk(); w('notes.md', 'about the Quartz-lab-session today\n'); sh(['add', '-A']); expect('planted value in a tracked file is caught', run(), 1);
   mk(); w('notes.md', 'nothing personal here\n'); sh(['add', '-A']); expect('unrelated tracked file stays clean', run(), 0);
+  mk(); w('index.html', 'const CITIES = [{"en":"Quartz-lab-session"}];\n'); sh(['add', '-A']); expect('a value inside the inlined public city list is not personal', run(), 0);
+  mk(); w('index.html', 'const CITIES = [{"en":"x"}]; Quartz-lab-session\n'); sh(['add', '-A']); expect('the same value outside the city list is caught', run(), 1);
   mk(); w('.gitignore', '\n'); expect('settings file that is not ignored is caught', run(), 1);
   mk(); sh(['add', '-f', '.private/settings.json']); expect('settings file that is tracked is caught', run(), 1);
   mk(); fs.rmSync(path.join(tmp, '.private'), { recursive: true }); expect('missing settings file gives exit 2', run(), 2);
