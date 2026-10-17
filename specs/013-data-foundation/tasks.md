@@ -160,7 +160,7 @@ description: "Task list for feature 013: data foundation"
 
 - [x] T014 [P] README: where data is kept (the copies, the snapshots, what iOS can clear), and how to run the E2E
   tests. PRODUCT: the snapshots. Review: mark B6 and B7 done.
-- [ ] T015 Tick the tasks, push, and open the PR. Before merging, remind the owner to save a backup file on the phone.
+- [x] T015 Tick the tasks, push, and open the PR. Before merging, remind the owner to save a backup file on the phone.
   Merge when the owner asks.
 
 ## Summary
