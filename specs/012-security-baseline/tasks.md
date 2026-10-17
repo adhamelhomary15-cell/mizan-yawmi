@@ -76,7 +76,7 @@ description: "Task list for feature 012: security baseline"
   - the PR shows as blocked while CI runs, and as mergeable once it is green.
   - 2026-10-17: applied after the owner's yes. Read back: `checks` required (strict), PR required with 0 approvals,
     admins included, no force-push, no deletion.
-- [ ] T011 Tick the tasks. Merge when the owner asks, through the PR, which is now the only way.
+- [x] T011 Tick the tasks. Merge when the owner asks, through the PR, which is now the only way.
 
 ## Dependencies
 
