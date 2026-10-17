@@ -1,0 +1,11 @@
+{
+  "name": "mizan-e2e",
+  "private": true,
+  "description": "Dev-only end-to-end tests for ميزان يومي (feature 013). Never shipped with the app.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

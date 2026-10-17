@@ -133,15 +133,24 @@ description: "Task list for feature 013: data foundation"
 
 ## Phase 4: End-to-end tests with Playwright (US3)
 
-- [ ] T010 [US3] Add `tests/e2e/package.json` (dev-only: `@playwright/test`, pinned exactly), the lockfile, and
+- [x] T010 [US3] Add `tests/e2e/package.json` (dev-only: `@playwright/test`, pinned exactly), the lockfile, and
   `playwright.config.js`:
   - Chromium and WebKit;
   - a 375×812 viewport;
   - a local `python3 -m http.server` web server on the build.
-- [ ] T011 [US3] Write the tests for every path in spec US3, with generated data only. That includes the service
+- [x] T011 [US3] Write the tests for every path in spec US3, with generated data only. That includes the service
   worker: install, offline reload, and an update that keeps the downloaded drawings.
-- [ ] T012 [US3] Add an `e2e` CI job: build, `npm ci`, install the browsers, run the tests. A failure keeps the
+- [x] T012 [US3] Add an `e2e` CI job: build, `npm ci`, install the browsers, run the tests. A failure keeps the
   screenshot and the console log as an artifact. Show that a broken tick fails the job. **Commit**.
+  - Done 2026-10-17.
+    - Playwright 1.63.0, pinned. It is the newest release at least 2 weeks old; 1.64.1 was too new.
+    - 13 tests × Chromium and WebKit: 25 pass and 1 is skipped. Three runs in a row were green.
+    - The offline and update test runs on Chromium only. Playwright's WebKit blocks any navigation while offline
+      before the service worker can answer ("Blocked by Web Inspector"), checked with two probes.
+    - The update part cannot serve a changed worker script in Playwright. Instead it registers the worker under a
+      new script URL while an old app cache exists. Activate deletes the old cache and keeps `mizan-guides-v1`.
+    - A broken tick (onClick removed) failed «a tick is saved» and nothing else, then was restored.
+    - The artifact keeps the screenshots and Playwright's error notes. The console log is not collected.
 - [ ] T013 [US3] Show the owner the change that adds `e2e` to the required checks in `branch-protection.json`, and
   apply it after their yes.
 
