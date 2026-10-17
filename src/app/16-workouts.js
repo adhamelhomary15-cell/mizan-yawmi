@@ -1,20 +1,35 @@
   /* ---------------- Workouts (own storage key and hook; knows nothing of the progress store) ---------------- */
-  function loadWorkouts(){ try { return normalizeRoot(readRaw(WORKOUTS_KEY)); } catch(e){ return {root: EMPTY_WORKOUTS(), tooNew: false}; } }
+  // The log as stored: {root, tooNew}. Data written by a newer app, or that could not be brought forward, is never
+  // written over (tooNew), and the screen says so.
+  function loadWorkouts(){
+    const got = loadStore('workouts');
+    if (got.state === 'too-new' || got.state === 'failed') return {root: EMPTY_WORKOUTS(), tooNew: true, got};
+    return Object.assign(got.state === 'ok' ? normalizeRoot(got.data) : {root: EMPTY_WORKOUTS(), tooNew: false}, {got});
+  }
   function useWorkouts(){
     const first = useRef(null);
     if (!first.current) first.current = loadWorkouts();
-    const [data, setData] = useState(first.current.root);
+    const opened = first.current;
+    const [data, setData] = useState(opened.root);
     const [saveFailed, setSaveFailed] = useState(false);
-    const latest = useRef(data);
-    const tooNew = first.current.tooNew;
-    // Data written by a newer app is never overwritten.
+    const [tooNew, setTooNew] = useState(opened.tooNew);
+    const [recovered, setRecovered] = useState(false);
+    const latest = useRef(data), locked = useRef(opened.tooNew);
+    const take = raw => { const r = normalizeRoot(raw); if (r.tooNew) return; latest.current = r.root; setData(r.root); };
+    useEffect(() => {
+      reconcile('workouts', opened.got.state === 'empty' || opened.got.state === 'damaged').then(r => {
+        if (r && r.tooNew) { locked.current = true; setTooNew(true); }
+        else if (r && r.recovered) { take(r.recovered); setRecovered(true); }
+      });
+      return onOtherTab('workouts', take);
+    }, []);
     const update = fn => {
-      if (tooNew) return;
+      if (locked.current) return;
       const next = normalizeRoot(fn(JSON.parse(JSON.stringify(latest.current)))).root;
       latest.current = next; setData(next);
-      setSaveFailed(!writeJSON(WORKOUTS_KEY, next));
+      setSaveFailed(!saveStore('workouts', next));
     };
-    return {data, update, tooNew, saveFailed};
+    return {data, update, tooNew, saveFailed, recovered, dismissRecovered: () => setRecovered(false)};
   }
   const Dots = () => html`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>`;
   const BLANK_SET = () => ({w: '', r: '', done: false});

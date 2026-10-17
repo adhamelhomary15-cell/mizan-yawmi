@@ -95,8 +95,9 @@ user of this app. It is the owner's chosen design.
 **Acceptance Scenarios**:
 
 1. **Given** any change to a store, **When** it is saved, **Then** it is written to localStorage and to the IndexedDB
-   mirror, with a checksum and a save time. A failure in either place shows the save-failure notice from 010,
-   naming which copy failed.
+   mirror, with a checksum and a save time. A failed localStorage write shows the save-failure notice from 010.
+   A failed mirror write shows in the storage line in Settings («النسخة التانية على الجهاز مش بتتحفظ دلوقتي»).
+   It is not an alert, because the main copy is still saved.
 2. **Given** the first save of a day, **When** it is written, **Then** a snapshot of all three stores is kept for that
    day. Snapshots older than the 7 most recent days are removed.
 3. **Given** the app opens, **When** it reads, **Then** it compares the localStorage copy and the mirror. It uses the

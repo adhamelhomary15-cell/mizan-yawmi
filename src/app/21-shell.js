@@ -11,8 +11,12 @@
   const Icon = ({paths}) => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
   function App(){
-    const [store, update, sync, replaceAll, saveFailed] = useStore();
+    const [store, update, sync, replaceAll, saveFailed, health] = useStore();
     const wk = useWorkouts();
+    // Settings brought back from the mirror reopen the page once (see the settings load); say so after it.
+    const [settingsBack, setSettingsBack] = useState(() => { try { const v = sessionStorage.getItem(RECOVERED_KEY); sessionStorage.removeItem(RECOVERED_KEY); return !!v; } catch(e){ return false; } });
+    const recovered = health.problem === 'recovered' || wk.recovered || settingsBack;
+    const dismissRecovered = () => { health.dismiss(); wk.dismissRecovered(); setSettingsBack(false); };
     // The save-failure notice: its own backup result, cleared once saving works again.
     const [saveMsg, setSaveMsg] = useState(null);
     useEffect(() => { if (!saveFailed) setSaveMsg(null); }, [saveFailed]);
@@ -83,6 +87,11 @@
         ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات' : 'لما يبقى عندك ملف إعداداتك هتستورده من الإعدادات'} />` : null}
         <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
         ${syncLate ? html`<${Notice} role="status" text="النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة."><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></${Notice}>` : null}
+        ${recovered ? html`<${Notice} role="status" text="رجّعنا بياناتك من النسخة المحفوظة على الجهاز."><button type="button" class="btn primary" onClick=${dismissRecovered}>تمام</button></${Notice}>` : null}
+        ${health.problem === 'damaged' ? html`<${Notice} role="alert" title="نسخة بياناتك على الجهاز بايظة" line="حطيناها على جنب ومامسحناهاش. لو عندك نسخة احتياطية، رجّعها من الإعدادات."><button type="button" class="btn" onClick=${health.dismiss}>تمام</button></${Notice}>` : null}
+        ${health.problem === 'too-new' ? html`<${Notice} role="alert" title="بياناتك اتحفظت بنسخة أحدث من التطبيق" line="مش هنعدّل عليها هنا عشان ما نبوّظهاش. حدّث التطبيق." />` : null}
+        ${health.problem === 'failed' ? html`<${Notice} role="alert" title="النسخة دي مش قادرة تفتح بياناتك" line="بياناتك محفوظة زي ما هي. احفظ نسخة احتياطية وحدّث التطبيق."><button type="button" class="btn primary" onClick=${saveNow}>احفظ نسخة احتياطية</button></${Notice}>` : null}
+        ${health.setAside ? html`<${Notice} role="status" title=${'فيه ' + health.setAside + ' حاجة في بياناتك شكلها بايظ'} line="اتحطت على جنب ومامسحناهاش، وهي موجودة في النسخة الاحتياطية."><button type="button" class="btn" onClick=${health.dismiss}>تمام</button></${Notice}>` : null}
         ${saveFailed ? html`<${Notice} role="alert" title="آخر تغيير ماتحفظش على الجهاز" line=${LOCAL_OK
           ? 'مساحة التخزين ممكن تكون مليانة أو المتصفح مانع الحفظ. احفظ نسخة احتياطية دلوقتي عشان ماتضيعش حاجة.'
           : 'المتصفح ده مش بيسمح بالحفظ، فالتقدم هيضيع لما تقفل التطبيق.'}

@@ -24,7 +24,7 @@ function block(source) {
   return source.slice(a, b);
 }
 function load(source) {
-  return new Function(block(source) + '\nreturn {WORKOUTS_KEY, STARTER_EXERCISES, EMPTY_WORKOUTS, parseNumber, validateSet, normName, isNameTaken, elapsedMs, restLeft, formatClock, restLabel, previousSets, computeRecords, bestSet, volumeOf, recordCount, finishWorkout, clampSets, validateRoutineName, routineLastUsed, startFromRoutine, canDeleteExercise, removeWorkout, putBackWorkout, correctSet, normalizeRoot};')();
+  return new Function(block(source) + '\nreturn {STARTER_EXERCISES, EMPTY_WORKOUTS, parseNumber, validateSet, normName, isNameTaken, elapsedMs, restLeft, formatClock, restLabel, previousSets, computeRecords, bestSet, volumeOf, recordCount, finishWorkout, clampSets, validateRoutineName, routineLastUsed, startFromRoutine, canDeleteExercise, removeWorkout, putBackWorkout, correctSet, normalizeRoot};')();
 }
 
 const clone = x => JSON.parse(JSON.stringify(x));

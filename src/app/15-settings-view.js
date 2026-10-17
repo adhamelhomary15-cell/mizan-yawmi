@@ -34,11 +34,11 @@
   function backupParts(store, wk){
     let settings = null;
     if (!LOADED.isExample) {
-      const r = validateSettings(readJSON(SETTINGS_KEY));
+      const r = validateSettings(storedData('settings'));
       if (r.ok) settings = r.settings;
     }
     let workouts = wk.data;
-    if (wk.tooNew) workouts = readJSON(WORKOUTS_KEY, workouts);
+    if (wk.tooNew) workouts = storedData('workouts') || workouts;
     return {progress: store, workouts, settings};
   }
   // Asking the browser to keep this site's data. Reading the state never prompts. Chromium and Safari decide a
@@ -62,14 +62,23 @@
     'may-clear': 'المتصفح ممكن يمسح البيانات لو المساحة قلت. احفظ نسخة احتياطية.',
     'unsupported': 'المتصفح ده مش بيقول إذا كان هيحتفظ بالبيانات. احفظ نسخة احتياطية.'
   };
+  // The extra copy in IndexedDB (feature 013).
+  const COPY_LINES = {
+    'on': 'فيه نسخة تانية من بياناتك على الجهاز، وصورة منها لكل يوم من آخر 7 أيام.',
+    'off': 'المتصفح ده مش بيسمح بنسخة تانية على الجهاز، فاحفظ نسخة احتياطية من وقت للتاني.',
+    'failed': 'النسخة التانية على الجهاز مش بتتحفظ دلوقتي. احفظ نسخة احتياطية.'
+  };
   function StorageLine(){
     const [st, setSt] = useState(null);
     const [asking, setAsking] = useState(false);
     useEffect(() => { let live = true; STORAGE_READY.then(s => { if (live) setSt(s); }); return () => { live = false; }; }, []);
+    const [copy, setCopy] = useState(null);
+    useEffect(() => { let live = true; openMirror().then(() => { if (live) setCopy(mirrorState); }); return () => { live = false; }; }, []);
     if (!st) return null;
     const ask = async () => { setAsking(true); const s = await askPersist(); setSt(s); setAsking(false); };
     return html`<div class="storage-line" aria-live="polite">
       <p class="small">${STORAGE_LINES[st]}</p>
+      ${copy ? html`<p class="small">${COPY_LINES[copy] || COPY_LINES.on}</p>` : null}
       ${st === 'may-clear' && IS_FIREFOX ? html`<span class="backup-act"><button type="button" class="btn" disabled=${asking} onClick=${ask}>اطلب من المتصفح يحتفظ بالبيانات</button></span>` : null}
     </div>`;
   }
@@ -117,14 +126,19 @@
     const apply = async () => {
       if (!pending || busy) return;
       if (wk.tooNew) { setPending(null); setErr('بيانات التمارين على الجهاز ده من نسخة أحدث من التطبيق، فمش هقدر أستبدلها.'); return; }
-      const p = pending.parts, keys = [LOCAL_KEY, WORKOUTS_KEY, SETTINGS_KEY], raw = {};
+      const p = pending.parts, keys = STORE_NAMES.map(n => STORE_KEYS[n]), raw = {};
+      // A backup holds the stores' data; it goes through the same migrations as stored data (checking progress
+      // again only sets aside what is broken), and is written as envelopes.
+      const progress = migrate('progress', 1, p.progress);
+      if (!progress.ok) { setPending(null); setErr('الاسترجاع فشل ومفيش حاجة اتغيّرت.'); return; }
+      const now = Date.now(), seal = (n, d) => JSON.stringify(sealStore(n, CURRENT_VERSION[n], d, now));
       try { keys.forEach(k => { raw[k] = localStorage.getItem(k); }); }
       catch(e){ setPending(null); setErr('الاسترجاع فشل ومفيش حاجة اتغيّرت.'); return; }
       setBusy(true);
       try {
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(p.progress));
-        localStorage.setItem(WORKOUTS_KEY, JSON.stringify(p.workouts));
-        if (p.settingsValid === 'valid') localStorage.setItem(SETTINGS_KEY, JSON.stringify(p.settings));
+        localStorage.setItem(STORE_KEYS.progress, seal('progress', progress.data));
+        localStorage.setItem(STORE_KEYS.workouts, seal('workouts', p.workouts));
+        if (p.settingsValid === 'valid') localStorage.setItem(STORE_KEYS.settings, seal('settings', p.settings));
       } catch(e){
         // put every key back as it was, so a half-written restore never stays
         keys.forEach(k => { try { if (raw[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, raw[k]); } catch(e2){} });
@@ -132,7 +146,7 @@
         return;
       }
       // The synced copy loads first on start, so it gets the restored progress before the reload (up to 5 seconds).
-      const synced = await Promise.race([replaceAll(p.progress), new Promise(res => setTimeout(() => res(false), 5000))]);
+      const synced = await Promise.race([replaceAll(progress.data), new Promise(res => setTimeout(() => res(false), 5000))]);
       if (!synced) { try { sessionStorage.setItem(RESTORE_SYNC_LATE_KEY, '1'); } catch(e){} }
       location.reload();
     };
@@ -234,11 +248,11 @@
       r.readAsText(f);
     };
     const apply = () => {
-      if (!writeJSON(SETTINGS_KEY, pending.settings)) { setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
+      if (!saveStore('settings', pending.settings)) { setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
       location.reload();
     };
-    const reset = () => {
-      try { localStorage.removeItem(SETTINGS_KEY); } catch(err){}
+    const reset = async () => {
+      await removeStore('settings');
       location.reload();
     };
     const sm = pending ? summaryOf(pending.settings) : null;

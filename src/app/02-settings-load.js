@@ -1,30 +1,23 @@
-  /* ---------------- device storage: one stored value at a time (restore writes its keys together, on its own) ---------------- */
-  // The stored text, or null when the key is missing or the browser blocks storage.
-  function readRaw(key){ try { return localStorage.getItem(key); } catch(e){ return null; } }
-  // The stored value, or fallback when it is missing, blocked or not valid JSON.
-  function readJSON(key, fallback = null){
-    const raw = readRaw(key);
-    if (raw === null) return fallback;
-    try { return JSON.parse(raw); } catch(e){ return fallback; }
-  }
-  // true when the write went through, false when the browser refused it (storage full, private mode, blocked).
-  function writeJSON(key, value){ try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch(e){ return false; } }
-
   /* ---------------- settings: load (stored file, else the embedded example) ---------------- */
-  const SETTINGS_KEY = 'mizan-settings-v1';
   const LOADED = (() => {
     let example = null;
     try { example = validateSettings(JSON.parse(document.getElementById('example-settings').textContent)).settings; } catch(e){}
     if (!example) example = {format:'mizan-settings', version:1, language:'ar', prayerMethod:'Egyptian', timezone:'Africa/Cairo', location:{lat:30.0444, lng:31.2357, label:'Sample city'}, categories:{rest:{label:'راحة', track:false}}, week:{0:{blocks:[['08:00','rest','مثال']]}}};
-    const raw = readRaw(SETTINGS_KEY);
-    if (!raw) return {settings: example, isExample: true, problem: false};
-    try {
-      const res = validateSettings(JSON.parse(raw));
-      if (res.ok) return {settings: res.settings, isExample: false, problem: false};
-    } catch(e){}
-    return {settings: example, isExample: true, problem: true};
+    const got = loadStore('settings');
+    if (got.state === 'empty') return {settings: example, isExample: true, problem: false, got};
+    const res = got.state === 'ok' ? validateSettings(got.data) : null;
+    if (res && res.ok) return {settings: res.settings, isExample: false, problem: false, got};
+    return {settings: example, isExample: true, problem: true, got};
   })();
   const CFG = LOADED.settings;
+  // Settings are read once per page. When the local copy was missing or damaged and the mirror brings them back, write
+  // them back and open the page again with them, once, saying so.
+  const RECOVERED_KEY = 'mizan-recovered';
+  reconcile('settings', LOADED.got.state === 'empty' || LOADED.got.state === 'damaged').then(r => {
+    if (!r || !r.recovered) return;
+    try { sessionStorage.setItem(RECOVERED_KEY, '1'); } catch(e){}
+    location.reload();
+  });
 
   /* ---------------- fixed names (weekdays) ---------------- */
   const DAY_NAMES = {6:'السبت',0:'الحد',1:'الاتنين',2:'التلات',3:'الأربع',4:'الخميس',5:'الجمعة'};

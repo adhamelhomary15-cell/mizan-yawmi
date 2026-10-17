@@ -110,7 +110,6 @@
   // start of workout rules
   // The workout log is its own record, kept under its own key. Nothing here knows about the progress store,
   // the schedule, tasks or settings, so nothing here can tick or change any of them.
-  const WORKOUTS_KEY = 'mizan-workouts-v1';
   const STARTER_EXERCISES = [
     'Bench Press', 'Incline Bench Press', 'Dumbbell Bench Press', 'Chest Fly', 'Push-Up', 'Dips',
     'Overhead Press', 'Dumbbell Shoulder Press', 'Lateral Raise', 'Triceps Pushdown',
@@ -319,12 +318,6 @@
   const BACKUP_FORMAT = 'mizan-backup';
   const BACKUP_VERSION = 1;
   const BACKUP_MAX_BYTES = 5 * 1024 * 1024;
-  // FNV-1a, 32 bits, over the UTF-16 code units: catches a damaged or hand-edited file; not a security measure.
-  function fnv1a(text){
-    let h = 0x811c9dc5;
-    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-    return ('0000000' + h.toString(16)).slice(-8);
-  }
   // dateIso is today's date in the app's time zone (the caller knows it); the name holds nothing else.
   function makeBackup(parts, now, dateIso){
     const data = {progress: parts.progress, workouts: parts.workouts, settings: parts.settings || null};

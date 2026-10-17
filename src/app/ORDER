@@ -5,7 +5,11 @@
 00-boot.js
 # settings: format check (pure)
 01-settings-validate.js
-# device storage helpers; settings: load, fixed weekday names, data derived from settings
+# data rules: store envelope, versions and migrations, copy choice, snapshot pruning (pure)
+01a-data-rules.js
+# device storage: the save path for the three stores, the IndexedDB mirror, daily snapshots
+01b-storage.js
+# settings: load, fixed weekday names, data derived from settings
 02-settings-load.js
 # time helpers
 03-time.js
@@ -13,7 +17,7 @@
 04-prayers.js
 # courses
 05-courses.js
-# progress storage (useStore), synced copy, save-failure state
+# progress store (useStore): normalize, synced copy, save and health state
 06-store.js
 # day model: schedule, one-off blocks, status
 07-day-model.js
