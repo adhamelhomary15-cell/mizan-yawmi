@@ -1,113 +1,151 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Ask on Its Own to Postpone What Was Not Done
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit-plan` command; its definition describes the execution workflow.
+**Branch**: `015-ask-to-postpone` | **Date**: 2026-10-18 | **Spec**: [spec.md](spec.md)
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+When Today opens, the app finds the ended days (up to 7 back) since the last day it asked about that still have
+open postponable blocks or open tasks due on them. If there are any, it shows one notice with 009's proposals and
+three buttons. Nothing is new about where items go or how they are stored. The new parts are:
+- one remembered date in the progress, `askedUpTo`;
+- one pure rule, `daysToAsk`;
+- one small screen part, the notice.
+
+As in 014, the research, data model and checks are kept in this file instead of separate files.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+- **Language**: JavaScript in one page (Preact and htm), built by `tools/build.py` from `src/app/*.js`.
+- **Storage**: the progress store (013). It gains one optional field and needs no new version.
+- **Tests**: `tools/check-postpone.js` (rules, oracles, mutations) and Playwright E2E in `tests/e2e`.
+- **Target**: phone browsers at 375 px, offline (PWA).
+- **Constraints**: no new library, no network, no file over 600 lines, no unused code (`check-code.js`).
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+Nothing is left as NEEDS CLARIFICATION. The decisions are below.
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+## Constitution Check (v2.0.1)
 
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+| Principle | Status |
+|---|---|
+| I. Human review | The notice only proposes. Every change waits for a tap: «أجّل الكل», «راجعها» or «مش دلوقتي». |
+| II. Checking off is human | The notice never ticks or cancels. «أجّل الكل» writes 009's `{moved: date}` marks only. |
+| III. Data stays on the device | `askedUpTo` lives in the progress store, on the device and in its backup. No network. |
+| IV. Honest, offline day | Places come from 009's rules, inside free time only. Works offline. |
+| V. Simple, single file | One new part (about 70 lines), and one pure function in the existing rules block. |
+| VI. General repo | Tests use generated data only. Nothing personal. |
 
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+All gates pass, before and after the design.
 
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+## Decisions (research)
 
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]
+1. **One remembered date, not a list of days.**
+   - **Decision**: the progress stores `askedUpTo`, the latest ended day already answered. Days on or before it
+     are never asked about again.
+   - **Why**: days are always answered oldest first. «راجعها» answers only the oldest listed day, and the other
+     buttons answer all of them, so one date is always enough.
+   - **Rejected**: a list of dismissed days. It grows forever and needs cleaning.
+2. **Showing the notice writes nothing (SC-002).**
+   - **Decision**: a day with nothing open is skipped each time Today opens, not stored. This is cheap: at most 7
+     days.
+   - **Why**: a write on open would be a change without a tap, and would make the undo snapshot surprising.
+3. **The proposals are 009's batch, extended over several days.**
+   - **Decision**: put the items of all listed days in one list, oldest day first, and call `proposePlaces` once,
+     over `postponeDays(now.iso, 7, …)`.
+   - **Why**: for one ended day, `postponeStart(day, now)` is always today, so this equals 009's
+     «أجّل اللي فاضل كله» exactly (SC-004). With one call, the items of different days never overlap.
+4. **One undo that does not bring the question back.**
+   - **Decision**: «أجّل الكل» takes a snapshot of the store with `askedUpTo` already set, applies 009's
+     `applyPostpone` for each day plus the new `askedUpTo`, and its undo puts that snapshot back.
+   - **How**: this uses `actEdit(text, fn, undoFn)` from the shell, which is passed to Today for this.
+   - **Why**: `act` would restore the old `askedUpTo`, and the notice would come back after an undo, against the
+     spec.
+5. **«راجعها» uses the existing review.**
+   - **Decision**: Today moves to the oldest listed day and opens its review (009), then sets `askedUpTo` to that
+     day.
+   - **Why**: the review already has «غيّر», «خلّصته» and «اتلغى». The other days come back in the notice when
+     the user returns to today.
+6. **First run.**
+   - **Decision**: when `askedUpTo` is missing (older data, a new user, an old backup), only yesterday is asked
+     about (FR-008).
 
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+## Data model
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
+- **Progress** (`06-store.js`):
+  - `askedUpTo`: a date `YYYY-MM-DD`, or `null`.
+  - `EMPTY()` sets it to `null`.
+  - `normalize` keeps it only if it is a date, otherwise `null`. That is the same shape as `phaseSeen`.
+  - The progress version stays 1. Data without the field reads as `null`, which is the first-run case.
+- **Backup** (007): the progress is carried as it is stored, so `askedUpTo` goes with it.
+  `tools/check-backup.js` builds its progress oracle field by field, so it gains `askedUpTo` the same way.
+- **Not stored**: the question itself (days, items and proposals) is worked out on every open of Today.
 
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+## Design
 
-## Constitution Check
+### Rule, in the postpone rules block (`src/app/13-rules.js`, tested by `tools/check-postpone.js`)
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+`daysToAsk(today, askedUpTo, addDays)` returns the ended days to look at, oldest first:
+- with no `askedUpTo`: only the day before `today`;
+- otherwise: from the day after `askedUpTo`, but never more than 7 days back, up to the day before `today`;
+- an `askedUpTo` on or after the day before `today` gives an empty list, and so does a date that is not valid.
 
-[Gates determined based on constitution file]
+`check-postpone.js` runs the block on its own, so the date helper comes in as a parameter, the way `isFree` does
+for `proposePlaces`. The function uses nothing else.
 
-## Project Structure
+### Screen part: `src/app/10b-postpone-ask.js` (new; listed after `10-postpone-ui.js` in `ORDER`)
 
-### Documentation (this feature)
+`AskPostpone({now, store, update, actEdit, onReview})`:
+- For each day from `daysToAsk(now.iso, store.askedUpTo, addDays)`, it collects:
+  - the open tracked blocks of postponable kinds (`dayBlocks`, `statusOf`, `canPostpone`, as in `Review`);
+  - the open tasks due that day.
+- It skips days with nothing in them. If no day is left, it renders nothing.
+- It proposes places with one `proposePlaces` call (decision 3). Tasks move to today, which is 009's
+  `postponeStart` for a past day.
+- It renders a `Notice`:
+  - the title «فيه N حاجات ماتعملتش امبارح», or «… من يوم <اليوم>» when the listed days start before yesterday;
+  - one line per item: its title, then its day and time, or «مفيش مكان، هيفضل زي ما هو»;
+  - the buttons, in one row that wraps at 375 px.
+- The buttons:
+  - **«أجّل الكل»**: decision 4. The toast says «اتأجل N حاجة».
+  - **«راجعها»**: `update` sets `askedUpTo` to the oldest listed day, then `onReview(thatDay)`.
+  - **«مش دلوقتي»**: `update` sets `askedUpTo` to the latest listed day.
 
-```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
-└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
-```
+**Wiring**:
+- `TodayView` (`10-postpone-ui.js`) renders `AskPostpone` at the top, only when it shows today and no review is
+  open.
+- `onReview(day)` sets the shown day and opens the review.
+- `21-shell.js` passes `actEdit` to `TodayView`.
 
-### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
+### Tests
 
-```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+- **`tools/check-postpone.js`** gets new checks for `daysToAsk`:
+  - first run, a gap of 1 day, a gap of 3 days, the 7-day limit, already answered, a bad date;
+  - an oracle over 400 random dates and gaps.
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+  And new mutations: no 7-day limit, today included, first run asking about more than yesterday.
+- **`tests/e2e/postpone-ask.spec.js`** (fixed clocks, generated data only):
+  - **US1**: open blocks on Thursday; opening on Friday shows the notice, and nothing is stored before a tap;
+    «أجّل الكل» makes the same marks and extras as 009's batch; reload, and there is no notice; undo, and the
+    store is back as before the tap, with no notice.
+  - **US2**: «راجعها» opens Thursday's review; «مش دلوقتي» survives a reload.
+  - **US3**: three missed days give one notice in order, and the places do not overlap.
+  - **First run**: data without `askedUpTo` and open blocks on two past days lists yesterday only.
+  - **No postponable kinds**: no notice.
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+## Phases
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+| # | Phase | Story | Gate |
+|---|---|---|---|
+| 1 | `askedUpTo` in the progress, `daysToAsk` in the rules, and their checks | all | `check-postpone` and `check-backup` green, with mutations caught; parity 0 |
+| 2 | The notice, «أجّل الكل» and «مش دلوقتي» | US1, US3 | Browser at 375 px; E2E |
+| 3 | «راجعها» | US2 | E2E |
+| 4 | Docs (README «تأجيل اللي ماتعملش», PRODUCT), ticks, PR | — | All checks; `check-private` clean |
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
+Phases 1–3 are one commit if `check-code` refuses the rule before its first use, as in 013 and 014.
 
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
-```
+## Risks
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
-
-## Complexity Tracking
-
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+- **The notice and the review show the same day.** Today hides the notice while a review is open.
+- **The clock passes 01:00 while the app is open.** The notice is worked out from `now`, which the shell already
+  updates every 30 seconds, so it appears without a reload.
+- **An undo after other changes.** Like 009's batch, the undo puts back the snapshot before «أجّل الكل». The toast
+  lasts 7 seconds, which keeps that window short.
