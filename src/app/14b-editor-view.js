@@ -133,7 +133,7 @@
           <label class="check-line"><input type="checkbox" checked=${!!c.free} onChange=${e => set(id, 'free', e.target.checked)} /> وقت فاضي</label>
         </span>
         ${own ? html`<div class="ed-colors" role="group" aria-label=${'لون ' + c.label}>${Object.keys(KIND_COLOR_NAMES).map(k => html`<button type="button" class=${'swatch c-k-' + k} aria-pressed=${c.color === k ? 'true' : 'false'} onClick=${() => set(id, 'color', k)}><i aria-hidden="true"></i>${KIND_COLOR_NAMES[k]}</button>`)}</div>
-          <label class="field" for=${'ks-' + id}>بيتحسب في الميزان<select id=${'ks-' + id} value=${c.side || ''} onChange=${e => set(id, 'side', e.target.value || undefined)}><option value="">ولا كفة</option><option value="a">${'الكفة الأولى (' + BAL_A + ')'}</option><option value="b">${'الكفة التانية (' + BAL_B + ')'}</option></select></label>
+          <div class="form-row"><label class="field" for=${'ks-' + id}>بيتحسب في الميزان<select id=${'ks-' + id} value=${c.side || ''} onChange=${e => set(id, 'side', e.target.value || undefined)}><option value="">ولا كفة</option><option value="a">${'الكفة الأولى (' + BAL_A + ')'}</option><option value="b">${'الكفة التانية (' + BAL_B + ')'}</option></select></label></div>
           ${said && said.id === id ? html`<p class="form-err" role="alert">${said.text}</p>` : null}
           <span class="backup-act"><button type="button" class="btn danger" onClick=${() => remove(id)}>امسح النوع</button></span>` : null}
       </div>`; })}

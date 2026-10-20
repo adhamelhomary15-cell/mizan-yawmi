@@ -56,7 +56,8 @@ description: "Task list for feature 016: add your own kinds"
 
 ## Phase 5: Files, tests, docs (US3)
 
-- [ ] T012 E2E in `tests/e2e/schedule.spec.js`: US1, US2, and US3 (export, then import into a fresh page).
-- [ ] T013 [P] Docs: the README kinds part, the six colours in DESIGN.md, and a line in PRODUCT.
-- [ ] T014 Run every check, parity on the example and the private file, the E2E tests, and a 375 px look in light
-  and dark. Then tick the tasks.
+- [x] T012 E2E in `tests/e2e/schedule.spec.js`: US1, US2, and US3 (export, then import into a fresh page).
+- [x] T013 [P] Docs: the README kinds part, the six colours in DESIGN.md, and a line in PRODUCT.
+- [x] T014 Run every check, parity on the example and the private file, the E2E tests, and a 375 px look in light
+  and dark. Then tick the tasks. Parity on the private file could not run: `check-parity.js --settings` differs
+  even main against main, because it does not read the settings the way 013 stores them. That is left for its own fix.
