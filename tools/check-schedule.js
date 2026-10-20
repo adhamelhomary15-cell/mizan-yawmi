@@ -27,7 +27,7 @@ function grabFunction(source, name) {
   }
   throw new Error(name + ' not found');
 }
-const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween';
+const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween';
 const load = source => new Function(grabFunction(source, 'validateSettings') + block(source) + '\nreturn {validateSettings, ' + NAMES + '};')();
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -55,6 +55,8 @@ const over = (ink, paper, p) => ink.map((v, i) => Math.round(v * p + paper[i] * 
 const tokens = (css, sel) => { const i = css.indexOf(sel + '{'), t = {}; if (i >= 0) css.slice(i, css.indexOf('}', i)).replace(/--([\w-]+):\s*([^;]+);/g, (_, k, v) => { t[k] = v.trim(); }); return t; };
 const KIND_COLORS = ['teal', 'blue', 'green', 'slate', 'copper', 'olive'];
 
+// Every block list of a draft: one per one-version day, and A and B of a two-version day.
+const SCHEDULE_ALL = d => Object.values(d.week).flatMap(w => !w.blocks ? [] : Array.isArray(w.blocks) ? [w.blocks] : Object.values(w.blocks));
 function runChecks(h, source) {
   const results = [];
   const check = (name, fn) => { let ok = false; try { ok = !!fn(); } catch (e) { ok = false; } results.push([name, ok]); };
@@ -156,6 +158,40 @@ function runChecks(h, source) {
       && cities.every(c => typeof c.ar === 'string' && c.ar && typeof c.en === 'string' && c.en && /^[A-Z]{2}$/.test(c.cc)
         && Math.abs(c.lat) <= 90 && Math.abs(c.lng) <= 180 && zoneOk(c.tz));
   });
+  check('added kinds: ids in order up to k12, a taken name refused, colour and side kept', () => {
+    let d = h.draftOf(base()), ids = [];
+    for (let n = 1; n <= 12; n++) { const r = h.addKind(d, {label: 'Kind ' + n, color: 'teal', track: true}); if (!r.ok) return false; d = r.draft; ids.push(r.id); }
+    const gap = h.removeKind(d, 'k3').draft, again = h.addKind(gap, {label: 'Again', color: 'blue', side: 'a'});
+    const named = h.addKind(h.draftOf(base()), {label: base().categories.work.label, color: 'teal'});
+    const side = h.setKind(d, 'k2', {color: 'olive', side: 'b'}).categories.k2;
+    return ids.join() === 'k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12' && h.addKind(d, {label: 'Thirteen', color: 'teal'}).code === 'full'
+      && again.id === 'k3' && eq(again.draft.categories.k3, {label: 'Again', color: 'blue', side: 'a'})
+      && named.code === 'same-name' && named.id === 'work' && side.color === 'olive' && side.side === 'b' && valid(d);
+  });
+  check('removing kinds: a built-in never, a used one names its days (both versions), an unused one goes', () => {
+    let d = h.addKind(h.draftOf(base()), {label: 'Teaching', color: 'teal'}).draft;
+    const b3 = d.week['3'].blocks.B; b3[1] = ['22:00', 'k1', 'Only on B'];
+    const used = h.removeKind(d, 'k1');
+    d.week['3'].blocks.B = b3.filter(b => b[1] !== 'k1');
+    const gone = h.removeKind(d, 'k1');
+    return h.removeKind(d, 'work').code === 'built-in' && used.code === 'used' && eq(used.days, ['3'])
+      && gone.ok && !('k1' in gone.draft.categories) && valid(gone.draft);
+  });
+  check('a kind can be removed exactly when no block of any day or version uses it, on 300 random drafts', () => {
+    let seed = 1601; const rnd = n => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+    for (let k = 0; k < 300; k++) {
+      let d = h.draftOf(base());
+      const n = 1 + rnd(4);
+      for (let i = 1; i <= n; i++) d = h.addKind(d, {label: 'K' + i + '-' + k, color: 'slate'}).draft;
+      SCHEDULE_ALL(d).forEach(list => list.forEach(b => { if (rnd(5) === 0) b[1] = 'k' + (1 + rnd(n)); }));
+      for (let i = 1; i <= n; i++) {
+        const id = 'k' + i, usedBy = Object.keys(d.week).filter(day => SCHEDULE_ALL({week: {[day]: d.week[day]}}).some(list => list.some(b => b[1] === id)));
+        const r = h.removeKind(d, id);
+        if (r.ok !== !usedBy.length || (!r.ok && !eq(r.days, usedBy.sort()))) return false;
+      }
+    }
+    return true;
+  });
   check('added kinds: a valid file passes; a bad id, colour or side, a colour on a built-in, or a taken name is refused', () => {
     const withKinds = extra => { const d = base(); Object.assign(d.categories, extra); return d; };
     const field = (extra, path) => h.validateSettings(withKinds(extra)).errors.some(e => e.path === path);
@@ -199,6 +235,10 @@ if (process.argv.includes('--self-test')) {
     ['a two-version day is rewritten', s => s.replace("const isTwoVersionDay = (draft, day) => !!(", "const isTwoVersionDay = (draft, day) => false && !!(")],
     ['an absorb is lost when the tie changes', s => s.replace("old && old.absorb ? {absorb: old.absorb} : {}", "{}")],
     ['an added kind needs no ready colour', s => s.replace("if (KIND_COLORS.indexOf(c.color) < 0) bad(", "if (false) bad(")],
+    ['added kinds have no limit', s => s.replace("if (n > KIND_LIMIT) return {ok: false, code: 'full'};", '')],
+    ['a used kind is removed', s => s.replace("if (days.length) return {ok: false, code: 'used', days};", '')],
+    ['version B is not searched for a kind', s => s.replace("(Array.isArray(blocks) ? [blocks] : Object.values(blocks))", "(Array.isArray(blocks) ? [blocks] : [blocks.A])")],
+    ['a built-in kind is removable', s => s.replace("if (!/^k\\d+$/.test(id)) return {ok: false, code: 'built-in'};", '')],
     ['a built-in kind takes a colour', s => s.replace("if (c.color !== undefined || c.side !== undefined) bad(", "if (false) bad(")]
   ];
   let missed = 0;

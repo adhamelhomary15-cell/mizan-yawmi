@@ -38,14 +38,14 @@ description: "Task list for feature 016: add your own kinds"
 
 ## Phase 2: The kind rules (US1, US2)
 
-- [ ] T007 In `13a-schedule-rules.js`, add `addKind`, `kindUses` and `removeKind`. Add `color` and `side` to
+- [x] T007 In `13a-schedule-rules.js`, add `addKind`, `kindUses` and `removeKind`. Add `color` and `side` to
   `KIND_FIELDS`.
-- [ ] T008 [P] In `tools/check-schedule.js`, add their checks, the 300-draft oracle and four mutations.
+- [x] T008 [P] In `tools/check-schedule.js`, add their checks, the 300-draft oracle and four mutations.
 
 ## Phase 3: The editor's kinds part (US1, US2)
 
-- [ ] T009 The block kind list reads the draft's kinds.
-- [ ] T010 `KindsPart` gets:
+- [x] T009 The block kind list reads the draft's kinds.
+- [x] T010 `KindsPart` gets:
   - «ضيف نوع», with the limit line at 12;
   - for a new kind: the colour buttons, the side select, and «امسح النوع», which names the days when it is
     refused.

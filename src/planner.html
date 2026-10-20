@@ -299,6 +299,10 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .ed-part summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
 .ed-kind{padding-block:var(--s2);border-top:1px solid var(--line)}
 .ed-flags{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4)}
+.ed-colors{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.swatch{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:22px;background:var(--surface);color:var(--fg);font:inherit;font-size:14px;cursor:pointer}
+.swatch i{width:18px;height:18px;border-radius:50%;background:var(--c)}
+.swatch[aria-pressed="true"]{border:2px solid var(--fg);font-weight:600}
 .check-line{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:14px}
 .check-line input{width:20px;height:20px}
 .ed-preview{margin-top:var(--s3);padding:10px 12px;border:1px dashed var(--line);border-radius:12px}
