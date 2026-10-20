@@ -11,7 +11,8 @@
  * run on personal data. Defaults: 366 days starting 2026-10-01.
  *
  * The data and plan logic is pulled out of each HTML file (from the settings/data section down to the
- * courses section) and run with a fake storage that holds the settings file under the key the app reads.
+ * courses section) and run with a fake storage that holds the settings file. Both builds get the same file, under the
+ * pre-013 key: every build reads it there, and a newer build moves it into its envelope the way it does on a device.
  *
  * Exit codes: 0 no differences, 1 differences found, 2 usage or load error.
  */
@@ -62,7 +63,7 @@ function load(file, settingsText) {
 
 const settingsText = settingsFile ? fs.readFileSync(settingsFile, 'utf8') : null;
 let A, B;
-try { A = load(oldFile, null); B = load(newFile, settingsText); }
+try { A = load(oldFile, settingsText); B = load(newFile, settingsText); }
 catch (e) { console.error('load error: ' + e.message); process.exit(2); }
 
 const diffs = [];
