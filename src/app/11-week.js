@@ -24,7 +24,7 @@
       });
       if (q) quranDays++;
     });
-    const statRow = (cat, label, pl, gt, extra) => html`<div class=${'stat c-' + cat}>
+    const statRow = (cat, label, pl, gt, extra) => html`<div class=${'stat ' + kc(cat)}>
       <span>${label}</span>
       <div class="track"><div class="fill" style=${{width: (pl ? Math.min(100, gt/pl*100) : 0) + '%'}}></div></div>
       <span class="val"><b>${hoursText(gt)}</b> من ${hoursText(pl)} س</span>
@@ -51,7 +51,7 @@
               return html`<button type="button" class="strip" onClick=${() => goDay(d)} aria-label=${DAY_NAMES[weekday(d)] + ' ' + dateLabel(d)}>
                 <span class="strip-name">${DAY_SHORT[weekday(d)]}${isToday ? html`<i class="today-dot"></i>` : null}</span>
                 <span class="bar">
-                  ${dayBlocks(d, store).map(b => html`<span class=${'seg c-' + b.cat + (away(statusOf(store, d, b.key)) ? ' skipped' : '')} style=${{insetInlineStart: ((b.s - START)/SPAN*100).toFixed(3) + '%', width: ((b.e - b.s)/SPAN*100).toFixed(3) + '%'}}></span>`)}
+                  ${dayBlocks(d, store).map(b => html`<span class=${'seg ' + kc(b.cat) + (away(statusOf(store, d, b.key)) ? ' skipped' : '')} style=${{insetInlineStart: ((b.s - START)/SPAN*100).toFixed(3) + '%', width: ((b.e - b.s)/SPAN*100).toFixed(3) + '%'}}></span>`)}
                   ${p ? ['dhuhr','asr','maghrib','isha'].map(k => html`<span class="tick" style=${{insetInlineStart: ((p[k] - START)/SPAN*100).toFixed(3) + '%'}}></span>`) : null}
                   ${isToday ? html`<span class="nowmark" style=${{insetInlineStart: ((Math.min(Math.max(now.min, START), END) - START)/SPAN*100).toFixed(3) + '%'}}></span>` : null}
                 </span>
@@ -86,6 +86,7 @@
           ${statRow('work', CATS.work.long, plan.work || 0, got.work || 0, skipNote('work'))}
           ${statRow('gym', CATS.gym.long, plan.gym || 0, got.gym || 0, join('رحت ' + gym + ' من ' + gymPlan + ' مرات', skipNote('gym')))}
           ${statRow('quran', CATS.quran.long, plan.quran || 0, got.quran || 0, join(CATS.quran.label + ' في ' + quranDays + ' من 7 أيام', skipNote('quran')))}
+          ${NEW_KINDS.filter(k => CATS[k].track).map(k => statRow(k, CATS[k].long, plan[k] || 0, got[k] || 0, skipNote(k)))}
         </div>
       </div>
 

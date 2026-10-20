@@ -16,6 +16,11 @@
   const toField = t => (Number(t.slice(0, 2)) >= 24 ? pad(Number(t.slice(0, 2)) - 24) + t.slice(2) : t);
   const fromField = t => (t && t < '01:00' ? '24' + t.slice(2) : t);
   const kindOf = (draft, id) => Object.assign({}, DEFAULT_CATS[id], (draft.categories || {})[id]);
+  // The built-in kinds, then the ones the user added, by number.
+  const draftKinds = draft => Object.keys(DEFAULT_CATS).concat(Object.keys(draft.categories || {}).filter(k => /^k\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1)));
+  const KIND_COLOR_NAMES = {teal: 'تركواز', blue: 'أزرق', green: 'أخضر', slate: 'رمادي', copper: 'نحاسي', olive: 'زيتوني'};
+  // Days in the app's week order, as one phrase: «السبت والتلات».
+  const daysPhrase = days => { const n = WEEK_ORDER.filter(d => days.includes(String(d))).map(d => DAY_NAMES[d]); return n.length > 1 ? n.slice(0, -1).join('، ') + ' و' + n[n.length - 1] : n.join(''); };
   // The next date (from today) that falls on a weekday, for the preview's prayer times.
   function nextDateOf(day){ const today = effectiveNow().iso; return addDays(today, (Number(day) - weekday(today) + 7) % 7); }
   const REFUSALS = {
@@ -35,6 +40,7 @@
     [/min must be/, 'الدقايق لازم تبقى من 0 لـ 180'],
     [/label must be/, 'اسم النوع لازم يبقى من حرف لـ 30 حرف'],
     [/long must be/, 'الاسم الطويل لازم يبقى من حرف لـ 60 حرف'],
+    [/another category has this label/, 'فيه نوع تاني بنفس الاسم'],
     [/subject name must be/, 'اسم المادة لازم يبقى من حرف لـ 60 حرف']
   ];
   function explain(err, draft){
@@ -72,7 +78,7 @@
     return html`<div class="panel form ed-form" role="group" aria-label=${index === null ? 'بلوك جديد' : 'تعديل البلوك'}>
       <div class="form-row">
         <label class="field narrow" for="ed-start">الوقت<input id="ed-start" type="time" dir="ltr" value=${f.start} onInput=${set('start')} /></label>
-        <label class="field" for="ed-kind">النوع<select id="ed-kind" value=${f.kind} onChange=${set('kind')}>${Object.keys(DEFAULT_CATS).map(k => html`<option value=${k}>${kindOf(draft, k).label}</option>`)}</select></label>
+        <label class="field" for="ed-kind">النوع<select id="ed-kind" value=${f.kind} onChange=${set('kind')}>${draftKinds(draft).map(k => html`<option value=${k}>${kindOf(draft, k).label}</option>`)}</select></label>
       </div>
       <label class="field wide" for="ed-title">العنوان<input id="ed-title" value=${f.title} maxlength="120" onInput=${set('title')} /></label>
       <div class="form-row">
@@ -101,9 +107,22 @@
   }
 
   function KindsPart({draft, onChange}){
+    const [said, setSaid] = useState(null);   // {id, text}: a refused delete, under its kind
     const set = (id, k, v) => onChange(d => setKind(d, id, Object.assign(kindOf(d, id), {[k]: v})));
+    const ids = draftKinds(draft), added = ids.filter(k => !DEFAULT_CATS[k]);
+    const add = () => onChange(d => {
+      const used = Object.values(d.categories || {}).map(c => c.color);
+      const color = Object.keys(KIND_COLOR_NAMES).find(c => !used.includes(c)) || 'teal';
+      let n = added.length + 1, r;
+      do { r = addKind(d, {label: 'نوع جديد ' + n++, color, track: true}); } while (r.code === 'same-name');
+      return r.ok ? r.draft : d;
+    });
+    const remove = id => {
+      const r = removeKind(draft, id);
+      if (r.ok) { setSaid(null); onChange(r.draft); } else setSaid({id, text: 'مستخدم يوم ' + daysPhrase(r.days) + '. شيل البلوكات دي أو غيّر نوعها الأول.'});
+    };
     return html`<details class="panel ed-part"><summary>الأنواع</summary>
-      ${Object.keys(DEFAULT_CATS).map(id => { const c = kindOf(draft, id); return html`<div class="form ed-kind" key=${id}>
+      ${ids.map(id => { const c = kindOf(draft, id), own = !DEFAULT_CATS[id]; return html`<div class="form ed-kind" key=${id}>
         <div class="form-row">
           <label class="field" for=${'kl-' + id}>الاسم<input id=${'kl-' + id} value=${c.label} maxlength="30" onInput=${e => set(id, 'label', e.target.value)} /></label>
           <label class="field" for=${'kn-' + id}>الاسم الطويل<input id=${'kn-' + id} value=${c.long || ''} maxlength="60" onInput=${e => set(id, 'long', e.target.value)} /></label>
@@ -113,7 +132,12 @@
           <label class="check-line"><input type="checkbox" checked=${!!c.postpone} onChange=${e => set(id, 'postpone', e.target.checked)} /> ينفع يتأجل</label>
           <label class="check-line"><input type="checkbox" checked=${!!c.free} onChange=${e => set(id, 'free', e.target.checked)} /> وقت فاضي</label>
         </span>
+        ${own ? html`<div class="ed-colors" role="group" aria-label=${'لون ' + c.label}>${Object.keys(KIND_COLOR_NAMES).map(k => html`<button type="button" class=${'swatch c-k-' + k} aria-pressed=${c.color === k ? 'true' : 'false'} onClick=${() => set(id, 'color', k)}><i aria-hidden="true"></i>${KIND_COLOR_NAMES[k]}</button>`)}</div>
+          <div class="form-row"><label class="field" for=${'ks-' + id}>بيتحسب في الميزان<select id=${'ks-' + id} value=${c.side || ''} onChange=${e => set(id, 'side', e.target.value || undefined)}><option value="">ولا كفة</option><option value="a">${'الكفة الأولى (' + BAL_A + ')'}</option><option value="b">${'الكفة التانية (' + BAL_B + ')'}</option></select></label></div>
+          ${said && said.id === id ? html`<p class="form-err" role="alert">${said.text}</p>` : null}
+          <span class="backup-act"><button type="button" class="btn danger" onClick=${() => remove(id)}>امسح النوع</button></span>` : null}
       </div>`; })}
+      ${added.length < KIND_LIMIT ? html`<button type="button" class="btn" onClick=${add}>ضيف نوع</button>` : html`<p class="small muted">وصلت لآخر عدد من الأنواع (${KIND_LIMIT}).</p>`}
     </details>`;
   }
 
@@ -191,7 +215,7 @@
         ${check && check.moved ? html`<${Notice} role="alert" title="الجدول اتغيّر من مكان تاني من ساعة ما فتحت المحرر" line="افتح المحرر من الأول عشان تشوف آخر نسخة."><button type="button" class="btn" onClick=${() => { editorSession = null; location.reload(); }}>افتح من الأول</button></${Notice}>` : null}
         ${ch ? html`<${Notice} title="هتحفظ التغييرات دي؟" text=${[
             ...ch.days.map(c => html`<span class="small">${DAY_NAMES[c.day]}: ${c.added ? c.added + ' بلوك جديد أو متعدّل' : ''}${c.added && c.removed ? '، ' : ''}${c.removed ? c.removed + ' اتشال أو اتغيّر' : ''}</span>`),
-            ch.kinds.length ? html`<span class="small">الأنواع: ${ch.kinds.map(k => kindOf(draft, k).label).join('، ')}</span>` : null,
+            ch.kinds.length ? html`<span class="small">الأنواع: ${ch.kinds.map(k => kindOf(draft, k).label || kindOf(editorSession.original, k).label).join('، ')}</span>` : null,
             ch.subjects ? html`<span class="small">المواد اتغيّرت</span>` : null,
             ch.place ? html`<span class="small">المكان اتغيّر</span>` : null,
             html`<span class="small muted">الجدول الجديد بيسري على كل الأيام، واللي فاتت كمان. علامة على بلوك وقته أو نوعه اتغيّر بتفضل محفوظة، بس مش هتبان على اليوم ده.</span>`]}>

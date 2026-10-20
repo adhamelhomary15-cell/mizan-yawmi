@@ -48,7 +48,7 @@ cities of the 57 OIC member states (GeoNames, CC BY 4.0), the device location on
   with planned set counts, history by month with best set, volume and records, and fixing or deleting a finished
   workout with undo; kept under its own key, separate from progress and settings), Settings
   (what is in use; a first-run guide (place, a week template, subjects) and a schedule editor: blocks with a day
-  preview, copying a day, ties to a prayer, renaming the 9 kinds, subjects and place, all on a draft that is checked
+  preview, copying a day, ties to a prayer, renaming the 9 kinds, adding up to 12 kinds of the user's own (a name, one of six ready colours, its options and its half of the balance; deleted only when no block uses it), subjects and place, all on a draft that is checked
   and summarised before it is saved; export the schedule as a settings file; import a settings file, reset to the example, save a backup file of all the data to the
   device and restore it after a preview, all or nothing, and whether the browser agreed to keep the data). If the browser refuses to save a change to progress, a notice on every tab says so and offers a backup
   of what is on screen, until a later save succeeds. Every save also goes to a second copy on the device (IndexedDB), and the first

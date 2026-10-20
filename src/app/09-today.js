@@ -76,7 +76,7 @@
       <${DayProgress} iso=${iso} store=${store} />
     </section>`;
     const st = statusOf(store, iso, main.key);
-    return html`<section class=${'now c-' + main.cat} aria-label="دلوقتي">
+    return html`<section class=${'now ' + kc(main.cat)} aria-label="دلوقتي">
       <div>
         <p class="now-title"><${Title} text=${main.title} /></p>
         <p class="now-meta"><b>${CATS[main.cat].label}</b> · ${cur

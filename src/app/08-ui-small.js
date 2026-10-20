@@ -1,7 +1,7 @@
   /* ---------------- small UI pieces ---------------- */
   const CheckSvg = () => html`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>`;
   const Check = ({on, cat, label, onToggle}) => html`
-    <button type="button" class=${'chk c-' + cat} role="checkbox" aria-checked=${on ? 'true' : 'false'} aria-label=${label} onClick=${onToggle}><i><${CheckSvg} /></i></button>`;
+    <button type="button" class=${'chk ' + kc(cat)} role="checkbox" aria-checked=${on ? 'true' : 'false'} aria-label=${label} onClick=${onToggle}><i><${CheckSvg} /></i></button>`;
   const Moon = () => html`<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M10.6 2.2a6 6 0 1 0 3.2 9.9A5 5 0 0 1 10.6 2.2z"/></svg>`;
   const Plus = () => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
   const Pencil = () => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 7.5l3 3"/></svg>`;
@@ -38,7 +38,7 @@
     };
     const petals = (side, from, cls) => inks(side).map((k, i) => {
       const ang = from + (i + 0.5) * 180 / N;
-      return html`<ellipse cx=${cx + 52} cy=${cy} rx="52" ry="15" transform=${`rotate(${ang.toFixed(2)} ${cx} ${cy})`} class=${k ? 'petal c-' + k : 'petal off'} />`;
+      return html`<ellipse cx=${cx + 52} cy=${cy} rx="52" ry="15" transform=${`rotate(${ang.toFixed(2)} ${cx} ${cy})`} class=${k ? 'petal ' + kc(k) : 'petal off'} />`;
     });
     let note;
     if (!a.done && !b.done) note = 'لسه مفيش حاجة متعلّمة ' + label + '.';
@@ -66,7 +66,8 @@
     </div>`;
   }
   function balanceOf(days, store){
-    const a = {done:0, plan:0, by:{}, order:['uni','study','course']}, b = {done:0, plan:0, by:{}, order:['work','gym','quran']};
+    const side = (ids, s) => ids.concat(NEW_KINDS.filter(k => FAMILY[k] === s));
+    const a = {done:0, plan:0, by:{}, order:side(['uni','study','course'], 'a')}, b = {done:0, plan:0, by:{}, order:side(['work','gym','quran'], 'b')};
     days.forEach(d => dayBlocks(d, store).forEach(bl => {
       const f = FAMILY[bl.cat]; if (!f) return;
       const st = statusOf(store, d, bl.key); if (away(st)) return;

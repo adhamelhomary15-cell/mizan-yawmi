@@ -65,7 +65,7 @@
   }
 
   // A kind keeps its id; only these fields change.
-  const KIND_FIELDS = ['label', 'long', 'track', 'postpone', 'free'];
+  const KIND_FIELDS = ['label', 'long', 'track', 'postpone', 'free', 'color', 'side'];
   function setKind(draft, id, fields){
     const d = clone(draft);
     d.categories = d.categories || {};
@@ -73,6 +73,31 @@
     KIND_FIELDS.forEach(f => { if (f in fields) k[f] = fields[f]; });
     d.categories[id] = k;
     return d;
+  }
+  // Kinds the user adds (feature 016): ids k1 … k12, given in order. The built-in kinds are never removed.
+  const KIND_LIMIT = 12;
+  function addKind(draft, fields){
+    const cats = draft.categories || {};
+    const same = Object.keys(cats).find(k => cats[k] && cats[k].label === fields.label);
+    if (same) return {ok: false, code: 'same-name', id: same};
+    let n = 1; while (('k' + n) in cats) n++;
+    if (n > KIND_LIMIT) return {ok: false, code: 'full'};
+    return {ok: true, draft: setKind(draft, 'k' + n, fields), id: 'k' + n};
+  }
+  // The days whose blocks use a kind, in either version of a two-version day.
+  function kindUses(draft, id){
+    return SCHEDULE_DAYS.filter(day => {
+      const blocks = draft.week[day] && draft.week[day].blocks;
+      return !!blocks && (Array.isArray(blocks) ? [blocks] : Object.values(blocks)).some(list => list.some(b => b[1] === id));
+    });
+  }
+  function removeKind(draft, id){
+    if (!/^k\d+$/.test(id)) return {ok: false, code: 'built-in'};
+    const days = kindUses(draft, id);
+    if (days.length) return {ok: false, code: 'used', days};
+    const d = clone(draft);
+    delete d.categories[id];
+    return {ok: true, draft: d};
   }
   // Subjects: ids S1, S2 … are given in order; a name is what the user sees.
   function addSubject(draft, name){
