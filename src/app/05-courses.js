@@ -1,9 +1,12 @@
   /* ---------------- courses ---------------- */
   const SETTINGS_COURSE_ID = 'aa';
-  const settingsCourse = () => ({id: SETTINGS_COURSE_ID, name: COURSE.name, sub: COURSE.sub, fromSettings: true, from: PLAN.length ? PLAN[0].from : '2000-01-01', to: PLAN.length ? PLAN[PLAN.length - 1].to : '2000-01-01'});
-  const allCourses = store => [settingsCourse()].concat(store.courses);
-  const courseById = (store, id) => allCourses(store).find(c => c.id === id) || settingsCourse();
-  const mainCourse = store => courseById(store, store.mainCourse);
+  // The course from the settings, when they have one; added courses live in the progress.
+  const settingsCourse = () => COURSE && ({id: SETTINGS_COURSE_ID, name: COURSE.name, sub: COURSE.sub, fromSettings: true, from: PLAN.length ? PLAN[0].from : '2000-01-01', to: PLAN.length ? PLAN[PLAN.length - 1].to : '2000-01-01'});
+  const allCourses = store => (COURSE ? [settingsCourse()] : []).concat(store.courses);
+  const courseById = (store, id) => allCourses(store).find(c => c.id === id) || null;
+  // The stored choice while that course exists, else the settings course, else the first added one, else none.
+  // Worked out on every read, so opening the app writes nothing.
+  const mainCourse = store => courseById(store, store.mainCourse) || allCourses(store)[0] || null;
   function daysBetween(a, b){
     const [y1,m1,d1] = a.split('-').map(Number), [y2,m2,d2] = b.split('-').map(Number);
     return Math.round((Date.UTC(y2,m2-1,d2) - Date.UTC(y1,m1-1,d1)) / 86400000);
@@ -33,5 +36,5 @@
       return s;
     });
   }
-  let MAIN_NAME = COURSE.name;
+  let MAIN_NAME = '';
 

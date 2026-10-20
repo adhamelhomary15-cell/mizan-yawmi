@@ -221,7 +221,7 @@
       </div>
 
       <aside class="today-side">
-        <div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>
+        ${mainCourse(store) ? html`<div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>` : null}
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">

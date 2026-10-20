@@ -30,9 +30,9 @@ description: "Task list for feature 017: courses without one person's rules"
 
 ## Phase 2: No settings course, the main course rule (US2)
 
-- [ ] T004 `COURSE` is `null` without `course` in the settings. `settingsCourse`, `allCourses`, `courseById` and
+- [x] T004 `COURSE` is `null` without `course` in the settings. `settingsCourse`, `allCourses`, `courseById` and
   `mainCourse` follow plan decisions 2 and 3, and `MAIN_NAME` follows.
-- [ ] T005 The Course tab gets its empty state, and the resolved main course in «isMain», deleting and the daily
+- [x] T005 The Course tab gets its empty state, and the resolved main course in «isMain», deleting and the daily
   line. `TargetCard` shows nothing without a main course.
 
 ## Phase 3: The pace line (US3)

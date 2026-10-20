@@ -34,6 +34,7 @@
 
   function TargetCard({iso, store, goTab}){
     const c = mainCourse(store);
+    if (!c) return null;
     const plan = planOf(c), dm = doneMap(store, c);
     const all = plan.reduce((a, w) => a.concat(w.items), []);
     const n = all.filter(it => dm[it[3]]).length;
