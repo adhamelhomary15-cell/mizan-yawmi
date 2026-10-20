@@ -82,7 +82,7 @@
       </div>` : null}
 
       <div class="prog c-course">
-        <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${c.fromSettings ? 'موديولين كل أسبوع تقريباً' : 'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
+        <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
         <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
       </div>
 

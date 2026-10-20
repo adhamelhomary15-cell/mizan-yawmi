@@ -37,7 +37,7 @@ description: "Task list for feature 017: courses without one person's rules"
 
 ## Phase 3: The pace line (US3)
 
-- [ ] T006 Every course's pace line is «حوالي N في الأسبوع», from its plan.
+- [x] T006 Every course's pace line is «حوالي N في الأسبوع», from its plan.
 
 ## Phase 4: Tests, docs, PR
 
