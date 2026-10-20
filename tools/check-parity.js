@@ -25,7 +25,7 @@ const oldFile = opt('old'), newFile = opt('new'), settingsFile = opt('settings')
 const from = opt('from') || '2026-10-01';
 const days = Number(opt('days') || 366);
 const NO_ADHAN = argv.includes('--no-adhan'); // run both builds without the prayer library, to exercise the fallback rule
-if (!oldFile || !newFile) { console.error('usage: node tools/check-parity.js --old <html> --new <html> [--settings <file>] [--from YYYY-MM-DD] [--days N]'); process.exit(2); }
+if (!oldFile || !newFile) { console.error('usage: node tools/check-parity.js --old <html> --new <html> [--settings <file>] [--from YYYY-MM-DD] [--days N] [--no-adhan]'); process.exit(2); }
 
 const adhanSrc = fs.readFileSync(path.join(__dirname, 'vendor', 'adhan.umd.min.js'), 'utf8');
 const mod = { exports: {} };
