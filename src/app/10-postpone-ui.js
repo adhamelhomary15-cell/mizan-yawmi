@@ -82,7 +82,7 @@
     return html`<section class="review" aria-label="مراجعة اليوم">
       <div class="sec-head"><h2>${isToday ? 'راجع يومك' : 'مراجعة ' + DAY_NAMES[weekday(iso)]}</h2><button type="button" class="btn ghost small" onClick=${onClose}>اقفل</button></div>
       ${open.length ? html`<ul class="review-list">
-        ${open.map(b => html`<li class=${'c-' + b.cat}>
+        ${open.map(b => html`<li class=${kc(b.cat)}>
           <div class="review-text"><span class="title"><${Title} text=${b.title} /></span><span class="meta"><b>${CATS[b.cat].label}</b> · ${fmtStr(b.s)} لحد ${fmtStr(b.e)}</span></div>
           <div class="review-actions">
             <button type="button" class="btn primary" onClick=${() => setStatus(update, iso, b.key, 'done')}><${CheckSvg} />خلّصته</button>
@@ -136,7 +136,7 @@
         <label class="field" for="ab-s">من<input id="ab-s" type="time" value=${s} onInput=${x => setS(x.target.value)} /></label>
         <label class="field" for="ab-e">لحد<input id="ab-e" type="time" value=${e} onInput=${x => setE(x.target.value)} /></label>
         <label class="field" for="ab-cat">النوع<select id="ab-cat" value=${cat} onChange=${x => setCat(x.target.value)}>
-          ${['uni','study','course','work','gym','quran','personal'].map(k => html`<option value=${k}>${CATS[k].label}</option>`)}</select></label>
+          ${KIND_IDS.filter(k => k !== 'move' && k !== 'rest').map(k => html`<option value=${k}>${CATS[k].label}</option>`)}</select></label>
       </div>
       ${err ? html`<p class="form-err" role="alert">${err}</p>` : null}
       <div><button type="submit" class="btn primary">ضيفها</button></div>
@@ -195,7 +195,7 @@
                 ${quiet ? (b.detail ? html`<span class="meta">${b.detail}</span>` : null)
                   : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${st === 'moved' ? html` · اتأجل لـ <bdi>${dayName(movedTo(store, iso, b.key))}</bdi>` : null}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
-              return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' c-' + b.cat + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
+              return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
                 <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra

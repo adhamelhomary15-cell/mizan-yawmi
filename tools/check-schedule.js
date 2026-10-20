@@ -47,6 +47,14 @@ function base() {
 const ONE_VERSION = ['0', '2', '4', '5', '6'];
 const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
 
+// WCAG contrast of two #RRGGBB colours, and a colour mixed over another (CSS color-mix in srgb).
+const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const over = (ink, paper, p) => ink.map((v, i) => Math.round(v * p + paper[i] * (1 - p)));
+const tokens = (css, sel) => { const i = css.indexOf(sel + '{'), t = {}; if (i >= 0) css.slice(i, css.indexOf('}', i)).replace(/--([\w-]+):\s*([^;]+);/g, (_, k, v) => { t[k] = v.trim(); }); return t; };
+const KIND_COLORS = ['teal', 'blue', 'green', 'slate', 'copper', 'olive'];
+
 function runChecks(h, source) {
   const results = [];
   const check = (name, fn) => { let ok = false; try { ok = !!fn(); } catch (e) { ok = false; } results.push([name, ok]); };
@@ -148,6 +156,26 @@ function runChecks(h, source) {
       && cities.every(c => typeof c.ar === 'string' && c.ar && typeof c.en === 'string' && c.en && /^[A-Z]{2}$/.test(c.cc)
         && Math.abs(c.lat) <= 90 && Math.abs(c.lng) <= 180 && zoneOk(c.tz));
   });
+  check('added kinds: a valid file passes; a bad id, colour or side, a colour on a built-in, or a taken name is refused', () => {
+    const withKinds = extra => { const d = base(); Object.assign(d.categories, extra); return d; };
+    const field = (extra, path) => h.validateSettings(withKinds(extra)).errors.some(e => e.path === path);
+    return valid(withKinds({k1: {label: 'Teaching', color: 'teal', side: 'b', track: true}, k12: {label: 'Family', color: 'olive'}}))
+      && field({k13: {label: 'X', color: 'teal'}}, 'categories.k13') && field({x1: {label: 'X', color: 'teal'}}, 'categories.x1')
+      && field({k1: {label: 'X'}}, 'categories.k1.color') && field({k1: {label: 'X', color: 'pink'}}, 'categories.k1.color')
+      && field({k1: {label: 'X', color: 'teal', side: 'c'}}, 'categories.k1.side')
+      && field({work: Object.assign({}, base().categories.work, {color: 'teal'})}, 'categories.work.color')
+      && field({rest: Object.assign({}, base().categories.rest, {side: 'a'})}, 'categories.rest.side')
+      && field({k1: {label: 'X', color: 'teal'}, k2: {label: 'X', color: 'blue'}}, 'categories.k2.label')
+      && field({k1: {label: base().categories.study.label, color: 'teal'}}, 'categories.k1.label');
+  });
+  check('the ready colours hold AA contrast on paper and on their tint, in light and dark', () => {
+    const light = tokens(source, ':root'), dark = tokens(source, ':root[data-theme="dark"]');
+    return KIND_COLORS.every(c => [[light, '--surface', 0.09], [dark, '--surface', 0.15]].every(([t, paper, tint]) => {
+      const ink = rgb(t['k-' + c]), bg = rgb(t[paper.slice(2)]);
+      return contrast(ink, bg) >= 4.5 && contrast(ink, over(ink, bg, tint)) >= 4.5;
+    }) && source.includes('.c-k-' + c + '{--c:var(--k-' + c + ')}'));
+  });
+  check('every colour class of a kind goes through kc', () => !/c-' \+ (b\.cat|main\.cat|cat|k)\b/.test(source));
   check('the schedule rules block never mentions storage, the page or the network', () => {
     const b = block(source).split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');
     return !/localStorage|indexedDB|document\.|window\.|fetch\(|navigator\./.test(b);
@@ -169,7 +197,9 @@ if (process.argv.includes('--self-test')) {
     ['a subject in use is removed', s => s.replace("if (uses.length) return {ok: false, code: 'in-use', uses};", '')],
     ['a day note is dropped', s => s.replace("d.week[day] = Object.assign({}, d.week[day] || {}, {blocks:", "d.week[day] = Object.assign({}, {blocks:")],
     ['a two-version day is rewritten', s => s.replace("const isTwoVersionDay = (draft, day) => !!(", "const isTwoVersionDay = (draft, day) => false && !!(")],
-    ['an absorb is lost when the tie changes', s => s.replace("old && old.absorb ? {absorb: old.absorb} : {}", "{}")]
+    ['an absorb is lost when the tie changes', s => s.replace("old && old.absorb ? {absorb: old.absorb} : {}", "{}")],
+    ['an added kind needs no ready colour', s => s.replace("if (KIND_COLORS.indexOf(c.color) < 0) bad(", "if (false) bad(")],
+    ['a built-in kind takes a colour', s => s.replace("if (c.color !== undefined || c.side !== undefined) bad(", "if (false) bad(")]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

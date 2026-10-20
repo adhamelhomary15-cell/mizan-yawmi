@@ -3,6 +3,9 @@
   // not-settings, too-new, invalid, unknown-id. Rules follow specs/002-separate-personal-settings/data-model.md.
   function validateSettings(obj){
     const CATEGORY_IDS = ['uni','study','course','work','gym','quran','personal','move','rest'];
+    // A kind the user added (feature 016): ids k1 to k12, with a ready colour and an optional balance side.
+    const isNewKind = k => /^k([1-9]|1[0-2])$/.test(k);
+    const KIND_COLORS = ['teal','blue','green','slate','copper','olive'];
     const METHODS = ['MuslimWorldLeague','Egyptian','Karachi','UmmAlQura','Dubai','MoonsightingCommittee','NorthAmerica','Kuwait','Qatar','Singapore','Tehran','Turkey','Other'];
     const LANGS = ['ar'];
     const PRAYER_IDS = ['fajr','dhuhr','asr','maghrib','isha'];
@@ -65,7 +68,7 @@
     if (!cats || !Object.keys(cats).length) bad('invalid', 'categories', 'categories is required with at least one category');
     else Object.keys(cats).forEach(k => {
       const c = cats[k];
-      if (CATEGORY_IDS.indexOf(k) < 0) bad('unknown-id', 'categories.' + k, 'unknown category id; allowed: ' + CATEGORY_IDS.join(', '));
+      if (CATEGORY_IDS.indexOf(k) < 0 && !isNewKind(k)) bad('unknown-id', 'categories.' + k, 'unknown category id; allowed: ' + CATEGORY_IDS.join(', ') + ', or k1 to k12');
       else if (!isObj(c) || !isStr(c.label, 1, 30)) bad('invalid', 'categories.' + k + '.label', 'label must be 1 to 30 characters');
       else {
         if (c.long !== undefined && !isStr(c.long, 1, 60)) bad('invalid', 'categories.' + k + '.long', 'long must be 1 to 60 characters');
@@ -73,6 +76,13 @@
         // postpone: open blocks of this kind can be moved to free time; free: this kind's time can receive them
         if (c.postpone !== undefined && typeof c.postpone !== 'boolean') bad('invalid', 'categories.' + k + '.postpone', 'postpone must be true or false');
         if (c.free !== undefined && typeof c.free !== 'boolean') bad('invalid', 'categories.' + k + '.free', 'free must be true or false');
+        if (!isNewKind(k)) {
+          if (c.color !== undefined || c.side !== undefined) bad('invalid', 'categories.' + k + (c.color !== undefined ? '.color' : '.side'), 'a built-in category has no color or side');
+        } else {
+          if (KIND_COLORS.indexOf(c.color) < 0) bad('invalid', 'categories.' + k + '.color', 'color must be one of: ' + KIND_COLORS.join(', '));
+          if (c.side !== undefined && c.side !== 'a' && c.side !== 'b') bad('invalid', 'categories.' + k + '.side', 'side must be a or b');
+          if (Object.keys(cats).some(o => o !== k && isObj(cats[o]) && cats[o].label === c.label)) bad('invalid', 'categories.' + k + '.label', 'another category has this label');
+        }
       }
     });
 

@@ -9,6 +9,8 @@
   --shell:#6E1A28; --shell-fg:#FAFBF6; --shell-dim:#E9C9CF;
   /* denominations: oxblood and madder (university), plum (course), sepia (work), ochre (gym, Quran, your time) */
   --uni:#7B1E2E; --study:#94304B; --course:#5B2A6B; --work:#5A402B; --gym:#735600; --quran:#6A4E00; --personal:#7A5A0A;
+  /* the ready colours for kinds the user adds (feature 016) */
+  --k-teal:#0E5E58; --k-blue:#244F8C; --k-green:#2F5E22; --k-slate:#46515F; --k-copper:#8A3A14; --k-olive:#535C14;
   --tint:9%;
   --font-display:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
   --font-body:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
@@ -21,6 +23,7 @@
     --bg:#16141A; --surface:#201D24; --fg:#EDE9E1; --muted:#A7A39A; --line:#36313B; --quiet:#3A3540; --danger:#FF9A76;
     --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
     --uni:#EE8E9C; --study:#F2A7B8; --course:#CFA0DD; --work:#D8B898; --gym:#E4C55C; --quran:#E8C96A; --personal:#EFD98F;
+    --k-teal:#7FD3C9; --k-blue:#A3C2F2; --k-green:#A9D68F; --k-slate:#B9C4D1; --k-copper:#F0A57D; --k-olive:#CBD48A;
     --tint:15%; color-scheme:dark;
   }
 }
@@ -28,6 +31,7 @@
   --bg:#16141A; --surface:#201D24; --fg:#EDE9E1; --muted:#A7A39A; --line:#36313B; --quiet:#3A3540; --danger:#FF9A76;
   --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
   --uni:#EE8E9C; --study:#F2A7B8; --course:#CFA0DD; --work:#D8B898; --gym:#E4C55C; --quran:#E8C96A; --personal:#EFD98F;
+  --k-teal:#7FD3C9; --k-blue:#A3C2F2; --k-green:#A9D68F; --k-slate:#B9C4D1; --k-copper:#F0A57D; --k-olive:#CBD48A;
   --tint:15%; color-scheme:dark;
 }
 html{scrollbar-color:var(--quiet) var(--bg)}
@@ -49,6 +53,7 @@ button{font:inherit;color:inherit}
 .sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:var(--s1) var(--s3)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
 .c-uni{--c:var(--uni)} .c-study{--c:var(--study)} .c-course{--c:var(--course)} .c-work{--c:var(--work)} .c-gym{--c:var(--gym)} .c-quran{--c:var(--quran)} .c-personal{--c:var(--personal)} .c-move{--c:var(--quiet)} .c-rest{--c:var(--quiet)} .c-life{--c:var(--gym)}
+.c-k-teal{--c:var(--k-teal)} .c-k-blue{--c:var(--k-blue)} .c-k-green{--c:var(--k-green)} .c-k-slate{--c:var(--k-slate)} .c-k-copper{--c:var(--k-copper)} .c-k-olive{--c:var(--k-olive)}
 
 /* headers: the heading leads, the date sits under it */
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s3)}
