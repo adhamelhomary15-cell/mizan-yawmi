@@ -83,7 +83,7 @@
     MAIN_NAME = mainCourse(store).name;
 
     let view;
-    if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} />`;
+    if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
     else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
     else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
     else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} showToast=${showToast} />`;

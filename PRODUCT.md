@@ -40,7 +40,8 @@ cities of the 57 OIC member states (GeoNames, CC BY 4.0), the device location on
 
 - Tabs: Today (timeline with check-offs, prayer times, main-course target card, day progress, and an end-of-day
   review where open blocks of kinds marked postponable, and tasks due that day, can be postponed into the next
-  free time, with a proposal the user confirms or changes and one undo), Week (shape of the
+  free time, with a proposal the user confirms or changes and one undo; after a day ends with open items, Today
+  asks on its own, with the proposed places, and moves nothing until the user taps), Week (shape of the
   week, planned vs done hours, per-subject study), Course (main course modules by week, add new courses from a
   template, pick the main course), Tasks (one-off tasks with due dates, weekly fixed appointments; both can be edited in place, with undo; tasks can also be pasted in bulk from any AI's answer in a fixed line format, with a preview and one undo),
   Workouts (a gym log in kilograms: sets with last time's values, rest and workout timers, user-named splits

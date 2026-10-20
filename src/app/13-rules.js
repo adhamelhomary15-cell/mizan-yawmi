@@ -394,6 +394,16 @@
     const clash = blocks.filter(b => !b.extra && isTracked(b.cat)).concat(extras).find(b => s < b.e && e > b.s);
     return clash ? {ok: false, code: 'clash', title: clash.title} : {ok: true, e};
   }
+  // The ended days to ask about, oldest first: from the day after the last one answered, at most 7 days back, up to
+  // yesterday. With none answered yet, only yesterday. addDays comes in so that this block runs on its own.
+  function daysToAsk(today, askedUpTo, addDays){
+    const last = addDays(today, -1), first = addDays(today, -7);
+    if (askedUpTo === null || askedUpTo === undefined) return [last];
+    if (typeof askedUpTo !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(askedUpTo)) return [];
+    const days = [];
+    for (let d = askedUpTo < first ? first : addDays(askedUpTo, 1); d <= last; d = addDays(d, 1)) days.push(d);
+    return days;
+  }
   // end of postpone rules
 
   // start of guide rules
