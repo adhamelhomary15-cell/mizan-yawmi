@@ -11,19 +11,19 @@
   // focusRef makes the box focusable, so an error can be moved into view and read out.
   const Notice = ({title, line, text, role, focusRef, children}) => html`<div class="notice" role=${role} tabindex=${focusRef ? '-1' : null} ref=${focusRef}><p>${title ? html`<b>${title}</b>` : null}${line ? html`<span class="small muted">${line}</span>` : null}${text}</p>${children}</div>`;
   const Time = ({min}) => { const f = fmt(min); return html`<bdi class="t">${f.t}</bdi><span class="suf">${f.s}</span>`; };
-  // Course study slots follow whichever course is main; the live lectures keep the built-in course's name.
-  // The built-in course's name in a block title ("Name|action" or just "Name") is swapped for whichever course is main.
-  const showTitle = text => {
-    if (text.indexOf('محاضرة لايف') > -1 || !COURSE.name) return text;
+  // Course blocks follow whichever course is main: in a block of kind course, the settings course's name ("Name" or
+  // "Name|action") shows as the main course's name. Blocks of other kinds, such as lectures, keep their title.
+  const showTitle = (text, cat) => {
+    if (cat !== 'course' || !COURSE || !MAIN_NAME) return text;
     if (text === COURSE.name) return MAIN_NAME;
     return text.indexOf(COURSE.name + '|') === 0 ? MAIN_NAME + '|' + text.slice(COURSE.name.length + 1) : text;
   };
-  function Title({text}){
-    const t = showTitle(text);
+  function Title({text, cat}){
+    const t = showTitle(text, cat);
     if (t.indexOf('|') > -1){ const [s, a] = t.split('|'); return html`<bdi class="subj">${s}</bdi> · ${a}`; }
     return t;
   }
-  const plainTitle = text => showTitle(text).replace('|', ' · ');
+  const plainTitle = (text, cat) => showTitle(text, cat).replace('|', ' · ');
 
   // The balance as a guilloche rosette: university and course on one half, work and life on the other.
   // Each half has 36 fine petals; a petal is inked in a category's colour for its share of the half's planned time that got done.

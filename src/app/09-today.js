@@ -78,7 +78,7 @@
     const st = statusOf(store, iso, main.key);
     return html`<section class=${'now ' + kc(main.cat)} aria-label="دلوقتي">
       <div>
-        <p class="now-title"><${Title} text=${main.title} /></p>
+        <p class="now-title"><${Title} text=${main.title} cat=${main.cat} /></p>
         <p class="now-meta"><b>${CATS[main.cat].label}</b> · ${cur
           ? html`فاضل ${countdown(main.e - now.min)} · لحد ${fmtStr(main.e)}`
           : html`بيبدأ ${fmtStr(main.s)}، بعد ${countdown(main.s - now.min)}`}</p>
@@ -88,7 +88,7 @@
         <button type="button" class="btn" onClick=${() => skip(main)}>اتلغى النهارده</button>
       </div>
       <div class="now-next">
-        ${after ? html`<p class="row-line"><span class="lbl">بعده</span><span><${Title} text=${after.title} /> · ${fmtStr(after.s)}</span></p>` : null}
+        ${after ? html`<p class="row-line"><span class="lbl">بعده</span><span><${Title} text=${after.title} cat=${after.cat} /> · ${fmtStr(after.s)}</span></p>` : null}
         ${nx ? html`<p class="row-line"><span class="lbl">${fri && nx[0] === 'dhuhr' ? 'الجمعة' : nx[1]}</span><span>${fmtStr(p[nx[0]])} · بعد ${countdown(p[nx[0]] - now.min)}</span></p>` : null}
       </div>
       <${DayProgress} iso=${iso} store=${store} />

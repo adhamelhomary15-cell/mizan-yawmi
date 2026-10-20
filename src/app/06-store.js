@@ -1,6 +1,6 @@
   /* ---------------- progress store: on the device through the storage path, plus the synced copy where there is one ---------------- */
   const LOCAL_OK = (() => { try { localStorage.setItem('__probe', '1'); localStorage.removeItem('__probe'); return true; } catch(e){ return false; } })();
-  const EMPTY = () => ({v:1, checks:{}, modules:{}, tasks:[], appts:[], courses:[], mainCourse:BUILTIN_ID, extras:{}, phaseSeen:null, askedUpTo:null, setAside:[]});
+  const EMPTY = () => ({v:1, checks:{}, modules:{}, tasks:[], appts:[], courses:[], mainCourse:SETTINGS_COURSE_ID, extras:{}, phaseSeen:null, askedUpTo:null, setAside:[]});
   const isISO = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
   const isHM = s => typeof s === 'string' && /^\d{2}:\d{2}$/.test(s);
   function normalize(d){
@@ -8,7 +8,7 @@
     if (!d || typeof d !== 'object') return e;
     const courses = Array.isArray(d.courses) ? d.courses.filter(c => c && typeof c.id === 'string' && typeof c.name === 'string' && isISO(c.from) && isISO(c.to) && Array.isArray(c.modules) && c.modules.length) : [];
     courses.forEach(c => { if (!c.done || typeof c.done !== 'object') c.done = {}; });
-    const main = typeof d.mainCourse === 'string' && (d.mainCourse === BUILTIN_ID || courses.some(c => c.id === d.mainCourse)) ? d.mainCourse : BUILTIN_ID;
+    const main = typeof d.mainCourse === 'string' && (d.mainCourse === SETTINGS_COURSE_ID || courses.some(c => c.id === d.mainCourse)) ? d.mainCourse : SETTINGS_COURSE_ID;
     const extras = {};
     if (d.extras && typeof d.extras === 'object') Object.keys(d.extras).forEach(k => {
       if (!isISO(k) || !Array.isArray(d.extras[k])) return;

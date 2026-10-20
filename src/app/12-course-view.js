@@ -56,7 +56,7 @@
 
     const save = course => { update(s => { s.courses.push(course); return s; }); setAdding(false); setSel(course.id); };
     const makeMain = () => update(s => { s.mainCourse = c.id; return s; });
-    const del = () => { setSel(BUILTIN_ID); remove('اتمسح كورس "' + c.name + '"', s => { s.courses = s.courses.filter(x => x.id !== c.id); if (s.mainCourse === c.id) s.mainCourse = BUILTIN_ID; return s; }); };
+    const del = () => { setSel(SETTINGS_COURSE_ID); remove('اتمسح كورس "' + c.name + '"', s => { s.courses = s.courses.filter(x => x.id !== c.id); if (s.mainCourse === c.id) s.mainCourse = SETTINGS_COURSE_ID; return s; }); };
 
     return html`<div class="coursev">
       <div class="top">
@@ -76,15 +76,15 @@
       </div>` : null}
 
       <div class="prog c-course">
-        <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${c.builtin ? 'موديولين كل أسبوع تقريباً' : 'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
+        <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${c.fromSettings ? 'موديولين كل أسبوع تقريباً' : 'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
         <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
       </div>
 
-      ${!c.builtin || !isMain ? html`<div class="form-row">
+      ${!c.fromSettings || !isMain ? html`<div class="form-row">
         ${!isMain ? html`<button type="button" class="btn" onClick=${makeMain}>خليه الكورس الأساسي</button>` : null}
-        ${!c.builtin ? html`<button type="button" class="btn ghost" onClick=${del}>امسح الكورس</button>` : null}
+        ${!c.fromSettings ? html`<button type="button" class="btn ghost" onClick=${del}>امسح الكورس</button>` : null}
       </div>` : null}
-      ${isMain && !c.builtin ? html`<p class="small muted">وقت الكورس في الجدول اليومي بقى لـ <bdi>${c.name}</bdi>.</p>` : null}
+      ${isMain && !c.fromSettings ? html`<p class="small muted">وقت الكورس في الجدول اليومي بقى لـ <bdi>${c.name}</bdi>.</p>` : null}
 
       <h2>الخطة أسبوع بأسبوع</h2>
       <div class="weeks">
