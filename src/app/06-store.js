@@ -1,6 +1,6 @@
   /* ---------------- progress store: on the device through the storage path, plus the synced copy where there is one ---------------- */
   const LOCAL_OK = (() => { try { localStorage.setItem('__probe', '1'); localStorage.removeItem('__probe'); return true; } catch(e){ return false; } })();
-  const EMPTY = () => ({v:1, checks:{}, modules:{}, tasks:[], appts:[], courses:[], mainCourse:BUILTIN_ID, extras:{}, phaseSeen:null, setAside:[]});
+  const EMPTY = () => ({v:1, checks:{}, modules:{}, tasks:[], appts:[], courses:[], mainCourse:BUILTIN_ID, extras:{}, phaseSeen:null, askedUpTo:null, setAside:[]});
   const isISO = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
   const isHM = s => typeof s === 'string' && /^\d{2}:\d{2}$/.test(s);
   function normalize(d){
@@ -15,7 +15,7 @@
       const list = d.extras[k].filter(x => x && typeof x.id === 'string' && isHM(x.s) && isHM(x.e) && CATS[x.cat] && typeof x.title === 'string');
       if (list.length) extras[k] = list;
     });
-    return {v:1, checks: d.checks && typeof d.checks === 'object' ? d.checks : {}, modules: d.modules && typeof d.modules === 'object' ? d.modules : {}, tasks: Array.isArray(d.tasks) ? d.tasks : [], appts: Array.isArray(d.appts) ? d.appts : [], courses, mainCourse: main, extras, phaseSeen: d.phaseSeen === 'A' || d.phaseSeen === 'B' ? d.phaseSeen : null, setAside: Array.isArray(d.setAside) ? d.setAside : []};
+    return {v:1, checks: d.checks && typeof d.checks === 'object' ? d.checks : {}, modules: d.modules && typeof d.modules === 'object' ? d.modules : {}, tasks: Array.isArray(d.tasks) ? d.tasks : [], appts: Array.isArray(d.appts) ? d.appts : [], courses, mainCourse: main, extras, phaseSeen: d.phaseSeen === 'A' || d.phaseSeen === 'B' ? d.phaseSeen : null, askedUpTo: isISO(d.askedUpTo) ? d.askedUpTo : null, setAside: Array.isArray(d.setAside) ? d.setAside : []};
   }
   const saveLocal = s => saveStore('progress', s);
   const hasData = s => Object.keys(s.checks).length || Object.keys(s.modules).length || s.tasks.length || s.appts.length || s.courses.length || Object.keys(s.extras).length;

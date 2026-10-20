@@ -46,7 +46,8 @@ function normalize(d) {
   const obj = x => x && typeof x === 'object' && !Array.isArray(x) ? JSON.parse(JSON.stringify(x)) : {};
   const arr = x => Array.isArray(x) ? JSON.parse(JSON.stringify(x)) : [];
   return {v: 1, checks: obj(o.checks), modules: obj(o.modules), tasks: arr(o.tasks), appts: arr(o.appts), courses: arr(o.courses),
-    mainCourse: typeof o.mainCourse === 'string' ? o.mainCourse : 'main', extras: obj(o.extras), phaseSeen: o.phaseSeen === 'A' || o.phaseSeen === 'B' ? o.phaseSeen : null};
+    mainCourse: typeof o.mainCourse === 'string' ? o.mainCourse : 'main', extras: obj(o.extras), phaseSeen: o.phaseSeen === 'A' || o.phaseSeen === 'B' ? o.phaseSeen : null,
+    askedUpTo: typeof o.askedUpTo === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.askedUpTo) ? o.askedUpTo : null};
 }
 
 const exMatch = html.match(/<script type="application\/json" id="example-settings">([\s\S]*?)<\/script>/);
@@ -58,7 +59,7 @@ function sample() {
   return {
     progress: {v: 1, checks: {'2026-10-01': {'0': true, '2': true}, '2026-10-02': {'1': true}, '2026-10-05': {'0': true}},
       modules: {m1: true}, tasks: [{id: 't1', text: 'Read chapter 2', tag: 'uni', due: '2026-10-20', done: false}, {id: 't2', text: 'Draft', tag: 'work', due: '', done: true}],
-      appts: [{id: 'a1', day: 2, s: '10:00', e: '11:00', title: 'Weekly meeting'}], courses: [], mainCourse: 'main', extras: {}, phaseSeen: 'A'},
+      appts: [{id: 'a1', day: 2, s: '10:00', e: '11:00', title: 'Weekly meeting'}], courses: [], mainCourse: 'main', extras: {}, phaseSeen: 'A', askedUpTo: '2026-10-04'},
     workouts: {v: 1, custom: [{id: 'c1', name: 'My lift'}], routines: [{id: 'r1', name: 'Push', exIds: ['c1'], sets: [3]}],
       workouts: [{id: 'w1', startedAt: 1000, endedAt: 4000, routineName: 'Push', exercises: [{exId: 'c1', name: 'My lift', sets: [{w: 22.5, r: 8}]}]}],
       current: {id: 'o1', startedAt: 5000, rest: null, exercises: [{exId: 'c1', sets: [{w: '20', r: '', done: false}]}]}, prefs: {restSeconds: 90, sound: true}},

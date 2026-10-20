@@ -21,7 +21,7 @@ function block(source) {
   if (a < 0 || b < a) throw new Error('postpone rules block not found in src/planner.html');
   return source.slice(a, b);
 }
-const load = source => new Function(block(source) + '\nreturn {freeStretches, proposePlaces, checkManualPlace};')();
+const load = source => new Function(block(source) + '\nreturn {freeStretches, proposePlaces, checkManualPlace, daysToAsk};')();
 
 const START = 420, END = 1500;
 const isFree = c => c === 'personal';
@@ -29,6 +29,14 @@ const isTracked = c => ['study', 'course', 'quran', 'work', 'uni', 'gym'].includ
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const B = (s, e, cat, title) => ({s, e, cat, title: title || cat});
 const X = (s, e, title) => ({s, e, cat: 'study', title: title || 'extra', extra: 'x'});
+const addDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+const dayNo = iso => Date.parse(iso + 'T00:00:00Z') / 86400000;
+
+// The oracle for daysToAsk: every day from 7 back to yesterday, kept when it is after the one answered.
+function oracleDays(today, askedUpTo) {
+  if (askedUpTo === null) return [addDays(today, -1)];
+  return [7, 6, 5, 4, 3, 2, 1].map(k => addDays(today, -k)).filter(d => dayNo(d) > dayNo(askedUpTo));
+}
 
 // The oracle: a minute grid per day, marked free by free blocks and taken by extras and earlier placements.
 function oraclePlaces(items, days) {
@@ -128,6 +136,23 @@ function runChecks(h, source) {
     }
     return true;
   });
+  check('days to ask: the first run, one day, three days, the 7-day limit, already answered, and a bad date', () => {
+    const t = '2027-03-10';
+    return eq(h.daysToAsk(t, null, addDays), ['2027-03-09'])
+      && eq(h.daysToAsk(t, '2027-03-08', addDays), ['2027-03-09'])
+      && eq(h.daysToAsk(t, '2027-03-06', addDays), ['2027-03-07', '2027-03-08', '2027-03-09'])
+      && eq(h.daysToAsk(t, '2027-01-01', addDays), ['2027-03-03', '2027-03-04', '2027-03-05', '2027-03-06', '2027-03-07', '2027-03-08', '2027-03-09'])
+      && eq(h.daysToAsk(t, '2027-03-09', addDays), []) && eq(h.daysToAsk(t, '2027-03-12', addDays), [])
+      && eq(h.daysToAsk(t, 'soon', addDays), []) && eq(h.daysToAsk('2027-03-01', '2027-02-26', addDays), ['2027-02-27', '2027-02-28']);
+  });
+  check('days to ask equal an independent oracle on 400 generated dates and gaps', () => {
+    let seed = 515; const rnd = n => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+    for (let k = 0; k < 400; k++) {
+      const today = addDays('2026-01-01', rnd(1500)), asked = rnd(10) === 0 ? null : addDays(today, -rnd(20) + 2);
+      if (!eq(h.daysToAsk(today, asked, addDays), oracleDays(today, asked))) return false;
+    }
+    return true;
+  });
   check('the rules block never mentions checks, done marks, storage or the network', () => {
     const b = block(source).split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');
     return !/\bchecks\b|\.done\b|=\s*true\b|localStorage|fetch\(|XMLHttp|sendBeacon|WebSocket|navigator\./.test(b);
@@ -149,7 +174,10 @@ if (process.argv.includes('--self-test')) {
     ['the latest stretch is used instead of the earliest', s => s.replace('const hit = st.find(r => r[1] - r[0] >= it.len);', 'const hit = st.filter(r => r[1] - r[0] >= it.len).pop();')],
     ['a clash is not checked', s => s.replace("return clash ? {ok: false, code: 'clash', title: clash.title} : {ok: true, e};", 'return {ok: true, e};')],
     ['running past the day end is allowed', s => s.replace("if (e > END) return {ok: false, code: 'late'};", '')],
-    ['the start is not clipped to from', s => s.replace('Math.max(b.s, from || 0)', 'b.s')]
+    ['the start is not clipped to from', s => s.replace('Math.max(b.s, from || 0)', 'b.s')],
+    ['days to ask have no 7-day limit', s => s.replace('let d = askedUpTo < first ? first : addDays(askedUpTo, 1)', 'let d = addDays(askedUpTo, 1)')],
+    ['days to ask include today', s => s.replace("const last = addDays(today, -1), first", "const last = today, first")],
+    ['the first run asks about more than yesterday', s => s.replace('if (askedUpTo === null || askedUpTo === undefined) return [last];', 'if (askedUpTo === null || askedUpTo === undefined) return [first, last];')]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

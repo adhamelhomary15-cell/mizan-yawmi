@@ -143,7 +143,7 @@
     </form>`;
   }
 
-  function TodayView({iso, setIso, now, store, update, goTab, remove, act}){
+  function TodayView({iso, setIso, now, store, update, goTab, remove, act, actEdit}){
     const skip = b => act('اتلغى "' + plainTitle(b.title) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
     const blocks = dayBlocks(iso, store);
     const p = prayers(iso);
@@ -175,7 +175,7 @@
 
       <div class="today-main">
         <div class="o-now">${reviewing ? html`<${Review} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} act=${act} onClose=${() => setReviewing(false)} />`
-          : isToday ? html`<${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} onReview=${() => setReviewing(true)} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
+          : isToday ? html`<${AskPostpone} now=${now} store=${store} update=${update} actEdit=${actEdit} onReview=${d => { setIso(d); setReviewing(true); }} /><${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} onReview=${() => setReviewing(true)} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
 
         <div class="sec o-timeline">
           <ol class="timeline">
