@@ -119,11 +119,15 @@ It is used mostly outdoors in daylight, so the light theme is primary and every 
 - Work: sepia `#5A402B`.
 - Life: ochre `#735600` (gym), `#6A4E00` (Quran), `#7A5A0A` (personal time).
 - Danger: `#B4300C`, only for late tasks and destructive actions.
+- Added kinds (feature 016), one of six ready inks, each a light and dark pair: teal `#0E5E58` / `#7FD3C9`,
+  blue `#244F8C` / `#A3C2F2`, green `#2F5E22` / `#A9D68F`, slate `#46515F` / `#B9C4D1`, copper `#8A3A14` / `#F0A57D`,
+  olive `#535C14` / `#CBD48A`. `tools/check-schedule.js` checks each at AA on paper and on its own tint. Two added
+  kinds may share an ink; the kind's name always shows beside it.
 
 ### Named Rules
 **The Denomination Rule.** A category's ink is its identity everywhere: row tint, check circle, denomination numeral, week strip segment and rosette petals. Never use a category ink for anything that is not that category.
 
-**The Two Halves Rule.** University and course form one half of the balance, work and life the other. New categories must join one half.
+**The Two Halves Rule.** University and course form one half of the balance, work and life the other. A kind the user adds joins one half, or neither when it is not about either (its own choice in the editor).
 
 ## Typography
 

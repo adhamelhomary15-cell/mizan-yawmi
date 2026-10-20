@@ -1,5 +1,5 @@
-// Making and editing the schedule in the app (feature 014): the guide, the device location, the editor, a refused
-// save, a prayer tie through the seasons, and a schedule file exported and imported back.
+// Making and editing the schedule in the app (features 014 and 016): the guide, the device location, the editor, a refused
+// save, a prayer tie through the seasons, a schedule file exported and imported back, and kinds the user adds.
 const {test, expect} = require('@playwright/test');
 const {openApp, tab, button, stored} = require('./helpers');
 
@@ -122,4 +122,67 @@ test('a block tied to Asr follows it from summer to winter', async ({page}) => {
     await button(page, 'رجوع').click();
   }
   expect(starts[0]).not.toBe(starts[1]);
+});
+
+// Added kinds (feature 016): «تدريس», copper, on the second side, put on Thursday's first block.
+async function addTeaching(page){
+  await openEditor(page);
+  await page.locator('summary', {hasText: /^الأنواع$/}).click();
+  await button(page, 'ضيف نوع').click();
+  await page.fill('#kl-k1', 'تدريس');
+  await page.locator('.swatch', {hasText: 'نحاسي'}).click();
+  await page.selectOption('#ks-k1', 'b');
+  await page.locator('main .ed-row').first().click();
+  await page.selectOption('#ed-kind', 'k1');
+  await button(page, 'تمام').click();
+  await saveSchedule(page);
+}
+
+test('an added kind shows in its colour, can be ticked, counts on its side, and has its Week row', async ({page}) => {
+  await openApp(page);
+  await addTeaching(page);
+  expect((await settings(page)).categories.k1).toEqual({label: 'تدريس', track: true, color: 'copper', side: 'b'});
+  const row = page.locator('.timeline li.c-k-copper');
+  await expect(row.locator('.meta b')).toHaveText('تدريس');
+  await expect(page.locator('.balance-legend .b b')).toHaveText('0%');
+  await row.locator('[role=checkbox]').click();
+  await expect(page.locator('.balance-legend .b b')).not.toHaveText('0%');
+  await tab(page, 'الأسبوع');
+  await expect(page.locator('.stat.c-k-copper')).toContainText('تدريس');
+});
+
+test('a used kind cannot be deleted; once unused it goes, and the summary names it', async ({page}) => {
+  await openApp(page);
+  await addTeaching(page);
+  await openEditor(page);
+  await page.locator('summary', {hasText: /^الأنواع$/}).click();
+  await button(page, 'امسح النوع').click();
+  await expect(page.locator('.ed-kind .form-err')).toHaveText('مستخدم يوم الخميس. شيل البلوكات دي أو غيّر نوعها الأول.');
+  await page.locator('main .ed-row').first().click();
+  await page.selectOption('#ed-kind', 'personal');
+  await button(page, 'تمام').click();
+  await button(page, 'امسح النوع').click();
+  await expect(page.locator('#kl-k1')).toHaveCount(0);
+  await button(page, 'احفظ الجدول').click();
+  await expect(page.locator('.notice', {hasText: 'هتحفظ التغييرات دي؟'})).toContainText('الأنواع: تدريس');
+  await clickAndReload(page, 'أيوه، احفظ');
+  expect((await settings(page)).categories.k1).toBeUndefined();
+});
+
+test('an exported schedule brings its added kinds back on import', async ({page}, info) => {
+  await openApp(page);
+  await addTeaching(page);
+  const before = await settings(page);
+  await tab(page, 'الإعدادات');
+  const [download] = await Promise.all([page.waitForEvent('download'), button(page, 'صدّر جدولي كملف').click()]);
+  const file = info.outputPath('kinds.json');
+  await download.saveAs(file);
+  await button(page, 'رجّع المثال').click();
+  await clickAndReload(page, 'أيوه، ارجع للمثال');
+  await tab(page, 'الإعدادات');
+  await page.locator('#settings-file').setInputFiles(file);
+  await clickAndReload(page, 'استبدل');
+  const after = await settings(page);
+  expect(after.categories).toEqual(before.categories);
+  expect(after.week['4']).toEqual(before.week['4']);
 });

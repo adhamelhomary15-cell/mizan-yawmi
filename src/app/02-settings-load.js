@@ -39,6 +39,10 @@
   };
   const CATS = {};
   Object.keys(DEFAULT_CATS).forEach(k => { CATS[k] = Object.assign({}, DEFAULT_CATS[k], (CFG.categories || {})[k]); });
+  // Kinds the user added (feature 016), after the built-in ones, by number; a missing long name is the name.
+  const NEW_KINDS = Object.keys(CFG.categories || {}).filter(k => /^k\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1));
+  NEW_KINDS.forEach(k => { CATS[k] = Object.assign({long: CFG.categories[k].label}, CFG.categories[k]); });
+  const KIND_IDS = Object.keys(DEFAULT_CATS).concat(NEW_KINDS);
   const SUBJ = CFG.subjects || {};
   // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
   // Each block ends where the next starts; the last ends at the end of the day.

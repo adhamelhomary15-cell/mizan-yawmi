@@ -1,5 +1,8 @@
   /* ---------------- day model: schedule + one-off blocks + status ---------------- */
-  const FAMILY = {uni:'a', study:'a', course:'a', work:'b', gym:'b', quran:'b'};
+  // The balance side of each kind: the built-in ones as always, plus each added kind's own side.
+  const FAMILY = NEW_KINDS.reduce((f, k) => { if (CATS[k].side) f[k] = CATS[k].side; return f; }, {uni:'a', study:'a', course:'a', work:'b', gym:'b', quran:'b'});
+  // The colour class of a kind: its own for a built-in, its ready colour's for an added one.
+  const kc = cat => 'c-' + (CATS[cat] && CATS[cat].color ? 'k-' + CATS[cat].color : cat);
   function hmToMin(t){ let m = toMin(t); if (m < START) m += 1440; return m; }
   function dayBlocks(iso, store){
     const base = blocksFor(iso);
