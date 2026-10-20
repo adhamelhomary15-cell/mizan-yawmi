@@ -41,9 +41,9 @@ description: "Task list for feature 017: courses without one person's rules"
 
 ## Phase 4: Tests, docs, PR
 
-- [ ] T007 `tests/e2e/course.spec.js`: US1, US2, US3, and stored progress unchanged by opening the app.
-- [ ] T008 [P] Docs: the README courses part, and B1 closed in `specs/010-code-health/review.md`.
-- [ ] T009 Run every check, parity on the example and the private file, the E2E tests, and a 375 px look. Tick the
+- [x] T007 `tests/e2e/course.spec.js`: US1, US2, US3, and stored progress unchanged by opening the app.
+- [x] T008 [P] Docs: the README courses part, and B1 closed in `specs/010-code-health/review.md`.
+- [x] T009 Run every check, parity on the example and the private file, the E2E tests, and a 375 px look. Tick the
   tasks.
 
 ## Phase 5: The private file
