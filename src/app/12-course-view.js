@@ -45,18 +45,24 @@
   function CourseView({now, store, update, remove}){
     const [sel, setSel] = useState(store.mainCourse);
     const [adding, setAdding] = useState(false);
-    const courses = allCourses(store);
-    const c = courses.find(x => x.id === sel) || mainCourse(store);
-    const isMain = c.id === store.mainCourse;
+    const courses = allCourses(store), main = mainCourse(store);
+    const c = courses.find(x => x.id === sel) || main;
+    const save = course => { update(s => { s.courses.push(course); return s; }); setAdding(false); setSel(course.id); };
+    const newCourse = html`<button type="button" class="btn primary" aria-expanded=${adding ? 'true' : 'false'} onClick=${() => setAdding(!adding)}><${Plus} /><span>كورس جديد</span></button>`;
+    const form = adding ? html`<${CourseForm} now=${now} onSave=${save} onCancel=${() => setAdding(false)} />` : null;
+    if (!c) return html`<div class="coursev">
+      <div class="top"><div class="top-meta"><h1>الكورسات</h1><p class="sub">لسه مفيش كورس</p></div>${newCourse}</div>
+      ${form}
+    </div>`;
+    const isMain = c.id === main.id;
     const plan = planOf(c), dm = doneMap(store, c);
     const all = plan.reduce((a, w) => a.concat(w.items), []);
     const n = all.filter(it => dm[it[3]]).length;
     const today = now.iso;
     const perWeek = Math.max(1, Math.round(all.length / Math.max(1, plan.length)));
 
-    const save = course => { update(s => { s.courses.push(course); return s; }); setAdding(false); setSel(course.id); };
     const makeMain = () => update(s => { s.mainCourse = c.id; return s; });
-    const del = () => { setSel(BUILTIN_ID); remove('اتمسح كورس "' + c.name + '"', s => { s.courses = s.courses.filter(x => x.id !== c.id); if (s.mainCourse === c.id) s.mainCourse = BUILTIN_ID; return s; }); };
+    const del = () => { setSel(null); remove('اتمسح كورس "' + c.name + '"', s => { s.courses = s.courses.filter(x => x.id !== c.id); if (s.mainCourse === c.id) s.mainCourse = SETTINGS_COURSE_ID; return s; }); };
 
     return html`<div class="coursev">
       <div class="top">
@@ -65,26 +71,26 @@
           <p class="sub">${isMain ? 'الكورس الأساسي، التارجت الأول للفترة دي' : 'كورس إضافي'}</p>
           <p class="small muted">${c.sub ? html`<bdi dir="rtl">${c.sub}</bdi> · ` : null}من ${dateLabel(c.from)} لحد ${dateLabel(c.to)}</p>
         </div>
-        <button type="button" class="btn primary" aria-expanded=${adding ? 'true' : 'false'} onClick=${() => setAdding(!adding)}><${Plus} /><span>كورس جديد</span></button>
+        ${newCourse}
       </div>
 
-      ${adding ? html`<${CourseForm} now=${now} onSave=${save} onCancel=${() => setAdding(false)} />` : null}
+      ${form}
 
       ${courses.length > 1 ? html`<div class="chips" aria-label="الكورسات">
         ${courses.map(x => html`<button type="button" class="btn small" aria-pressed=${x.id === c.id ? 'true' : 'false'} onClick=${() => setSel(x.id)}>
-          ${x.id === store.mainCourse ? html`<${Star} />` : null}<bdi>${x.name}</bdi></button>`)}
+          ${x.id === main.id ? html`<${Star} />` : null}<bdi>${x.name}</bdi></button>`)}
       </div>` : null}
 
       <div class="prog c-course">
-        <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${c.builtin ? 'موديولين كل أسبوع تقريباً' : 'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
+        <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
         <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
       </div>
 
-      ${!c.builtin || !isMain ? html`<div class="form-row">
+      ${!c.fromSettings || !isMain ? html`<div class="form-row">
         ${!isMain ? html`<button type="button" class="btn" onClick=${makeMain}>خليه الكورس الأساسي</button>` : null}
-        ${!c.builtin ? html`<button type="button" class="btn ghost" onClick=${del}>امسح الكورس</button>` : null}
+        ${!c.fromSettings ? html`<button type="button" class="btn ghost" onClick=${del}>امسح الكورس</button>` : null}
       </div>` : null}
-      ${isMain && !c.builtin ? html`<p class="small muted">وقت الكورس في الجدول اليومي بقى لـ <bdi>${c.name}</bdi>.</p>` : null}
+      ${isMain && !c.fromSettings && COURSE ? html`<p class="small muted">وقت الكورس في الجدول اليومي بقى لـ <bdi>${c.name}</bdi>.</p>` : null}
 
       <h2>الخطة أسبوع بأسبوع</h2>
       <div class="weeks">

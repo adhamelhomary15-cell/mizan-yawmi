@@ -39,14 +39,14 @@
       document.addEventListener('keydown', key);
       return () => document.removeEventListener('keydown', key);
     }, []);
-    const go = to => { act('اتأجلت "' + plainTitle(b.title) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
+    const go = to => { act('اتأجلت "' + plainTitle(b.title, b.cat) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
     const pick = () => {
       const bl = dayBlocks(day, store), s = time ? hmToMin(time) : NaN;
       const r = checkManualPlace(bl, bl.filter(x => x.extra), s, len, START, END, c => !!CATS[c].track);
       if (!r.ok) { setErr(r.code === 'clash' ? 'الميعاد ده بيتداخل مع ' + plainTitle(r.title) + '.' : PLACE_ERR[r.code]); return; }
       go({iso: day, s, e: r.e});
     };
-    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + plainTitle(b.title)}>
+    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + plainTitle(b.title, b.cat)}>
       ${!manual ? html`<p class="small">هتتحط <bdi>${dayName(prop.iso)}</bdi> من <bdi>${fmtStr(prop.s)}</bdi> لحد <bdi>${fmtStr(prop.e)}</bdi></p>
         <span class="backup-act"><button type="button" class="btn primary" data-first="1" onClick=${() => go(prop)}>تمام</button><button type="button" class="btn" onClick=${() => setManual(true)}>غيّر</button><button type="button" class="btn ghost" onClick=${onClose}>لأ</button></span>`
       : html`${prop ? null : html`<p class="small">مفيش وقت فاضي يسعها في الأسبوع الجاي، اختار يوم وميعاد.</p>`}
@@ -83,7 +83,7 @@
       <div class="sec-head"><h2>${isToday ? 'راجع يومك' : 'مراجعة ' + DAY_NAMES[weekday(iso)]}</h2><button type="button" class="btn ghost small" onClick=${onClose}>اقفل</button></div>
       ${open.length ? html`<ul class="review-list">
         ${open.map(b => html`<li class=${kc(b.cat)}>
-          <div class="review-text"><span class="title"><${Title} text=${b.title} /></span><span class="meta"><b>${CATS[b.cat].label}</b> · ${fmtStr(b.s)} لحد ${fmtStr(b.e)}</span></div>
+          <div class="review-text"><span class="title"><${Title} text=${b.title} cat=${b.cat} /></span><span class="meta"><b>${CATS[b.cat].label}</b> · ${fmtStr(b.s)} لحد ${fmtStr(b.e)}</span></div>
           <div class="review-actions">
             <button type="button" class="btn primary" onClick=${() => setStatus(update, iso, b.key, 'done')}><${CheckSvg} />خلّصته</button>
             ${canPostpone(b) ? html`<button type="button" class="btn" aria-expanded=${pp === b.key ? 'true' : 'false'} onClick=${() => { setBatch(null); setPp(pp === b.key ? null : b.key); }}>أجّلها</button>` : null}
@@ -103,7 +103,7 @@
       </ul>` : null}
       ${movable.length + dueTasks.length > 1 && !batch ? html`<button type="button" class="btn review-all" onClick=${openBatch}>أجّل اللي فاضل كله</button>` : null}
       ${batch ? html`<div class="notice postpone-batch" role="group" aria-label="تأجيل اللي فاضل"><p>
-          ${batch.map(x => html`<span class="small"><${Title} text=${x.b.title} /> ← ${x.to ? html`<bdi>${dayName(x.to.iso)}</bdi> <bdi>${fmtStr(x.to.s)}</bdi>–<bdi>${fmtStr(x.to.e)}</bdi>` : 'مفيش مكان، هيفضل زي ما هو'}</span>`)}
+          ${batch.map(x => html`<span class="small"><${Title} text=${x.b.title} cat=${x.b.cat} /> ← ${x.to ? html`<bdi>${dayName(x.to.iso)}</bdi> <bdi>${fmtStr(x.to.s)}</bdi>–<bdi>${fmtStr(x.to.e)}</bdi>` : 'مفيش مكان، هيفضل زي ما هو'}</span>`)}
           ${dueTasks.map(t => html`<span class="small">${t.text} ← <bdi>${dayName(taskTo)}</bdi></span>`)}
         </p>
         <span class="backup-act"><button type="button" class="btn primary" onClick=${applyBatch}>أجّلهم</button><button type="button" class="btn ghost" onClick=${() => setBatch(null)}>لأ</button></span></div>` : null}
@@ -144,7 +144,7 @@
   }
 
   function TodayView({iso, setIso, now, store, update, goTab, remove, act, actEdit}){
-    const skip = b => act('اتلغى "' + plainTitle(b.title) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
+    const skip = b => act('اتلغى "' + plainTitle(b.title, b.cat) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
     const blocks = dayBlocks(iso, store);
     const p = prayers(iso);
     const appts = apptsFor(iso, store);
@@ -191,12 +191,12 @@
               marks.sort((x, y) => x.at - y.at);
               const markEls = marks.length ? html`<span class="marks">${marks.map(m => html`<span class=${'mk' + (m.kind === 'appt' ? ' appt' : '')}>${m.kind === 'pr' ? html`<${Moon} />` : null}${m.text}</span>`)}</span>` : null;
               const body = html`
-                <span class="title"><${Title} text=${b.title} />${quiet ? html`<span class="muted small"> · ${durText(b.e - b.s)}</span>` : null}${cur ? html`<span class="now-pill">دلوقتي</span>` : null}</span>
+                <span class="title"><${Title} text=${b.title} cat=${b.cat} />${quiet ? html`<span class="muted small"> · ${durText(b.e - b.s)}</span>` : null}${cur ? html`<span class="now-pill">دلوقتي</span>` : null}</span>
                 ${quiet ? (b.detail ? html`<span class="meta">${b.detail}</span>` : null)
                   : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${st === 'moved' ? html` · اتأجل لـ <bdi>${dayName(movedTo(store, iso, b.key))}</bdi>` : null}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
               return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
-                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
+                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title, b.cat)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
@@ -221,7 +221,7 @@
       </div>
 
       <aside class="today-side">
-        <div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>
+        ${mainCourse(store) ? html`<div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>` : null}
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">

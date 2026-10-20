@@ -28,7 +28,7 @@
     return html`<div class="notice postpone-batch" role="status" aria-label="حاجات ماتعملتش"><p>
         <b>${'فيه ' + n + (n === 1 ? ' حاجة' : ' حاجات') + ' ماتعملتش ' + from}</b>
         ${days.map(d => html`${days.length > 1 ? html`<span class="small"><b>${DAY_NAMES[weekday(d.iso)]}</b></span>` : null}
-          ${d.blocks.map(b => html`<span class="small"><${Title} text=${b.title} /> ← ${placeOf(b) ? html`<bdi>${dayName(placeOf(b).iso)}</bdi> <bdi>${fmtStr(placeOf(b).s)}</bdi>–<bdi>${fmtStr(placeOf(b).e)}</bdi>` : 'مفيش مكان، هيفضل زي ما هو'}</span>`)}
+          ${d.blocks.map(b => html`<span class="small"><${Title} text=${b.title} cat=${b.cat} /> ← ${placeOf(b) ? html`<bdi>${dayName(placeOf(b).iso)}</bdi> <bdi>${fmtStr(placeOf(b).s)}</bdi>–<bdi>${fmtStr(placeOf(b).e)}</bdi>` : 'مفيش مكان، هيفضل زي ما هو'}</span>`)}
           ${d.tasks.map(t => html`<span class="small">${t.text} ← <bdi>${dayName(now.iso)}</bdi></span>`)}`)}
       </p>
       <span class="backup-act"><button type="button" class="btn primary" onClick=${postponeAll}>أجّل الكل</button><button type="button" class="btn" onClick=${review}>راجعها</button><button type="button" class="btn ghost" onClick=${() => update(answer(last))}>مش دلوقتي</button></span>

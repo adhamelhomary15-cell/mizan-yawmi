@@ -9,7 +9,8 @@
  *   - src/app/ORDER and the files in src/app agree;
  *   - no part is longer than 600 lines;
  *   - every top-level function, const and let in src/app is used somewhere;
- *   - nothing writes raw HTML into the page (dangerouslySetInnerHTML).
+ *   - nothing writes raw HTML into the page (dangerouslySetInnerHTML);
+ *   - no string search for Arabic text decides behaviour (indexOf, includes, startsWith, endsWith).
  * Output is check names and file:name findings only.
  *
  * Exit codes: 0 all checks pass, 1 a check failed, 2 usage or I/O error.
@@ -61,6 +62,14 @@ function runChecks({order, parts, shell}) {
   });
   check('nothing writes raw HTML into the page', () =>
     Object.keys(parts).filter(f => /dangerouslySetInnerHTML/.test(parts[f])).map(f => f));
+  // A rule for one person hides as a search for their words (feature 017): behaviour must come from data, not text.
+  check('no string search for Arabic text decides behaviour', () => {
+    const found = [];
+    Object.keys(parts).forEach(f => parts[f].split('\n').forEach((l, i) => {
+      if (/\.(indexOf|includes|startsWith|endsWith)\(\s*['"`][؀-ۿ]/.test(l)) found.push(f + ':' + (i + 1));
+    }));
+    return found;
+  });
   return results;
 }
 
@@ -86,7 +95,8 @@ if (process.argv.includes('--self-test')) {
     ['a part over the line limit', d => { d.parts[first] += '  //\n'.repeat(MAX_LINES); }],
     ['a part missing from ORDER', d => { d.order = d.order.slice(1); }],
     ['a part listed twice', d => { d.order.push(first); }],
-    ['raw HTML written into the page', d => { d.parts[first] += "  const raw = h('div', {dangerouslySetInnerHTML: {__html: ''}}); raw;\n"; }]
+    ['raw HTML written into the page', d => { d.parts[first] += "  const raw = h('div', {dangerouslySetInnerHTML: {__html: ''}}); raw;\n"; }],
+    ['a search for Arabic text', d => { d.parts[first] += "  const special = t => t.indexOf('مثال') > -1; special;\n"; }]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

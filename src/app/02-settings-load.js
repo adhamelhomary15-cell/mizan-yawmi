@@ -47,7 +47,7 @@
   // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
   // Each block ends where the next starts; the last ends at the end of the day.
   const SCHED = CFG.week || {};
-  const COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : {name:'Course', sub:''};
+  const COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : null;
   const PLAN = CFG.course ? CFG.course.plan : [];
   const TASK_TAGS = Object.assign({uni:CATS.uni.label, course:CATS.course.label, work:CATS.work.label, personal:CATS.personal.label}, CFG.taskTags || {});
   const RULES = CFG.rules || [];

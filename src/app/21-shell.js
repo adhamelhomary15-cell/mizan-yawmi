@@ -80,7 +80,7 @@
       update(fn);
       showToast(text, () => update(undoFn));
     };
-    MAIN_NAME = mainCourse(store).name;
+    MAIN_NAME = (mainCourse(store) || {}).name || '';
 
     let view;
     if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
