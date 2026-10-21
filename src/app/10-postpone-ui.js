@@ -219,7 +219,7 @@
             : html`<button type="button" class="btn add-block" onClick=${() => setAdding(true)}><${Plus} />ضيف حاجة لليوم ده</button>`}
           ${(SCHED[wd] || {}).note ? html`<p class="note">${SCHED[wd].note}</p>` : null}
           ${ANCHOR_NOTICES[dayNotice(iso)] ? html`<p class="note">${ANCHOR_NOTICES[dayNotice(iso)]}</p>` : null}
-          <p class="small muted">دوس على أي بلوك عشان تلغيه النهارده. ${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
+          <p class="small muted">دوس على أي بلوك عشان تلغيه أو تأجّله.${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
         </div>
       </div>
 
@@ -228,11 +228,12 @@
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">
-            ${dayTasks.map(t => html`<div class=${'titem c-' + t.tag}>
+            ${dayTasks.map(t => { const late = t.due < iso, tomorrow = addDays(now.iso, 1); return html`<div class=${'titem c-' + t.tag + (late ? ' has-act' : '')}>
               <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })} />
               <span class="ttext">${t.text}</span>
-              <span class=${'tdue' + (t.due < iso ? ' late' : '')}>${t.due < iso ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
-            </div>`)}
+              <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
+              ${late ? html`<button type="button" class="btn" onClick=${() => act('اتأجلت المهمة لـ ' + dayName(tomorrow), applyPostpone(iso, [], [t.id], tomorrow))}>أجّلها</button>` : null}
+            </div>`; })}
           </div>
         </div>` : null}
         <div class="sec o-prayers"><h2>مواعيد الصلاة</h2><${PrayerCard} iso=${iso} now=${now} /></div>

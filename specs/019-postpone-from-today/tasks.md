@@ -26,9 +26,9 @@ description: "Task list for feature 019: postpone from the day's timeline"
 
 ## Phase 2: «أجّلها» on late tasks, and the hint (US2)
 
-- [ ] T003 A late task in today's «مهام النهارده» gets «أجّلها»: its date becomes tomorrow, through `applyPostpone`
+- [x] T003 A late task in today's «مهام النهارده» gets «أجّلها»: its date becomes tomorrow, through `applyPostpone`
   and `act`.
-- [ ] T004 `.titem.has-act` gets a fourth column, and the hint under the timeline says «تلغيه أو تأجّله».
+- [x] T004 `.titem.has-act` gets a fourth column, and the hint under the timeline says «تلغيه أو تأجّله».
 
 ## Phase 3: Tests, docs, PR
 
