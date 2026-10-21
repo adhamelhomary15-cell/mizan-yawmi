@@ -14,8 +14,7 @@
       return r;
     } catch(e){ return null; }
   }
-  // The saved schedule's prayer times, once per date.
-  const ptCache = {};
+  // The saved schedule's prayer times, once per date (the cache is in the settings values, see applySettings).
   function prayers(iso){
     if (ptCache[iso] === undefined) ptCache[iso] = prayerTimesFor(CFG, iso);
     return ptCache[iso];

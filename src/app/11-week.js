@@ -1,6 +1,4 @@
   /* ---------------- Week ---------------- */
-  // The strip's hour labels: every 5 hours from the first full hour of the day (feature 018).
-  const AXIS_HOURS = Array.from({length: 6}, (_, i) => Math.ceil(START / 60) * 60 + i * 300).filter(m => m < END);
   const hourLabel = m => { const h = Math.floor(m / 60) % 24; return ((h % 12) || 12) + (h < 12 ? 'ص' : 'م'); };
   function WeekView({iso, setIso, now, store, goDay}){
     const ws = weekStart(iso);
