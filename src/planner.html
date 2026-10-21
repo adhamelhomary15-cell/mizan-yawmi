@@ -200,6 +200,7 @@ button{font:inherit;color:inherit}
 /* tasks */
 .tlist{display:flex;flex-direction:column}
 .titem{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:var(--s2);align-items:center;padding:4px 0;border-top:1px solid var(--line)}
+.titem.has-act{grid-template-columns:44px minmax(0,1fr) auto auto}
 .titem:first-child{border-top:0}
 .titem .ttext{overflow-wrap:anywhere}
 .titem.done .ttext{text-decoration:line-through;color:var(--muted)}
