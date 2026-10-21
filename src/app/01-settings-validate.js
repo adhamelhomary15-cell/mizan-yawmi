@@ -1,6 +1,16 @@
   /* ---------------- settings: format check (pure; used by the importer and tools/check-settings.js) ---------------- */
   // Returns {ok, errors, warnings, settings}. Each error is {code, path, detail}; codes:
   // not-settings, too-new, invalid, unknown-id. Rules follow specs/002-separate-personal-settings/data-model.md.
+  // The user's day (feature 018): {start, end} in minutes from the day's midnight, an end after midnight past 1440.
+  // Without `day` it is 07:00 to 01:00; null when the day is outside what the app allows.
+  function dayBounds(day){
+    if (day === undefined) return {start: 420, end: 1500};
+    const min = t => typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(t) ? Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) : NaN;
+    const start = min(day && day.start), clock = min(day && day.end);
+    if (!(start >= 180 && start <= 720)) return null;
+    const end = clock <= 300 ? clock + 1440 : clock >= 1200 ? clock : NaN;
+    return end - start <= 1440 ? {start, end} : null;
+  }
   function validateSettings(obj){
     const CATEGORY_IDS = ['uni','study','course','work','gym','quran','personal','move','rest'];
     // A kind the user added (feature 016): ids k1 to k12, with a ready colour and an optional balance side.
@@ -9,7 +19,7 @@
     const METHODS = ['MuslimWorldLeague','Egyptian','Karachi','UmmAlQura','Dubai','MoonsightingCommittee','NorthAmerica','Kuwait','Qatar','Singapore','Tehran','Turkey','Other'];
     const LANGS = ['ar'];
     const PRAYER_IDS = ['fajr','dhuhr','asr','maghrib','isha'];
-    const KNOWN = ['format','version','name','language','timezone','location','prayerMethod','versions','categories','subjects','week','rules','taskTags','course'];
+    const KNOWN = ['format','version','name','language','timezone','location','prayerMethod','versions','categories','subjects','week','rules','taskTags','course','day'];
     const errors = [], warnings = [];
     const bad = (code, path, detail) => { if (errors.length < 50) errors.push({code, path, detail}); };
     const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -28,7 +38,7 @@
     const timeOk = v => {
       if (typeof v !== 'string' || v.length !== 5 || v[2] !== ':' || !digits(v.slice(0,2), 2) || !digits(v.slice(3,5), 2)) return null;
       const h = Number(v.slice(0,2)), m = Number(v.slice(3,5));
-      return h <= 24 && m <= 59 ? h * 60 + m : null;
+      return h <= 28 && m <= 59 ? h * 60 + m : null;
     };
 
     if (!isObj(obj)) { bad('not-settings', 'file', 'the file is not a settings object'); return {ok:false, errors, warnings, settings:null}; }
@@ -98,6 +108,14 @@
       }
     }
 
+    const bounds = dayBounds(obj.day);
+    if (!bounds) {
+      const d = obj.day, clock = t => typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+      if (!isObj(d)) bad('invalid', 'day', 'day must be an object with start and end');
+      else if (!clock(d.start) || d.start < '03:00' || d.start > '12:00') bad('invalid', 'day.start', 'start must be HH:MM from 03:00 to 12:00');
+      else if (!clock(d.end) || (d.end > '05:00' && d.end < '20:00')) bad('invalid', 'day.end', 'end must be HH:MM from 20:00 to 23:59, or from 00:00 to 05:00 for the next morning');
+      else bad('invalid', 'day', 'the day can be at most 24 hours long');
+    }
     const checkBlocks = (list, path) => {
       if (!Array.isArray(list) || !list.length) { bad('invalid', path, 'blocks must be a non-empty list'); return; }
       let prev = -1;
@@ -105,8 +123,12 @@
         const at = path + '[' + i + ']';
         if (!Array.isArray(b) || b.length < 2 || b.length > 6) { bad('invalid', at, 'a block is [start, category, title, detail, subject, anchor] with 2 to 6 items'); return; }
         const t = timeOk(b[0]);
-        if (t === null) bad('invalid', at + '.start', 'start must be HH:MM from 00:00 to 24:59');
-        else { if (t <= prev) bad('invalid', at + '.start', 'blocks must be in ascending time order'); prev = t; }
+        if (t === null) bad('invalid', at + '.start', 'start must be HH:MM from 00:00 to 28:59');
+        else {
+          if (t <= prev) bad('invalid', at + '.start', 'blocks must be in ascending time order');
+          else if (bounds && (t < bounds.start || t >= bounds.end)) bad('invalid', at + '.start', 'start is outside the day');
+          prev = t;
+        }
         if (!cats || !Object.prototype.hasOwnProperty.call(cats, b[1])) bad('unknown-id', at + '.category', 'category is not defined in categories');
         if (!isStr(b[2], 1, 120)) bad('invalid', at + '.title', 'title must be 1 to 120 characters');
         if (b[3] !== undefined && !isStr(b[3], 0, 300)) bad('invalid', at + '.detail', 'detail must be at most 300 characters');

@@ -36,7 +36,7 @@ const backupBlock = source => between(source, '// start of backup rules', '// en
 function load(source) {
   const rules = new Function(between(source, '// start of data rules', '// end of data rules') + backupBlock(source) +'\nreturn {BACKUP_FORMAT, BACKUP_VERSION, BACKUP_MAX_BYTES, fnv1a, makeBackup, readBackup};')();
   const wk = new Function(between(source, '// start of workout rules', '// end of workout rules') + '\nreturn {normalizeRoot, EMPTY_WORKOUTS};')();
-  const validateSettings = new Function(grabFunction(source, 'validateSettings') + '\nreturn validateSettings;')();
+  const validateSettings = new Function(grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + '\nreturn validateSettings;')();
   return Object.assign(rules, {normalizeRoot: wk.normalizeRoot, EMPTY_WORKOUTS: wk.EMPTY_WORKOUTS, validateSettings});
 }
 

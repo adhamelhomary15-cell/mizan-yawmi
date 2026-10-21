@@ -14,7 +14,9 @@
 
   // The time field shows 00:00–23:59; a block after midnight is stored as 24:00–24:59, as the settings expect.
   const toField = t => (Number(t.slice(0, 2)) >= 24 ? pad(Number(t.slice(0, 2)) - 24) + t.slice(2) : t);
-  const fromField = t => (t && t < '01:00' ? '24' + t.slice(2) : t);
+  // The draft's day, or the app's while the draft's is not valid yet (feature 018).
+  const boundsOf = draft => dayBounds(draft.day) || {start: START, end: END};
+  const fromField = (t, b) => (t && toMin(t) < b.start ? pad(Number(t.slice(0, 2)) + 24) + t.slice(2) : t);
   const kindOf = (draft, id) => Object.assign({}, DEFAULT_CATS[id], (draft.categories || {})[id]);
   // The built-in kinds, then the ones the user added, by number.
   const draftKinds = draft => Object.keys(DEFAULT_CATS).concat(Object.keys(draft.categories || {}).filter(k => /^k\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1)));
@@ -30,6 +32,9 @@
   // validateSettings speaks English for files; the editor says the same in Egyptian Arabic, on the line it is about.
   const SAY = [
     [/ascending time order/, 'الوقت لازم يبقى بعد البلوك اللي قبله، ومينفعش بلوكين في نفس الوقت'],
+    [/start must be HH:MM from 03:00/, 'يومك لازم يبدأ من 3 الصبح لـ 12 الضهر'],
+    [/end must be HH:MM from 20:00/, 'يومك لازم يخلص من 8 بالليل لحد 5 الصبح اليوم اللي بعده'],
+    [/at most 24 hours/, 'يومك مينفعش يبقى أطول من 24 ساعة'],
     [/start must be HH:MM/, 'الوقت مش مظبوط'],
     [/title must be/, 'العنوان لازم يبقى من حرف لـ 120 حرف'],
     [/detail must be/, 'التفاصيل أطول من 300 حرف'],
@@ -44,19 +49,21 @@
     [/subject name must be/, 'اسم المادة لازم يبقى من حرف لـ 60 حرف']
   ];
   function explain(err, draft){
-    const said = (SAY.find(([re]) => re.test(err.detail)) || [null, err.detail])[1];
-    const m = err.path.match(/^week\.(\d)\.blocks(?:\.[AB])?\[(\d+)\]/);
+    const day = boundsOf(draft);
+    const said = err.detail === 'start is outside the day' ? 'الوقت ده برّه يومك (من ' + fmtStr(day.start) + ' لحد ' + fmtStr(day.end) + ')'
+      : (SAY.find(([re]) => re.test(err.detail)) || [null, err.detail])[1];
+    const m = err.path.match(/^week\.(\d)\.blocks(?:\.([AB]))?\[(\d+)\]/);
     if (!m) return said;
-    const b = ((draft.week[m[1]] || {}).blocks || [])[Number(m[2])];
-    return DAY_NAMES[m[1]] + '، البلوك ' + (Number(m[2]) + 1) + (Array.isArray(b) ? ' (' + toField(b[0]) + ' ' + b[2] + ')' : '') + ': ' + said;
+    const blocks = (draft.week[m[1]] || {}).blocks || [], b = (m[2] ? blocks[m[2]] || [] : blocks)[Number(m[3])];
+    return DAY_NAMES[m[1]] + '، البلوك ' + (Number(m[3]) + 1) + (Array.isArray(b) ? ' (' + toField(b[0]) + ' ' + b[2] + ')' : '') + ': ' + said;
   }
 
   function BlockForm({draft, day, index, onDone, onCancel}){
     const old = index === null ? null : draft.week[day].blocks[index];
-    const list = draft.week[day].blocks, lastStart = list.length ? list[list.length - 1][0] : '07:00';
+    const bounds = boundsOf(draft), list = draft.week[day].blocks, lastStart = list.length ? list[list.length - 1][0] : minToHM(bounds.start);
     const [f, setF] = useState(() => old
       ? {start: toField(old[0]), kind: old[1], title: old[2], detail: old[3] || '', subject: old[4] || '', tie: !!old[5], anchor: Object.assign({prayer: 'maghrib', dir: 'before', min: 30}, old[5] || {})}
-      : {start: toField(minToHM(Math.min(toMin(lastStart) + 60, 1439))), kind: 'study', title: '', detail: '', subject: '', tie: false, anchor: {prayer: 'maghrib', dir: 'before', min: 30}});
+      : {start: toField(minToHM(Math.min(toMin(lastStart) + 60, bounds.end - 1))), kind: 'study', title: '', detail: '', subject: '', tie: false, anchor: {prayer: 'maghrib', dir: 'before', min: 30}});
     const [err, setErr] = useState('');
     // each change starts from the latest form, so quick changes (or autofill) never undo each other
     const set = k => e => { const v = e.target.type === 'checkbox' ? e.target.checked : e.target.value; setF(p => Object.assign({}, p, {[k]: v})); };
@@ -64,7 +71,7 @@
     const done = () => {
       if (!f.title.trim()) { setErr('اكتب عنوان للبلوك.'); return; }
       let d = draft.categories && draft.categories[f.kind] ? draft : setKind(draft, f.kind, kindOf(draft, f.kind));
-      const fields = {start: fromField(f.start), kind: f.kind, title: f.title.trim(), detail: f.detail.trim(), subject: f.subject};
+      const fields = {start: fromField(f.start, bounds), kind: f.kind, title: f.title.trim(), detail: f.detail.trim(), subject: f.subject};
       let r = index === null ? addBlock(d, day, fields) : setBlock(d, day, index, fields);
       if (r.ok) {
         const i = r.draft.week[day].blocks.findIndex(b => b[0] === fields.start);
@@ -99,7 +106,7 @@
 
   function DayPreview({draft, day}){
     const list = draft.week[day].blocks, two = !Array.isArray(list);
-    const lay = layoutDay(two ? list.A : list, prayerTimesFor(draft, nextDateOf(day)), START, END);
+    const bounds = boundsOf(draft), lay = layoutDay(two ? list.A : list, prayerTimesFor(draft, nextDateOf(day)), bounds.start, bounds.end);
     return html`<div class="ed-preview" aria-label="شكل اليوم">
       ${lay.notice ? html`<p class="small" role="status">${ANCHOR_NOTICES[lay.notice]}</p>` : null}
       ${lay.blocks.map(b => html`<p class="small" key=${b.key}><bdi class="num">${fmtStr(b.s)}</bdi> – <bdi class="num">${fmtStr(b.e)}</bdi> · ${kindOf(draft, b.cat).label} · <bdi>${b.title}</bdi></p>`)}
@@ -206,6 +213,8 @@
           <span class="backup-act"><button type="button" class="btn primary" disabled=${!copyTo.length} onClick=${doCopy}>انسخ</button><button type="button" class="btn ghost" onClick=${() => setCopyTo(null)}>لأ</button></span></div>` : null}
         <${DayPreview} draft=${draft} day=${day} />
       </div>
+      <details class="panel ed-part"><summary><span>يومك: من <bdi>${fmtStr(boundsOf(draft).start)}</bdi> لحد <bdi>${fmtStr(boundsOf(draft).end)}</bdi></span></summary>
+        <div class="form"><${DayFields} start=${(draft.day || {}).start || '07:00'} end=${(draft.day || {}).end || '01:00'} onSet=${(start, end) => setDraft(d => setDayBounds(d, start, end))} /></div></details>
       <details class="panel ed-part"><summary>المكان: <bdi>${draft.location.label || '—'}</bdi></summary><${PlacePicker} place=${{location: draft.location, timezone: draft.timezone, prayerMethod: draft.prayerMethod}} onPlace=${p => setDraft(d => setPlace(d, p))} /></details>
       <${KindsPart} draft=${draft} onChange=${setDraft} />
       <${SubjectsPart} draft=${draft} onChange=${setDraft} />
@@ -218,6 +227,7 @@
             ch.kinds.length ? html`<span class="small">الأنواع: ${ch.kinds.map(k => kindOf(draft, k).label || kindOf(editorSession.original, k).label).join('، ')}</span>` : null,
             ch.subjects ? html`<span class="small">المواد اتغيّرت</span>` : null,
             ch.place ? html`<span class="small">المكان اتغيّر</span>` : null,
+            ch.day ? html`<span class="small">يومك اتغيّر</span>` : null,
             html`<span class="small muted">الجدول الجديد بيسري على كل الأيام، واللي فاتت كمان. علامة على بلوك وقته أو نوعه اتغيّر بتفضل محفوظة، بس مش هتبان على اليوم ده.</span>`]}>
             <span class="backup-act"><button type="button" class="btn primary" onClick=${save}>أيوه، احفظ</button><button type="button" class="btn ghost" onClick=${() => setCheck(null)}>لأ</button></span></${Notice}>` : null}
         <button type="button" class="btn primary" onClick=${trySave}>احفظ الجدول</button>

@@ -1,4 +1,7 @@
   /* ---------------- Week ---------------- */
+  // The strip's hour labels: every 5 hours from the first full hour of the day (feature 018).
+  const AXIS_HOURS = Array.from({length: 6}, (_, i) => Math.ceil(START / 60) * 60 + i * 300).filter(m => m < END);
+  const hourLabel = m => { const h = Math.floor(m / 60) % 24; return ((h % 12) || 12) + (h < 12 ? 'ص' : 'م'); };
   function WeekView({iso, setIso, now, store, goDay}){
     const ws = weekStart(iso);
     const days = WEEK_ORDER.map((_, i) => addDays(ws, i));
@@ -60,10 +63,7 @@
           </div>
           <div class="axis" aria-hidden="true"><span></span>
             <div class="axis-track">
-              <span class="first" style="inset-inline-start:0%">7ص</span>
-              <span style="inset-inline-start:27.78%">12م</span>
-              <span style="inset-inline-start:55.56%">5م</span>
-              <span style="inset-inline-start:83.33%">10م</span>
+              ${AXIS_HOURS.map((m, i) => html`<span class=${i ? null : 'first'} style=${{insetInlineStart: ((m - START)/SPAN*100).toFixed(2) + '%'}}>${hourLabel(m)}</span>`)}
             </div>
           </div>
           <div class="legend">

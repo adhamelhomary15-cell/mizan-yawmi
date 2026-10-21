@@ -28,7 +28,7 @@ function grabFunction(name) {
   }
   throw new Error('unbalanced braces in ' + name);
 }
-const validateSettings = new Function(grabFunction('validateSettings') + '\nreturn validateSettings;')();
+const validateSettings = new Function(grabFunction('dayBounds') + grabFunction('validateSettings') + '\nreturn validateSettings;')();
 
 const exMatch = html.match(/<script type="application\/json" id="example-settings">([\s\S]*?)<\/script>/);
 if (!exMatch) { console.error('embedded example not found in src/planner.html'); process.exit(2); }
