@@ -152,7 +152,8 @@
     const [open, setOpen] = useState(null);
     const [adding, setAdding] = useState(false);
     const [reviewing, setReviewing] = useState(false);
-    useEffect(() => { setOpen(null); setAdding(false); }, [iso]);
+    const [postponing, setPostponing] = useState(null);   // the key of the block whose postpone panel is open
+    useEffect(() => { setOpen(null); setAdding(false); setPostponing(null); }, [iso]);
     const dayTasks = store.tasks.filter(t => !t.done && t.due && (t.due === iso || (isToday && t.due < iso)));
     const wd = weekday(iso);
     const ab = balanceOf([iso], store);
@@ -200,15 +201,17 @@
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
-                  : html`<button type="button" class="row-body" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${() => setOpen(isOpen ? null : b.key)}>${body}</button>`}
+                  : html`<button type="button" class="row-body" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${() => { setOpen(isOpen ? null : b.key); setPostponing(null); }}>${body}</button>`}
                 ${quiet ? null : html`<span class="denom" aria-hidden="true">${(b.e - b.s) < 60 ? (b.e - b.s) : hoursText(b.e - b.s)}<small>${(b.e - b.s) < 60 ? 'د' : 'س'}</small></span>`}
                 ${isOpen ? html`<div class="row-actions">
                   ${tracked && st === 'moved' ? html`<button type="button" class="btn" onClick=${() => { setOpen(null); setIso(movedTo(store, iso, b.key)); }}>روح لليوم ده</button>`
                     : tracked ? (st === 'skip'
                     ? html`<button type="button" class="btn" onClick=${() => { setStatus(update, iso, b.key, null); setOpen(null); }}>رجّعه للجدول</button>`
                     : html`<button type="button" class="btn" onClick=${() => { setOpen(null); skip(b); }}>اتلغى النهارده</button>`) : null}
+                  ${tracked && st === null && canPostpone(b) ? html`<button type="button" class="btn" aria-expanded=${postponing === b.key ? 'true' : 'false'} onClick=${() => setPostponing(postponing === b.key ? null : b.key)}>أجّلها</button>` : null}
                   ${b.extra ? html`<button type="button" class="btn ghost" onClick=${() => { setOpen(null); remove('اتمسحت "' + b.title + '"', s => { s.extras[iso] = (s.extras[iso] || []).filter(x => x.id !== b.extra); return s; }); }}>امسحها</button>` : null}
                 </div>` : null}
+                ${isOpen && postponing === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
               </li>`;
             })}
           </ol>
@@ -216,7 +219,7 @@
             : html`<button type="button" class="btn add-block" onClick=${() => setAdding(true)}><${Plus} />ضيف حاجة لليوم ده</button>`}
           ${(SCHED[wd] || {}).note ? html`<p class="note">${SCHED[wd].note}</p>` : null}
           ${ANCHOR_NOTICES[dayNotice(iso)] ? html`<p class="note">${ANCHOR_NOTICES[dayNotice(iso)]}</p>` : null}
-          <p class="small muted">دوس على أي بلوك عشان تلغيه النهارده. ${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
+          <p class="small muted">دوس على أي بلوك عشان تلغيه أو تأجّله.${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
         </div>
       </div>
 
@@ -225,11 +228,12 @@
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">
-            ${dayTasks.map(t => html`<div class=${'titem c-' + t.tag}>
+            ${dayTasks.map(t => { const late = t.due < iso, tomorrow = addDays(now.iso, 1); return html`<div class=${'titem c-' + t.tag + (late ? ' has-act' : '')}>
               <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })} />
               <span class="ttext">${t.text}</span>
-              <span class=${'tdue' + (t.due < iso ? ' late' : '')}>${t.due < iso ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
-            </div>`)}
+              <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
+              ${late ? html`<button type="button" class="btn" onClick=${() => act('اتأجلت المهمة لـ ' + dayName(tomorrow), applyPostpone(iso, [], [t.id], tomorrow))}>أجّلها</button>` : null}
+            </div>`; })}
           </div>
         </div>` : null}
         <div class="sec o-prayers"><h2>مواعيد الصلاة</h2><${PrayerCard} iso=${iso} now=${now} /></div>
