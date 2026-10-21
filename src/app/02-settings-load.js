@@ -4,11 +4,13 @@
     try { example = validateSettings(JSON.parse(document.getElementById('example-settings').textContent)).settings; } catch(e){}
     if (!example) example = {format:'mizan-settings', version:1, language:'ar', prayerMethod:'Egyptian', timezone:'Africa/Cairo', location:{lat:30.0444, lng:31.2357, label:'Sample city'}, categories:{rest:{label:'راحة', track:false}}, week:{0:{blocks:[['08:00','rest','مثال']]}}};
     const got = loadStore('settings');
-    if (got.state === 'empty') return {settings: example, isExample: true, problem: false, got};
+    if (got.state === 'empty') return {settings: example, example, isExample: true, problem: false, got};
     const res = got.state === 'ok' ? validateSettings(got.data) : null;
     // fromExample: the example stored with the history after «رجّع المثال» (feature 020)
-    if (res && res.ok) return {settings: res.settings, isExample: !!res.settings.fromExample, problem: false, got};
-    return {settings: example, isExample: true, problem: true, got};
+    // keptAside: kept weeks the checks set aside (feature 020); they stay in the stored copy
+    if (res && res.ok) return {settings: res.settings, example, isExample: !!res.settings.fromExample, problem: false, got,
+      keptAside: res.warnings.filter(w => w.code === 'history-entry').length};
+    return {settings: example, example, isExample: true, problem: true, got};
   })();
   const CFG = LOADED.settings;
   // Settings are read once per page. When the local copy was missing or damaged and the mirror brings them back, write

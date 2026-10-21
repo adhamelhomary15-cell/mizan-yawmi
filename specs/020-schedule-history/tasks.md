@@ -60,15 +60,15 @@ description: "Task list for feature 020: past days keep the schedule they had"
 
 ## Phase 3: Saving, importing, the example and export (US2, US3)
 
-- [ ] T010 In `src/app/14b-editor-view.js`, the save goes through `withHistory` with the raw stored settings. The
+- [x] T010 In `src/app/14b-editor-view.js`, the save goes through `withHistory` with the raw stored settings. The
   summary's last line follows the plan's wording, naming today by day and date.
-- [ ] T011 In `src/app/15-settings-view.js`:
+- [x] T011 In `src/app/15-settings-view.js`:
   - the import goes through `withHistory`;
   - «رجّع المثال» stores the example with the history and `fromExample`, or removes the settings when there is no
     history;
   - `exportSettings` leaves out `history` and `fromExample`;
   - a `history-entry` warning shows one line in Settings.
-- [ ] T012 Browser at 375 px:
+- [x] T012 Browser at 375 px:
   - tick a past day, change its block, save: the past day is unchanged;
   - a second save today;
   - import a file, go back to the example, export;
