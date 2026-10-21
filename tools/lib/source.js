@@ -48,7 +48,15 @@ function readSource() {
   return joinParts(fs.readFileSync(path.join(ROOT, 'src', 'planner.html'), 'utf8').replace(/\r\n/g, '\n'));
 }
 
-module.exports = {readSource, joinParts, partNames, PLACEHOLDER};
+// The app's data section, from a to b, for the checks that run the day plans outside the page (check-anchors,
+// check-parity). The schedule rules block follows it where the source has one, since the day in use on a date comes
+// from there (feature 020). A source without the block, such as an older build, is returned as it was.
+function dataSection(html, a, b) {
+  const r0 = html.indexOf('// start of schedule rules'), r1 = html.indexOf('// end of schedule rules');
+  return html.slice(a, b) + (r0 >= 0 && r1 > r0 && (r0 < a || r0 >= b) ? '\n' + html.slice(r0, r1) : '');
+}
+
+module.exports = {readSource, joinParts, partNames, dataSection, PLACEHOLDER};
 
 if (require.main === module && process.argv.includes('--print-sha')) {
   try { console.log(require('crypto').createHash('sha1').update(readSource()).digest('hex')); }

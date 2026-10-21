@@ -82,9 +82,14 @@
     return fits ? {blocks: make(starts), notice: null} : {blocks: make(fixed), notice: 'nofit'};
   }
   // end of anchor layout
-  // The day's block list from the settings (version A or B by phaseFor), laid out for that date's prayer times.
+  // The day in use on a date: from the week that was in use then (feature 020), cached per date. Its blocks are
+  // [start, category, title ("Subject|action" splits), detail, subject, anchor]; each ends where the next starts, and
+  // the last at the end of the day.
+  const dayCache = {};
+  const dayOfDate = iso => (iso in dayCache ? dayCache[iso] : (dayCache[iso] = dayOn(CFG, iso, weekday)));
+  // The day's block list (version A or B by phaseFor), laid out for that date's prayer times.
   function listFor(iso){
-    const day = SCHED[weekday(iso)] || {blocks: []};
+    const day = dayOfDate(iso) || {blocks: []};
     return Array.isArray(day.blocks) ? day.blocks : (day.blocks[phaseFor(iso)] || day.blocks.A);
   }
   function dayLayout(iso){ return layoutDay(listFor(iso), prayers(iso), START, END); }

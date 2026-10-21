@@ -6,7 +6,8 @@
     const got = loadStore('settings');
     if (got.state === 'empty') return {settings: example, isExample: true, problem: false, got};
     const res = got.state === 'ok' ? validateSettings(got.data) : null;
-    if (res && res.ok) return {settings: res.settings, isExample: false, problem: false, got};
+    // fromExample: the example stored with the history after «رجّع المثال» (feature 020)
+    if (res && res.ok) return {settings: res.settings, isExample: !!res.settings.fromExample, problem: false, got};
     return {settings: example, isExample: true, problem: true, got};
   })();
   const CFG = LOADED.settings;
@@ -43,10 +44,14 @@
   const NEW_KINDS = Object.keys(CFG.categories || {}).filter(k => /^k\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1));
   NEW_KINDS.forEach(k => { CATS[k] = Object.assign({long: CFG.categories[k].label}, CFG.categories[k]); });
   const KIND_IDS = Object.keys(DEFAULT_CATS).concat(NEW_KINDS);
+  // A kind a kept week still uses but the settings no longer have (feature 020): its past blocks show under this name,
+  // never tracked. It is not in KIND_IDS, so the editor and the Week rows do not list it.
+  (CFG.history || []).forEach(h => Object.values(h.days).forEach(d => {
+    if (d) (Array.isArray(d.blocks) ? [d.blocks] : Object.values(d.blocks)).forEach(list => list.forEach(b => {
+      if (!CATS[b[1]]) CATS[b[1]] = {label: 'نوع اتمسح', long: 'نوع اتمسح', track: false};
+    }));
+  }));
   const SUBJ = CFG.subjects || {};
-  // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
-  // Each block ends where the next starts; the last ends at the end of the day.
-  const SCHED = CFG.week || {};
   const COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : null;
   const PLAN = CFG.course ? CFG.course.plan : [];
   const TASK_TAGS = Object.assign({uni:CATS.uni.label, course:CATS.course.label, work:CATS.work.label, personal:CATS.personal.label}, CFG.taskTags || {});

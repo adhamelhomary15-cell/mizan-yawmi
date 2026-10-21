@@ -25,37 +25,37 @@ description: "Task list for feature 020: past days keep the schedule they had"
 
 ## Phase 1: The rules and the checks (all stories)
 
-- [ ] T001 In the schedule rules block of `src/app/13a-schedule-rules.js`, add `dayOn(settings, iso, weekday)`.
-- [ ] T002 In the same block, add `withHistory(stored, next, {today, yesterday, cutoff})`. It:
+- [x] T001 In the schedule rules block of `src/app/13a-schedule-rules.js`, add `dayOn(settings, iso, weekday)`.
+- [x] T002 In the same block, add `withHistory(stored, next, {today, yesterday, cutoff})`. It:
   - takes out the entry ending yesterday;
   - adds the changed days, or nothing when the week is the same;
   - drops entries older than the cutoff, then the oldest while the settings are over 900 KB;
   - keeps bad entries as they are;
   - removes `fromExample` unless the reset passes it.
-- [ ] T003 In `src/app/01-settings-validate.js`:
+- [x] T003 In `src/app/01-settings-validate.js`:
   - add `history` and `fromExample` to `KNOWN`;
   - give `checkBlocks` a loose flag for kept days: any valid kind id, and any subject of 1 to 8 characters;
   - check each kept entry: a real `until`, rising dates, day keys 0 to 6, and a day or `null`;
   - leave bad entries out of the result, with one warning `history-entry`.
-- [ ] T004 [P] In `tools/check-schedule.js`:
+- [x] T004 [P] In `tools/check-schedule.js`:
   - `dayOn` against a full-week oracle, over 300 random sequences of saves across dates;
   - `withHistory`: a second save today, an equal week, a day added or removed, two-version days, the cutoff, the
     900 KB cap, a bad entry carried on, and `fromExample`;
   - four mutations: no taking out on a second save, the full week stored, an off-by-one `until`, and no cutoff.
-- [ ] T005 [P] In `tools/check-settings.js`: valid and bad entries; a kept block of a removed kind or subject passes;
+- [x] T005 [P] In `tools/check-settings.js`: valid and bad entries; a kept block of a removed kind or subject passes;
   a bad time or an unknown id format fails. Add one mutation that drops the loose flag.
 
 ## Phase 2: Every screen follows the date (US1)
 
-- [ ] T006 In `src/app/04-prayers.js`, `listFor(iso)` reads `dayOn(CFG, iso, weekday)`, cached per date. In
+- [x] T006 In `src/app/04-prayers.js`, `listFor(iso)` reads `dayOn(CFG, iso, weekday)`, cached per date. In
   `src/app/10-postpone-ui.js`, the day note reads the same day.
-- [ ] T007 In `src/app/02-settings-load.js`:
+- [x] T007 In `src/app/02-settings-load.js`:
   - `isExample` is also true for stored settings with `fromExample`;
   - each kind a kept day uses that is missing from `CATS` is added as «نوع اتمسح», not tracked, and is not added
     to `KIND_IDS`.
-- [ ] T008 Check every place that reads `SUBJ[id]` or `CATS[id]` with a removed subject or kind on a past day: no
+- [x] T008 Check every place that reads `SUBJ[id]` or `CATS[id]` with a removed subject or kind on a past day: no
   error, and no subject shown.
-- [ ] T009 Parity, with no history: 0 differences on the example, and 0 on the private file (local run with
+- [x] T009 Parity, with no history: 0 differences on the example, and 0 on the private file (local run with
   `--settings`). **Commit** phases 1 and 2 together if `check-code` refuses the rules before their first use.
 
 ## Phase 3: Saving, importing, the example and export (US2, US3)

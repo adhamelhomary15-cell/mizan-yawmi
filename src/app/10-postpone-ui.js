@@ -217,7 +217,7 @@
           </ol>
           ${adding ? html`<${AddBlock} iso=${iso} update=${update} onDone=${() => setAdding(false)} />`
             : html`<button type="button" class="btn add-block" onClick=${() => setAdding(true)}><${Plus} />ضيف حاجة لليوم ده</button>`}
-          ${(SCHED[wd] || {}).note ? html`<p class="note">${SCHED[wd].note}</p>` : null}
+          ${(dayOfDate(iso) || {}).note ? html`<p class="note">${dayOfDate(iso).note}</p>` : null}
           ${ANCHOR_NOTICES[dayNotice(iso)] ? html`<p class="note">${ANCHOR_NOTICES[dayNotice(iso)]}</p>` : null}
           <p class="small muted">دوس على أي بلوك عشان تلغيه أو تأجّله.${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
         </div>

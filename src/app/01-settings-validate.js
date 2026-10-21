@@ -9,9 +9,11 @@
     const METHODS = ['MuslimWorldLeague','Egyptian','Karachi','UmmAlQura','Dubai','MoonsightingCommittee','NorthAmerica','Kuwait','Qatar','Singapore','Tehran','Turkey','Other'];
     const LANGS = ['ar'];
     const PRAYER_IDS = ['fajr','dhuhr','asr','maghrib','isha'];
-    const KNOWN = ['format','version','name','language','timezone','location','prayerMethod','versions','categories','subjects','week','rules','taskTags','course'];
+    const KNOWN = ['format','version','name','language','timezone','location','prayerMethod','versions','categories','subjects','week','rules','taskTags','course','history','fromExample'];
     const errors = [], warnings = [];
-    const bad = (code, path, detail) => { if (errors.length < 50) errors.push({code, path, detail}); };
+    // Errors go to sink: the settings' errors, or one kept entry's while it is checked (see history below).
+    let sink = errors;
+    const bad = (code, path, detail) => { if (sink.length < 50) sink.push({code, path, detail}); };
     const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
     const isStr = (v, min, max) => typeof v === 'string' && v.length >= min && v.length <= max;
     const isNum = v => typeof v === 'number' && isFinite(v);
@@ -98,7 +100,8 @@
       }
     }
 
-    const checkBlocks = (list, path) => {
+    // loose: a kept day (feature 020), whose kind or subject may since have been removed; ids need only a valid shape.
+    const checkBlocks = (list, path, loose) => {
       if (!Array.isArray(list) || !list.length) { bad('invalid', path, 'blocks must be a non-empty list'); return; }
       let prev = -1;
       list.forEach((b, i) => {
@@ -107,10 +110,10 @@
         const t = timeOk(b[0]);
         if (t === null) bad('invalid', at + '.start', 'start must be HH:MM from 00:00 to 24:59');
         else { if (t <= prev) bad('invalid', at + '.start', 'blocks must be in ascending time order'); prev = t; }
-        if (!cats || !Object.prototype.hasOwnProperty.call(cats, b[1])) bad('unknown-id', at + '.category', 'category is not defined in categories');
+        if (loose ? !(CATEGORY_IDS.indexOf(b[1]) >= 0 || isNewKind(b[1])) : !cats || !Object.prototype.hasOwnProperty.call(cats, b[1])) bad('unknown-id', at + '.category', 'category is not defined in categories');
         if (!isStr(b[2], 1, 120)) bad('invalid', at + '.title', 'title must be 1 to 120 characters');
         if (b[3] !== undefined && !isStr(b[3], 0, 300)) bad('invalid', at + '.detail', 'detail must be at most 300 characters');
-        if (b[4] !== undefined && b[4] !== '' && !(subs && Object.prototype.hasOwnProperty.call(subs, b[4]))) bad('unknown-id', at + '.subject', 'subject is not defined in subjects');
+        if (b[4] !== undefined && b[4] !== '' && !(loose ? isStr(b[4], 1, 8) : subs && Object.prototype.hasOwnProperty.call(subs, b[4]))) bad('unknown-id', at + '.subject', 'subject is not defined in subjects');
         if (b.length === 6) {
           // The sixth element ties the block to a prayer time: {prayer, dir, min}. The block's start stays as the fixed fallback time.
           const a = b[5], an = at + '.anchor';
@@ -136,19 +139,41 @@
         }
       });
     };
+    const checkDay = (d, at, loose) => {
+      if (!isObj(d)) { bad('invalid', at, 'a day is an object with blocks'); return; }
+      if (d.note !== undefined && !isStr(d.note, 0, 500)) bad('invalid', at + '.note', 'note must be at most 500 characters');
+      if (Array.isArray(d.blocks)) checkBlocks(d.blocks, at + '.blocks', loose);
+      else if (isObj(d.blocks)) {
+        Object.keys(d.blocks).forEach(v => { if (v !== 'A' && v !== 'B') bad('invalid', at + '.blocks.' + v, 'versions are named A and B'); else checkBlocks(d.blocks[v], at + '.blocks.' + v, loose); });
+        if (!d.blocks.A) bad('invalid', at + '.blocks.A', 'version A is required when using two versions');
+      } else bad('invalid', at + '.blocks', 'blocks must be a list, or an object with A and B');
+    };
+    const isDayKey = k => ['0','1','2','3','4','5','6'].indexOf(k) >= 0;
     const week = isObj(obj.week) ? obj.week : null;
     if (!week || !Object.keys(week).length) bad('invalid', 'week', 'week is required with at least one day (keys 0 to 6)');
     else Object.keys(week).forEach(k => {
-      const d = week[k], at = 'week.' + k;
-      if (['0','1','2','3','4','5','6'].indexOf(k) < 0) { bad('invalid', at, 'day keys are 0 to 6'); return; }
-      if (!isObj(d)) { bad('invalid', at, 'a day is an object with blocks'); return; }
-      if (d.note !== undefined && !isStr(d.note, 0, 500)) bad('invalid', at + '.note', 'note must be at most 500 characters');
-      if (Array.isArray(d.blocks)) checkBlocks(d.blocks, at + '.blocks');
-      else if (isObj(d.blocks)) {
-        Object.keys(d.blocks).forEach(v => { if (v !== 'A' && v !== 'B') bad('invalid', at + '.blocks.' + v, 'versions are named A and B'); else checkBlocks(d.blocks[v], at + '.blocks.' + v); });
-        if (!d.blocks.A) bad('invalid', at + '.blocks.A', 'version A is required when using two versions');
-      } else bad('invalid', at + '.blocks', 'blocks must be a list, or an object with A and B');
+      if (!isDayKey(k)) bad('invalid', 'week.' + k, 'day keys are 0 to 6');
+      else checkDay(week[k], 'week.' + k, false);
     });
+    // Kept weeks (feature 020): [{until, days}] with until rising; a day is as in week, or null for no blocks. A kept
+    // entry that fails is left out of the result with a warning, and the stored copy keeps it (see withHistory).
+    const keptOk = [];
+    if (obj.history !== undefined) {
+      if (!Array.isArray(obj.history)) bad('invalid', 'history', 'history must be a list');
+      else obj.history.forEach((h, i) => {
+        const at = 'history[' + i + ']', last = keptOk.length ? keptOk[keptOk.length - 1].until : '';
+        sink = [];
+        if (!isObj(h) || !isDate(h.until) || h.until <= last || !isObj(h.days) || !Object.keys(h.days).length) bad('invalid', at, 'a kept week is {until, days}, with until a date after the one before');
+        else Object.keys(h.days).forEach(k => {
+          if (!isDayKey(k)) bad('invalid', at + '.days.' + k, 'day keys are 0 to 6');
+          else if (h.days[k] !== null) checkDay(h.days[k], at + '.days.' + k, true);
+        });
+        if (sink.length) warnings.push({code: 'history-entry', path: at, detail: 'set aside: ' + sink[0].detail});
+        else keptOk.push(h);
+        sink = errors;
+      });
+    }
+    if (obj.fromExample !== undefined && obj.fromExample !== true) bad('invalid', 'fromExample', 'fromExample is true or left out');
 
     if (obj.rules !== undefined) {
       if (!Array.isArray(obj.rules) || obj.rules.length > 20) bad('invalid', 'rules', 'rules must be a list of at most 20 texts');
@@ -184,6 +209,7 @@
 
     if (errors.length) return {ok:false, errors, warnings, settings:null};
     const settings = JSON.parse(JSON.stringify(obj));
+    if (settings.history !== undefined) { if (keptOk.length) settings.history = JSON.parse(JSON.stringify(keptOk)); else delete settings.history; }
     if (settings.language === undefined) settings.language = 'ar';
     if (settings.prayerMethod === undefined) settings.prayerMethod = 'Egyptian';
     return {ok:true, errors, warnings, settings};

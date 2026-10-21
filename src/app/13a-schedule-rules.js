@@ -192,4 +192,51 @@
     return {days, kinds, subjects: key(before.subjects || {}) !== key(after.subjects || {}),
       place: key([before.location, before.timezone, before.prayerMethod]) !== key([after.location, after.timezone, after.prayerMethod])};
   }
+
+  // Past days keep the week they had (feature 020). settings.history is [{until, days}] with until rising: an entry
+  // covers the dates after the one before it, up to its own until, and the current week covers the dates after the
+  // last one. An entry lists only the days that differed from the week after it; a day it does not list is as in the
+  // next newer entry, or in the current week. A listed day of null had no blocks.
+  const keptShape = h => !!h && typeof h.until === 'string' && !!h.days && typeof h.days === 'object';
+  // The 7 days in use from history[i] on (i = history.length gives the current week).
+  function weekFrom(history, i, week){
+    const w = {};
+    SCHEDULE_DAYS.forEach(day => {
+      let j = i;
+      while (j < history.length && !(keptShape(history[j]) && day in history[j].days)) j++;
+      w[day] = j < history.length ? history[j].days[day] : (week[day] || null);
+    });
+    return w;
+  }
+  // The day object in use on a date, or null for no blocks. weekday(iso) gives 0–6.
+  function dayOn(settings, iso, weekday){
+    const history = settings.history || [], i = history.findIndex(h => keptShape(h) && iso <= h.until);
+    return weekFrom(history, i < 0 ? history.length : i, settings.week)[String(weekday(iso))];
+  }
+  // The settings to store when next replaces stored (the raw stored settings, or null). dates is {today, yesterday,
+  // cutoff}. The week in use yesterday is kept up to yesterday, as the days that differ from next.week; a second save on
+  // the same day replaces that day's week instead of adding to it. Entries ending before cutoff go, then the oldest
+  // while the settings are larger than HISTORY_MAX_BYTES. Entries the checks refuse are carried on as they are.
+  // fromExample is set only when the reset to the example asks for it.
+  const HISTORY_MAX_BYTES = 900 * 1024;
+  function withHistory(stored, next, dates, fromExample){
+    const out = clone(next);
+    delete out.history; delete out.fromExample;
+    if (fromExample) out.fromExample = true;
+    let history = stored && Array.isArray(stored.history) ? clone(stored.history) : [];
+    if (stored && stored.week) {
+      const i = history.findIndex(h => keptShape(h) && dates.yesterday <= h.until);
+      const was = weekFrom(history, i < 0 ? history.length : i, stored.week), days = {};
+      history = history.filter(h => !keptShape(h) || h.until < dates.yesterday);
+      SCHEDULE_DAYS.forEach(day => { if (JSON.stringify(was[day]) !== JSON.stringify(out.week[day] || null)) days[day] = was[day]; });
+      if (Object.keys(days).length) history.push({until: dates.yesterday, days});
+    }
+    history = history.filter(h => !keptShape(h) || h.until >= dates.cutoff);
+    // measured once; each dropped entry takes its own bytes and a comma off
+    const bytes = v => new TextEncoder().encode(JSON.stringify(v)).length;
+    let size = bytes(Object.assign({}, out, {history}));
+    while (history.length && size > HISTORY_MAX_BYTES) size -= bytes(history.shift()) + 1;
+    if (history.length) out.history = history;
+    return out;
+  }
   // end of schedule rules
