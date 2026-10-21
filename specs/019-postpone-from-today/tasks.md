@@ -32,6 +32,6 @@ description: "Task list for feature 019: postpone from the day's timeline"
 
 ## Phase 3: Tests, docs, PR
 
-- [ ] T005 E2E in `tests/e2e/day.spec.js`: US1, US1 with no button on a «شغل» block, and US2.
-- [ ] T006 [P] README: the line in «تأجيل اللي ماتعملش».
-- [ ] T007 Run every check, parity, the E2E tests, and a 375 px look. Tick the tasks.
+- [x] T005 E2E in `tests/e2e/day.spec.js`: US1, US1 with no button on a «شغل» block, and US2.
+- [x] T006 [P] README: the line in «تأجيل اللي ماتعملش».
+- [x] T007 Run every check, parity, the E2E tests, and a 375 px look. Tick the tasks.
