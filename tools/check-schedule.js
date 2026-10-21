@@ -27,7 +27,7 @@ function grabFunction(source, name) {
   }
   throw new Error(name + ' not found');
 }
-const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt';
+const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt, setDayBounds';
 const load = source => new Function(grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + block(source) + '\nreturn {dayBounds, validateSettings, ' + NAMES + '};')();
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -148,7 +148,13 @@ function runChecks(h, source) {
     const d1 = h.addBlock(s, '0', {start: '24:30', kind: 'rest', title: 'نوم'}).draft;
     const c = h.changesBetween(s, h.addSubject(h.setKind(d1, 'gym', {label: 'جيم'}), 'x').draft);
     return eq(c.days, [{day: '0', added: 1, removed: 0}]) && eq(c.kinds, ['gym']) && c.subjects && !c.place
-      && eq(h.changesBetween(s, s), {days: [], kinds: [], subjects: false, place: false});
+      && eq(h.changesBetween(s, s), {days: [], kinds: [], subjects: false, place: false, day: false});
+  });
+  check('setting the day: the default is stored as no day, any other value as day, and no block moves', () => {
+    const s = freeze(base()), early = h.setDayBounds(s, '04:30', '01:00'), back = h.setDayBounds(early, '07:00', '01:00');
+    return eq(early.day, {start: '04:30', end: '01:00'}) && eq(early.week, s.week) && !('day' in back) && eq(back, s)
+      && h.changesBetween(s, early).day && !h.changesBetween(s, back).day && !h.changesBetween(s, early).days.length
+      && eq(h.setDayBounds(s, '03:00', '05:00').day, {start: '03:00', end: '05:00'});
   });
   check('the city list: under 100 KB, all 57 OIC states, valid coordinates and time zones', () => {
     const file = require('path').join(__dirname, 'vendor', 'cities', 'cities.json');

@@ -54,6 +54,16 @@
     </div>`;
   }
 
+  // The start and end of the user's day (feature 018), in the guide and in the editor.
+  function DayFields({start, end, onSet}){
+    const ok = !!dayBounds({start, end});
+    return html`<div class="form-row">
+        <label class="field narrow" for="day-start">يومك بيبدأ الساعة<input id="day-start" type="time" dir="ltr" value=${start} onInput=${e => onSet(e.target.value, end)} /></label>
+        <label class="field narrow" for="day-end">وبيخلص الساعة<input id="day-end" type="time" dir="ltr" value=${end} onInput=${e => onSet(start, e.target.value)} /></label>
+      </div>
+      <p class=${ok ? 'small muted' : 'form-err'} role=${ok ? null : 'alert'}>من 3 الصبح لـ 12 الضهر، ولحد 5 الصبح اليوم اللي بعده، ومش أطول من 24 ساعة.</p>`;
+  }
+
   const TEMPLATE_CHOICES = [['student', 'طالب', 'محاضرات الصبح ومذاكرة بعد الضهر'], ['student-work', 'طالب وبيشتغل', 'محاضرات الصبح وشغل بعد الضهر ومذاكرة بالليل'], ['empty', 'فاضي', 'هبدأ من الصفر']];
   // Three steps, then the editor with the new week; nothing is stored before «احفظ الجدول» there.
   function Guide({onClose, onEditor}){
@@ -61,7 +71,8 @@
     const [place, setPlaceState] = useState(null);
     const [template, setTemplate] = useState('student');
     const [subjects, setSubjects] = useState(['', '', '']);
-    const finish = () => { openEditor(newSettings(place, template, subjects.map(s => s.trim()), DEFAULT_CATS)); onEditor(); };
+    const [day, setDay] = useState({start: '07:00', end: '01:00'});
+    const finish = () => { openEditor(setDayBounds(newSettings(place, template, subjects.map(s => s.trim()), DEFAULT_CATS), day.start, day.end)); onEditor(); };
     return html`<div class="settingsv guide">
       <div class="top a-head"><div class="top-meta"><h1>اعمل جدولك</h1><p class="sub">${step === 'place' ? '1 من 3: إنت فين؟' : step === 'week' ? '2 من 3: أسبوعك شكله إيه؟' : '3 من 3: موادك'}</p></div>
         <button type="button" class="btn" onClick=${onClose}>رجوع</button></div>
@@ -70,8 +81,9 @@
           <span class="backup-act"><button type="button" class="btn primary" disabled=${!place} onClick=${() => setStep('week')}>التالي</button></span></div>`
       : step === 'week' ? html`<div class="sec"><div class="panel tlist" role="radiogroup" aria-label="شكل الأسبوع">
           ${TEMPLATE_CHOICES.map(([id, name, line]) => html`<label class="check-line" key=${id}><input type="radio" name="tpl" checked=${template === id} onChange=${() => setTemplate(id)} /> <b>${name}</b> <span class="small muted">${line}</span></label>`)}</div>
+          <div class="panel form"><${DayFields} start=${day.start} end=${day.end} onSet=${(start, end) => setDay({start, end})} /></div>
           <p class="small muted">هتقدر تعدّل كل يوم بعد كده.</p>
-          <span class="backup-act"><button type="button" class="btn primary" onClick=${() => setStep('subjects')}>التالي</button><button type="button" class="btn ghost" onClick=${() => setStep('place')}>اللي قبله</button></span></div>`
+          <span class="backup-act"><button type="button" class="btn primary" disabled=${!dayBounds(day)} onClick=${() => setStep('subjects')}>التالي</button><button type="button" class="btn ghost" onClick=${() => setStep('place')}>اللي قبله</button></span></div>`
       : html`<div class="sec"><div class="panel form">
           <p class="small muted">اختياري. أسامي قصيرة زي «رياضة 1» أو «فيزيا»، وتقدر تزوّد بعدين.</p>
           ${subjects.map((s, i) => html`<label class="field wide" key=${i} for=${'gs-' + i}>مادة ${i + 1}<input id=${'gs-' + i} value=${s} maxlength="60" onInput=${e => { const v = e.target.value; setSubjects(list => list.map((x, k) => k === i ? v : x)); }} /></label>`)}

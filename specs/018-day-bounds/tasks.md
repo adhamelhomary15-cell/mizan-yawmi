@@ -45,9 +45,9 @@ description: "Task list for feature 018: choose when your day starts and ends"
 
 ## Phase 3: The editor and the guide (US1–US4)
 
-- [ ] T008 `setDayBounds` in the schedule rules, with its checks.
-- [ ] T009 The editor's «يومك» part, and the outside-the-day message with the bounds.
-- [ ] T010 The guide's start and end fields.
+- [x] T008 `setDayBounds` in the schedule rules, with its checks.
+- [x] T009 The editor's «يومك» part, and the outside-the-day message with the bounds.
+- [x] T010 The guide's start and end fields.
 
 ## Phase 4: Tests, docs, PR
 
