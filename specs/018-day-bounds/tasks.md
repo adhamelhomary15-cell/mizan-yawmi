@@ -51,8 +51,8 @@ description: "Task list for feature 018: choose when your day starts and ends"
 
 ## Phase 4: Tests, docs, PR
 
-- [ ] T011 `tests/e2e/day-bounds.spec.js`: US1–US4.
-- [ ] T012 [P] Docs: the README day part, and B4 closed in `specs/010-code-health/review.md`. Tick T010 in 017's
+- [x] T011 `tests/e2e/day-bounds.spec.js`: US1–US4.
+- [x] T012 [P] Docs: the README day part, and B4 closed in `specs/010-code-health/review.md`. Tick T010 in 017's
   tasks.md.
-- [ ] T013 Run every check, parity on the example and the private file, the E2E tests, and a 375 px look. Tick the
+- [x] T013 Run every check, parity on the example and the private file, the E2E tests, and a 375 px look. Tick the
   tasks.

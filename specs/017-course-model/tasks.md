@@ -48,5 +48,5 @@ description: "Task list for feature 017: courses without one person's rules"
 
 ## Phase 5: The private file
 
-- [ ] T010 Back up `.private/settings.json`. Move the 3 live lectures from `course` to `uni`, and check the file.
+- [x] T010 Back up `.private/settings.json`. Move the 3 live lectures from `course` to `uni`, and check the file.
   Parity against the backup must show only those blocks.
