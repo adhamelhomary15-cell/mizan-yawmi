@@ -14,7 +14,9 @@
 
   // The time field shows 00:00–23:59; a block after midnight is stored as 24:00–24:59, as the settings expect.
   const toField = t => (Number(t.slice(0, 2)) >= 24 ? pad(Number(t.slice(0, 2)) - 24) + t.slice(2) : t);
-  const fromField = t => (t && t < '01:00' ? '24' + t.slice(2) : t);
+  // The draft's day, or the app's while the draft's is not valid yet (feature 018).
+  const boundsOf = draft => dayBounds(draft.day) || {start: START, end: END};
+  const fromField = (t, b) => (t && toMin(t) < b.start ? pad(Number(t.slice(0, 2)) + 24) + t.slice(2) : t);
   const kindOf = (draft, id) => Object.assign({}, DEFAULT_CATS[id], (draft.categories || {})[id]);
   // The built-in kinds, then the ones the user added, by number.
   const draftKinds = draft => Object.keys(DEFAULT_CATS).concat(Object.keys(draft.categories || {}).filter(k => /^k\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1)));
@@ -53,10 +55,10 @@
 
   function BlockForm({draft, day, index, onDone, onCancel}){
     const old = index === null ? null : draft.week[day].blocks[index];
-    const list = draft.week[day].blocks, lastStart = list.length ? list[list.length - 1][0] : '07:00';
+    const bounds = boundsOf(draft), list = draft.week[day].blocks, lastStart = list.length ? list[list.length - 1][0] : minToHM(bounds.start);
     const [f, setF] = useState(() => old
       ? {start: toField(old[0]), kind: old[1], title: old[2], detail: old[3] || '', subject: old[4] || '', tie: !!old[5], anchor: Object.assign({prayer: 'maghrib', dir: 'before', min: 30}, old[5] || {})}
-      : {start: toField(minToHM(Math.min(toMin(lastStart) + 60, 1439))), kind: 'study', title: '', detail: '', subject: '', tie: false, anchor: {prayer: 'maghrib', dir: 'before', min: 30}});
+      : {start: toField(minToHM(Math.min(toMin(lastStart) + 60, bounds.end - 1))), kind: 'study', title: '', detail: '', subject: '', tie: false, anchor: {prayer: 'maghrib', dir: 'before', min: 30}});
     const [err, setErr] = useState('');
     // each change starts from the latest form, so quick changes (or autofill) never undo each other
     const set = k => e => { const v = e.target.type === 'checkbox' ? e.target.checked : e.target.value; setF(p => Object.assign({}, p, {[k]: v})); };
@@ -64,7 +66,7 @@
     const done = () => {
       if (!f.title.trim()) { setErr('اكتب عنوان للبلوك.'); return; }
       let d = draft.categories && draft.categories[f.kind] ? draft : setKind(draft, f.kind, kindOf(draft, f.kind));
-      const fields = {start: fromField(f.start), kind: f.kind, title: f.title.trim(), detail: f.detail.trim(), subject: f.subject};
+      const fields = {start: fromField(f.start, bounds), kind: f.kind, title: f.title.trim(), detail: f.detail.trim(), subject: f.subject};
       let r = index === null ? addBlock(d, day, fields) : setBlock(d, day, index, fields);
       if (r.ok) {
         const i = r.draft.week[day].blocks.findIndex(b => b[0] === fields.start);
@@ -99,7 +101,7 @@
 
   function DayPreview({draft, day}){
     const list = draft.week[day].blocks, two = !Array.isArray(list);
-    const lay = layoutDay(two ? list.A : list, prayerTimesFor(draft, nextDateOf(day)), START, END);
+    const bounds = boundsOf(draft), lay = layoutDay(two ? list.A : list, prayerTimesFor(draft, nextDateOf(day)), bounds.start, bounds.end);
     return html`<div class="ed-preview" aria-label="شكل اليوم">
       ${lay.notice ? html`<p class="small" role="status">${ANCHOR_NOTICES[lay.notice]}</p>` : null}
       ${lay.blocks.map(b => html`<p class="small" key=${b.key}><bdi class="num">${fmtStr(b.s)}</bdi> – <bdi class="num">${fmtStr(b.e)}</bdi> · ${kindOf(draft, b.cat).label} · <bdi>${b.title}</bdi></p>`)}

@@ -35,12 +35,12 @@ description: "Task list for feature 018: choose when your day starts and ends"
 
 ## Phase 2: The screens follow the bounds (US1, US2)
 
-- [ ] T004 `START`, `END` and `SPAN` come from `dayBounds(CFG.day)`. `dayAt` goes in the schedule rules, and
+- [x] T004 `START`, `END` and `SPAN` come from `dayBounds(CFG.day)`. `dayAt` goes in the schedule rules, and
   `effectiveNow` uses it.
-- [ ] T005 The Week's hour labels are computed from the bounds.
-- [ ] T006 The editor's `toField`/`fromField`, a new block's default start, and the preview follow the draft's
+- [x] T005 The Week's hour labels are computed from the bounds.
+- [x] T006 The editor's `toField`/`fromField`, a new block's default start, and the preview follow the draft's
   bounds.
-- [ ] T007 [P] `check-schedule.js`: `dayAt` over every minute of the night for every end, with a mutation.
+- [x] T007 [P] `check-schedule.js`: `dayAt` over every minute of the night for every end, with a mutation.
   `check-anchors.js`: a layout with an early start.
 
 ## Phase 3: The editor and the guide (US1–US4)

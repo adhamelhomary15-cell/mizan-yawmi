@@ -27,7 +27,7 @@ function grabFunction(source, name) {
   }
   throw new Error(name + ' not found');
 }
-const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween';
+const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt';
 const load = source => new Function(grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + block(source) + '\nreturn {dayBounds, validateSettings, ' + NAMES + '};')();
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -225,6 +225,16 @@ function runChecks(h, source) {
       && at(withDay({start: '02:00', end: '01:00'}, () => {}), 'day.start') && at(withDay({start: '07:00', end: '06:00'}, () => {}), 'day.end')
       && at(withDay({start: '03:00', end: '05:00'}, () => {}), 'day') && at(withDay('soon', () => {}), 'day');
   });
+  check('the date at night: every minute from 00:00 to 06:00, for every end from 20:00 to 05:00, as a clock reads it', () => {
+    const addDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+    for (let e = 1200; e <= 1740; e += 15) for (let m = 0; m <= 360; m++) {
+      // the oracle: the day that started before midnight lasts until its end, read on the clock of the next morning
+      const stillYesterday = e > 1440 && m < e - 1440;
+      const want = stillYesterday ? {iso: '2027-03-09', min: m + 1440} : {iso: '2027-03-10', min: m};
+      if (!eq(h.dayAt('2027-03-10', m, e, addDays), want)) return false;
+    }
+    return eq(h.dayAt('2027-03-01', 30, 1500, addDays), {iso: '2027-02-28', min: 1470}) && eq(h.dayAt('2027-03-10', 60, 1500, addDays), {iso: '2027-03-10', min: 60});
+  });
   check('added kinds: a valid file passes; a bad id, colour or side, a colour on a built-in, or a taken name is refused', () => {
     const withKinds = extra => { const d = base(); Object.assign(d.categories, extra); return d; };
     const field = (extra, path) => h.validateSettings(withKinds(extra)).errors.some(e => e.path === path);
@@ -275,7 +285,8 @@ if (process.argv.includes('--self-test')) {
     ['a built-in kind takes a colour', s => s.replace("if (c.color !== undefined || c.side !== undefined) bad(", "if (false) bad(")],
     ['the day has no 24-hour limit', s => s.replace('return end - start <= 1440 ? {start, end} : null;', 'return end >= 0 ? {start, end} : null;')],
     ['a block outside the day is accepted', s => s.replace("else if (bounds && (t < bounds.start || t >= bounds.end)) bad(", "else if (false) bad(")],
-    ['times stop at 24:59', s => s.replace('return h <= 28 && m <= 59 ? h * 60 + m : null;', 'return h <= 24 && m <= 59 ? h * 60 + m : null;')]
+    ['times stop at 24:59', s => s.replace('return h <= 28 && m <= 59 ? h * 60 + m : null;', 'return h <= 24 && m <= 59 ? h * 60 + m : null;')],
+    ['the date turns at 01:00 whatever the end', s => s.replace('return min < end - 1440 ? {iso: addDays(iso, -1)', 'return min < 60 ? {iso: addDays(iso, -1)')]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

@@ -192,4 +192,9 @@
     return {days, kinds, subjects: key(before.subjects || {}) !== key(after.subjects || {}),
       place: key([before.location, before.timezone, before.prayerMethod]) !== key([after.location, after.timezone, after.prayerMethod])};
   }
+  // The day a clock moment belongs to (feature 018): until the end of a day that runs past midnight, it is still the
+  // day before, at min + 1440.
+  function dayAt(iso, min, end, addDays){
+    return min < end - 1440 ? {iso: addDays(iso, -1), min: min + 1440} : {iso, min};
+  }
   // end of schedule rules
