@@ -152,7 +152,8 @@
     const [open, setOpen] = useState(null);
     const [adding, setAdding] = useState(false);
     const [reviewing, setReviewing] = useState(false);
-    useEffect(() => { setOpen(null); setAdding(false); }, [iso]);
+    const [postponing, setPostponing] = useState(null);   // the key of the block whose postpone panel is open
+    useEffect(() => { setOpen(null); setAdding(false); setPostponing(null); }, [iso]);
     const dayTasks = store.tasks.filter(t => !t.done && t.due && (t.due === iso || (isToday && t.due < iso)));
     const wd = weekday(iso);
     const ab = balanceOf([iso], store);
@@ -200,15 +201,17 @@
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
-                  : html`<button type="button" class="row-body" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${() => setOpen(isOpen ? null : b.key)}>${body}</button>`}
+                  : html`<button type="button" class="row-body" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${() => { setOpen(isOpen ? null : b.key); setPostponing(null); }}>${body}</button>`}
                 ${quiet ? null : html`<span class="denom" aria-hidden="true">${(b.e - b.s) < 60 ? (b.e - b.s) : hoursText(b.e - b.s)}<small>${(b.e - b.s) < 60 ? 'د' : 'س'}</small></span>`}
                 ${isOpen ? html`<div class="row-actions">
                   ${tracked && st === 'moved' ? html`<button type="button" class="btn" onClick=${() => { setOpen(null); setIso(movedTo(store, iso, b.key)); }}>روح لليوم ده</button>`
                     : tracked ? (st === 'skip'
                     ? html`<button type="button" class="btn" onClick=${() => { setStatus(update, iso, b.key, null); setOpen(null); }}>رجّعه للجدول</button>`
                     : html`<button type="button" class="btn" onClick=${() => { setOpen(null); skip(b); }}>اتلغى النهارده</button>`) : null}
+                  ${tracked && st === null && canPostpone(b) ? html`<button type="button" class="btn" aria-expanded=${postponing === b.key ? 'true' : 'false'} onClick=${() => setPostponing(postponing === b.key ? null : b.key)}>أجّلها</button>` : null}
                   ${b.extra ? html`<button type="button" class="btn ghost" onClick=${() => { setOpen(null); remove('اتمسحت "' + b.title + '"', s => { s.extras[iso] = (s.extras[iso] || []).filter(x => x.id !== b.extra); return s; }); }}>امسحها</button>` : null}
                 </div>` : null}
+                ${isOpen && postponing === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
               </li>`;
             })}
           </ol>
