@@ -131,6 +131,11 @@ function runChecks(layoutDay) {
     const r = lay(list, {fajr: 10});
     return r.notice === null && r.blocks[1].s === 1450 && r.blocks[2].s === 1460 && r.blocks[2].e === END;
   });
+  check('an early day (feature 018): a block after Fajr stays in the morning, and the last block ends at the day end', () => {
+    const list = [['03:30', 'rest', 'A'], ['05:00', 'study', 'B', '', '', anchor('fajr', 'after', 20)], ['08:00', 'rest', 'C']];
+    const r = layoutDay(clone(list), {fajr: 270}, 210, 1380);
+    return r.notice === null && r.blocks[1].s === 290 && r.blocks[0].e === 290 && r.blocks[2].e === 1380;
+  });
   check('keys always use the fixed start and category, anchored or not, fitting or not', () => {
     const want = day().map(b => b[0] + '-' + b[1]);
     return [PM, null, Object.assign({}, PM, {maghrib: 1250})].every(pm => eq(lay(day(anchor('maghrib', 'before', 30)), pm).blocks.map(b => b.key), want));

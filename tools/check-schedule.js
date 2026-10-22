@@ -27,8 +27,8 @@ function grabFunction(source, name) {
   }
   throw new Error(name + ' not found');
 }
-const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayOn, withHistory, HISTORY_MAX_BYTES';
-const load = source => new Function(grabFunction(source, 'validateSettings') + block(source) + '\nreturn {validateSettings, ' + NAMES + '};')();
+const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt, setDayBounds, dayOn, withHistory, HISTORY_MAX_BYTES';
+const load = source => new Function(grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + block(source) + '\nreturn {dayBounds, validateSettings, ' + NAMES + '};')();
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const freeze = o => { if (o && typeof o === 'object') { Object.values(o).forEach(freeze); Object.freeze(o); } return o; };
@@ -163,7 +163,13 @@ function runChecks(h, source) {
     const d1 = h.addBlock(s, '0', {start: '24:30', kind: 'rest', title: 'نوم'}).draft;
     const c = h.changesBetween(s, h.addSubject(h.setKind(d1, 'gym', {label: 'جيم'}), 'x').draft);
     return eq(c.days, [{day: '0', added: 1, removed: 0}]) && eq(c.kinds, ['gym']) && c.subjects && !c.place
-      && eq(h.changesBetween(s, s), {days: [], kinds: [], subjects: false, place: false});
+      && eq(h.changesBetween(s, s), {days: [], kinds: [], subjects: false, place: false, day: false});
+  });
+  check('setting the day: the default is stored as no day, any other value as day, and no block moves', () => {
+    const s = freeze(base()), early = h.setDayBounds(s, '04:30', '01:00'), back = h.setDayBounds(early, '07:00', '01:00');
+    return eq(early.day, {start: '04:30', end: '01:00'}) && eq(early.week, s.week) && !('day' in back) && eq(back, s)
+      && h.changesBetween(s, early).day && !h.changesBetween(s, back).day && !h.changesBetween(s, early).days.length
+      && eq(h.setDayBounds(s, '03:00', '05:00').day, {start: '03:00', end: '05:00'});
   });
   check('the city list: under 100 KB, all 57 OIC states, valid coordinates and time zones', () => {
     const file = require('path').join(__dirname, 'vendor', 'cities', 'cities.json');
@@ -206,6 +212,49 @@ function runChecks(h, source) {
       }
     }
     return true;
+  });
+  check('day bounds: the default, every edge, just past every edge, and the 24-hour limit', () => {
+    const b = (start, end) => h.dayBounds({start, end});
+    return eq(h.dayBounds(undefined), {start: 420, end: 1500}) && b('07:00', '01:00') && eq(b('07:00', '01:00'), {start: 420, end: 1500})
+      && eq(b('03:00', '20:00'), {start: 180, end: 1200}) && eq(b('12:00', '05:00'), {start: 720, end: 1740})
+      && eq(b('04:30', '23:59'), {start: 270, end: 1439}) && eq(b('04:30', '00:00'), {start: 270, end: 1440})
+      && eq(b('05:00', '05:00'), {start: 300, end: 1740}) && b('03:00', '03:00') !== null
+      && [['02:59', '01:00'], ['12:01', '01:00'], ['07:00', '05:01'], ['07:00', '19:59'], ['03:00', '05:00'], ['04:59', '05:00'],
+        ['7:00', '01:00'], ['07:00', '24:00'], ['07:00', ''], [7, 1]].every(([s, e]) => b(s, e) === null)
+      && [null, 'x', {}, {start: '07:00'}].every(d => h.dayBounds(d) === null);
+  });
+  check('day bounds equal an independent count over every start and end on a 15-minute grid', () => {
+    const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    for (let s = 0; s < 1440; s += 15) for (let e = 0; e < 1440; e += 15) {
+      const end = e <= 300 ? e + 1440 : e;
+      const want = s >= 180 && s <= 720 && (e <= 300 || e >= 1200) && end - s <= 1440 ? {start: s, end} : null;
+      if (!eq(h.dayBounds({start: hm(s), end: hm(e)}), want)) return false;
+    }
+    return true;
+  });
+  check('blocks outside the day are refused, at their start, in either version; a bad day names its field', () => {
+    const withDay = (day, edit) => { const d = base(); if (day) d.day = day; edit(d.week); return h.validateSettings(d).errors; };
+    const at = (errs, path) => errs.some(e => e.path === path && (!/^week\./.test(path) || e.detail === 'start is outside the day'));
+    const first = w => w['4'].blocks;
+    return withDay(null, () => {}).length === 0
+      && at(withDay({start: '07:00', end: '01:00'}, w => { first(w)[0][0] = '06:30'; }), 'week.4.blocks[0].start')
+      && at(withDay(null, w => { first(w)[0][0] = '06:30'; }), 'week.4.blocks[0].start')
+      && at(withDay({start: '07:00', end: '23:00'}, w => { first(w).push(['23:00', 'rest', 'Late']); }), 'week.4.blocks[' + first(base().week).length + '].start')
+      && at(withDay({start: '07:00', end: '23:00'}, w => { w['3'].blocks.B.push(['24:30', 'rest', 'Late']); }), 'week.3.blocks.B[' + base().week['3'].blocks.B.length + '].start')
+      && withDay({start: '07:00', end: '03:00'}, w => { first(w).push(['26:30', 'rest', 'Late']); }).length === 0
+      && withDay({start: '04:30', end: '01:00'}, w => { first(w).unshift(['04:30', 'study', 'Early']); }).length === 0
+      && at(withDay({start: '02:00', end: '01:00'}, () => {}), 'day.start') && at(withDay({start: '07:00', end: '06:00'}, () => {}), 'day.end')
+      && at(withDay({start: '03:00', end: '05:00'}, () => {}), 'day') && at(withDay('soon', () => {}), 'day');
+  });
+  check('the date at night: every minute from 00:00 to 06:00, for every end from 20:00 to 05:00, as a clock reads it', () => {
+    const addDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+    for (let e = 1200; e <= 1740; e += 15) for (let m = 0; m <= 360; m++) {
+      // the oracle: the day that started before midnight lasts until its end, read on the clock of the next morning
+      const stillYesterday = e > 1440 && m < e - 1440;
+      const want = stillYesterday ? {iso: '2027-03-09', min: m + 1440} : {iso: '2027-03-10', min: m};
+      if (!eq(h.dayAt('2027-03-10', m, e, addDays), want)) return false;
+    }
+    return eq(h.dayAt('2027-03-01', 30, 1500, addDays), {iso: '2027-02-28', min: 1470}) && eq(h.dayAt('2027-03-10', 60, 1500, addDays), {iso: '2027-03-10', min: 60});
   });
   check('added kinds: a valid file passes; a bad id, colour or side, a colour on a built-in, or a taken name is refused', () => {
     const withKinds = extra => { const d = base(); Object.assign(d.categories, extra); return d; };
@@ -288,8 +337,8 @@ function runChecks(h, source) {
     return eq(out.history[0], bad) && out.history.length === 2 && res.ok && res.warnings.filter(w => w.code === 'history-entry').length === 1
       && eq(res.settings.history.map(e => e.until), ['2026-03-09']);
   });
-  check('a kept block of a removed kind or subject loads with no warning', () => {
-    const s = Object.assign(base(), {history: [{until: '2026-01-04', days: {'0': {blocks: [['08:00', 'k7', 'old', '', 'S9']]}, '6': null}}]});
+  check('a kept block of a removed kind or subject, or outside the current day, loads with no warning', () => {
+    const s = Object.assign(base(), {history: [{until: '2026-01-04', days: {'0': {blocks: [['05:00', 'k7', 'old', '', 'S9']]}, '6': null}}]});
     const res = h.validateSettings(JSON.parse(JSON.stringify(s)));
     return res.ok && !res.warnings.some(w => w.code === 'history-entry') && res.settings.history.length === 1;
   });
@@ -326,11 +375,16 @@ if (process.argv.includes('--self-test')) {
     ['version B is not searched for a kind', s => s.replace("(Array.isArray(blocks) ? [blocks] : Object.values(blocks))", "(Array.isArray(blocks) ? [blocks] : [blocks.A])")],
     ['a built-in kind is removable', s => s.replace("if (!/^k\\d+$/.test(id)) return {ok: false, code: 'built-in'};", '')],
     ['a built-in kind takes a colour', s => s.replace("if (c.color !== undefined || c.side !== undefined) bad(", "if (false) bad(")],
+    ['the day has no 24-hour limit', s => s.replace('return end - start <= 1440 ? {start, end} : null;', 'return end >= 0 ? {start, end} : null;')],
+    ['a block outside the day is accepted', s => s.replace("else if (!loose && bounds && (t < bounds.start || t >= bounds.end)) bad(", "else if (false) bad(")],
+    ['times stop at 24:59', s => s.replace('return h <= 28 && m <= 59 ? h * 60 + m : null;', 'return h <= 24 && m <= 59 ? h * 60 + m : null;')],
+    ['the date turns at 01:00 whatever the end', s => s.replace('return min < end - 1440 ? {iso: addDays(iso, -1)', 'return min < 60 ? {iso: addDays(iso, -1)')],
     ['a second save on the same day adds another entry', s => s.replace("history = history.filter(h => !keptShape(h) || h.until < dates.yesterday);", '')],
     ['a kept entry holds the whole week', s => s.replace("if (JSON.stringify(was[day]) !== JSON.stringify(out.week[day] || null)) days[day] = was[day];", 'days[day] = was[day];')],
     ['a kept entry ends today', s => s.replace("history.push({until: dates.yesterday, days});", 'history.push({until: dates.today, days});')],
     ['old entries are never dropped', s => s.replace("history = history.filter(h => !keptShape(h) || h.until >= dates.cutoff);", '')],
-    ['a kept block must use a kind that still exists', s => s.replace("loose ? !(CATEGORY_IDS.indexOf(b[1]) >= 0 || isNewKind(b[1])) : ", '')]
+    ['a kept block must use a kind that still exists', s => s.replace("loose ? !(CATEGORY_IDS.indexOf(b[1]) >= 0 || isNewKind(b[1])) : ", '')],
+    ['a kept block must fit the current day', s => s.replace("else if (!loose && bounds && (t < bounds.start", "else if (bounds && (t < bounds.start")]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

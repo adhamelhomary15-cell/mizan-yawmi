@@ -1,27 +1,11 @@
 // Courses without one person's rules (feature 017): course blocks follow the main course by kind, settings without a
 // course show none, the pace line comes from the plan, and opening the app writes nothing. All data is generated.
-const fs = require('fs');
-const path = require('path');
 const {test, expect} = require('@playwright/test');
-const {openApp, tab, button, stored} = require('./helpers');
+const {openApp, tab, button, stored, EXAMPLE, seed} = require('./helpers');
 
-const EXAMPLE = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'planner.html'), 'utf8')
-  .match(/<script type="application\/json" id="example-settings">([\s\S]*?)<\/script>/)[1]);
 const week = (from, to, n, first) => ({from, to, label: from, items: Array.from({length: n}, (_, i) => [String(first + i), 'Module ' + (first + i)])});
 const ADDED = {id: 'cb', name: 'Course B', from: '2026-10-01', to: '2026-11-30', modules: [{id: 'm1', title: 'One'}, {id: 'm2', title: 'Two'}], done: {}};
 
-// Settings stored as the app stores them (013), and progress under the old key, written once per test.
-function seed(settings, progress) {
-  const data = JSON.stringify(settings);
-  const old = progress ? JSON.stringify(Object.assign({v: 1, checks: {}, modules: {}, tasks: [], appts: [], courses: [], extras: {}, phaseSeen: 'A'}, progress)) : null;
-  return `if (!sessionStorage.getItem('seeded')) {
-    sessionStorage.setItem('seeded', '1');
-    const data = ${JSON.stringify(data)};
-    let h = 0x811c9dc5; for (let i = 0; i < data.length; i++) { h ^= data.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-    localStorage.setItem('mizan-settings', JSON.stringify({format: 'mizan-store', store: 'settings', version: 2, savedAt: new Date().toISOString(), sum: ('0000000' + h.toString(16)).slice(-8), data: JSON.parse(data)}));
-    ${old ? `localStorage.setItem('fall26-planner-v1', ${JSON.stringify(old)});` : ''}
-  }`;
-}
 const withCourse = name => {
   const s = JSON.parse(JSON.stringify(EXAMPLE));
   s.course = {name, plan: [week('2026-10-12', '2026-10-18', 3, 1), week('2026-10-19', '2026-10-25', 3, 4), week('2026-10-26', '2026-11-01', 3, 7)]};

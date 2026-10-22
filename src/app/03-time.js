@@ -1,5 +1,6 @@
   /* ---------------- time helpers ---------------- */
-  const START = 420, END = 1500, SPAN = END - START;
+  // The user's day (feature 018): from the settings, or 07:00 to 01:00.
+  const {start: START, end: END} = dayBounds(CFG.day), SPAN = END - START;
   const toMin = t => { const [a,b] = t.split(':').map(Number); return a*60 + b; };
   const pad = n => String(n).padStart(2,'0');
   function fmt(min){
@@ -41,8 +42,6 @@
   function dateLabel(iso){ const [y,m,d] = iso.split('-').map(Number); return dateFmt.format(new Date(Date.UTC(y,m-1,d))); }
   function effectiveNow(){
     const p = zoneParts(new Date());
-    // The schedule's day runs until 1:00am, so between midnight and 1:00 it still shows the previous day.
-    if (p.min < 60) return {iso: addDays(p.iso, -1), min: p.min + 1440};
-    return p;
+    return dayAt(p.iso, p.min, END, addDays);
   }
 

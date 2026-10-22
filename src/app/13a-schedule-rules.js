@@ -178,6 +178,14 @@
       prayerMethod: place.prayerMethod, categories: clone(categories), subjects, week: weekFromTemplate(templateId)};
   }
 
+  // The day's start and end (feature 018). The app's default, 07:00 to 01:00, is stored as no `day`, so a file that
+  // never changes it stays as it was. Blocks never move: the save's check names any block outside the day.
+  function setDayBounds(draft, start, end){
+    const d = clone(draft);
+    if (start === '07:00' && end === '01:00') delete d.day; else d.day = {start, end};
+    return d;
+  }
+
   // What a save changes, for its summary: per day the blocks added and removed, the kinds changed, and whether the
   // subjects or the place changed.
   function changesBetween(before, after){
@@ -190,7 +198,13 @@
     }).filter(Boolean);
     const kinds = Object.keys(Object.assign({}, before.categories, after.categories)).filter(k => key((before.categories || {})[k]) !== key((after.categories || {})[k]));
     return {days, kinds, subjects: key(before.subjects || {}) !== key(after.subjects || {}),
-      place: key([before.location, before.timezone, before.prayerMethod]) !== key([after.location, after.timezone, after.prayerMethod])};
+      place: key([before.location, before.timezone, before.prayerMethod]) !== key([after.location, after.timezone, after.prayerMethod]),
+      day: key(before.day || null) !== key(after.day || null)};
+  }
+  // The day a clock moment belongs to (feature 018): until the end of a day that runs past midnight, it is still the
+  // day before, at min + 1440.
+  function dayAt(iso, min, end, addDays){
+    return min < end - 1440 ? {iso: addDays(iso, -1), min: min + 1440} : {iso, min};
   }
 
   // Past days keep the week they had (feature 020). settings.history is [{until, days}] with until rising: an entry
