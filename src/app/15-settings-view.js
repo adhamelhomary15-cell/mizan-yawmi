@@ -247,7 +247,7 @@
     </div>`;
   }
 
-  function SettingsView({store, wk, sync, replaceAll}){
+  function SettingsView({store, wk, sync, replaceAll, settingsChanged}){
     const [pending, setPending] = useState(null);
     const [msgs, setMsgs] = useState([]);
     const [done, setDone] = useState('');
@@ -271,17 +271,17 @@
     };
     const apply = () => {
       if (!saveStore('settings', pending.settings)) { setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
-      location.reload();
+      settingsChanged('اتطبّقت الإعدادات الجديدة');
     };
     const reset = async () => {
       await removeStore('settings');
-      location.reload();
+      settingsChanged('رجعت للمثال');
     };
     // The schedule editor is a screen of Settings; an unsaved draft brings it back (see editorSession).
     const [screen, setScreen] = useState(() => editorSession ? 'editor' : guideRequested ? 'guide' : 'main');
     useEffect(() => { guideRequested = false; }, []);
     const edit = () => { openEditor(); setScreen('editor'); };
-    if (screen === 'editor') return html`<${ScheduleEditor} onClose=${() => setScreen('main')} />`;
+    if (screen === 'editor') return html`<${ScheduleEditor} onClose=${() => setScreen('main')} onSaved=${() => settingsChanged('اتحفظ الجدول', 'today')} />`;
     if (screen === 'guide') return html`<${Guide} onClose=${() => setScreen('main')} onEditor=${() => setScreen('editor')} />`;
     const sm = pending ? summaryOf(pending.settings) : null;
     return html`<div class="settingsv">

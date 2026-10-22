@@ -29,10 +29,10 @@ description: "Task list for feature 020: settings changes without reopening the 
 
 ## Phase 2: Apply without reloading (US1, US2)
 
-- [ ] T004 `21-shell.js`: `settingsEpoch`, `settingsChanged(after)`, the view keyed by the epoch, and a toast with no
+- [x] T004 `21-shell.js`: `settingsEpoch`, `settingsChanged(after)`, the view keyed by the epoch, and a toast with no
   undo.
-- [ ] T005 The editor's save calls `settingsChanged('today')`: «اليوم», then «اتحفظ الجدول».
-- [ ] T006 «استبدل» and «رجّع المثال» call `settingsChanged('settings')`.
+- [x] T005 The editor's save calls `settingsChanged('today')`: «اليوم», then «اتحفظ الجدول».
+- [x] T006 «استبدل» and «رجّع المثال» call `settingsChanged('settings')`.
 
 ## Phase 3: Tests, docs, PR
 

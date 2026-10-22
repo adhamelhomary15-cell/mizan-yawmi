@@ -62,7 +62,7 @@
     // «اعمل جدولك» opens Settings on the guide; a new key opens it fresh even when Settings is already showing.
     const [settingsOpened, setSettingsOpened] = useState(0);
     const startGuide = () => { guideRequested = true; setSettingsOpened(n => n + 1); goTab('settings'); };
-    // A message with an undo button for 7 seconds. The caller has already made the change.
+    // A message for 7 seconds, with an undo button when there is something to undo. The caller has already made the change.
     const showToast = (text, undo) => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
       setToast({text, undo});
@@ -80,15 +80,26 @@
       update(fn);
       showToast(text, () => update(undoFn));
     };
+    // After the settings are stored (the editor's save, an import, a reset): read them back as a page load would, apply
+    // them, and start every screen fresh with them, with no reload (feature 020). The date follows a new day or zone.
+    const [settingsEpoch, setSettingsEpoch] = useState(0);
+    const settingsChanged = (text, tabAfter) => {
+      applySettings(readSettings());
+      editorSession = null;
+      const n = effectiveNow();
+      setNow(n); setIso(n.iso); setSettingsEpoch(e => e + 1);
+      if (tabAfter) goTab(tabAfter);
+      showToast(text);
+    };
     MAIN_NAME = (mainCourse(store) || {}).name || '';
 
     let view;
-    if (tab === 'today') view = html`<${TodayView} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
-    else if (tab === 'week') view = html`<${WeekView} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
-    else if (tab === 'course') view = html`<${CourseView} now=${now} store=${store} update=${update} remove=${remove} />`;
-    else if (tab === 'workout') view = html`<${WorkoutView} wk=${wk} showToast=${showToast} />`;
-    else if (tab === 'settings') view = html`<${SettingsView} key=${settingsOpened} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />`;
-    else view = html`<${TasksView} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
+    if (tab === 'today') view = html`<${TodayView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
+    else if (tab === 'week') view = html`<${WeekView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
+    else if (tab === 'course') view = html`<${CourseView} key=${settingsEpoch} now=${now} store=${store} update=${update} remove=${remove} />`;
+    else if (tab === 'workout') view = html`<${WorkoutView} key=${settingsEpoch} wk=${wk} showToast=${showToast} />`;
+    else if (tab === 'settings') view = html`<${SettingsView} key=${settingsOpened + '-' + settingsEpoch} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} settingsChanged=${settingsChanged} />`;
+    else view = html`<${TasksView} key=${settingsEpoch} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
 
     return html`<div class="shell">
       <nav class="nav" aria-label="أقسام">
@@ -115,7 +126,7 @@
         ${view}
         <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
       </main>
-      <div aria-live="polite">${toast ? html`<div class="toast" role="status"><p>${toast.text}</p><button type="button" class="btn" onClick=${() => { toast.undo(); setToast(null); }}>رجّعها</button></div>` : null}</div>
+      <div aria-live="polite">${toast ? html`<div class="toast" role="status"><p>${toast.text}</p>${toast.undo ? html`<button type="button" class="btn" onClick=${() => { toast.undo(); setToast(null); }}>رجّعها</button>` : null}</div>` : null}</div>
     </div>`;
   }
 
