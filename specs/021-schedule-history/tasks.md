@@ -85,7 +85,7 @@ description: "Task list for feature 021: past days keep the schedule they had"
   - the README «تعديل الجدول» part: past days keep their schedule, and the new week starts today;
   - PRODUCT: the history;
   - the 014 spec line about past days, marked as replaced by 021.
-- [ ] T015 Take `main` into this branch once 018 is merged, rebuild, and run every check, parity, the E2E tests and a
+- [x] T015 Take `main` into this branch once 018 is merged, rebuild, and run every check, parity, the E2E tests and a
   375 px look. Tick the tasks, then push and open the PR. Merge when the owner asks.
 
 ## Summary
