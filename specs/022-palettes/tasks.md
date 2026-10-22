@@ -26,20 +26,20 @@ description: "Task list for feature 022: colour palettes and a light, dark or au
 
 ## Phase 1: The colours and their checks (US1 colours)
 
-- [ ] T001 In `src/planner.html`, remove the `@media (prefers-color-scheme: dark)` block that copies
+- [x] T001 In `src/planner.html`, remove the `@media (prefers-color-scheme: dark)` block that copies
   `:root[data-theme="dark"]` (plan, decision 2). Leave `:root[data-theme="dark"]` as the one dark block.
-- [ ] T002 In `src/planner.html`, after the dark block, add the palette blocks for `olive`, `navy` and `graphite`:
+- [x] T002 In `src/planner.html`, after the dark block, add the palette blocks for `olive`, `navy` and `graphite`:
   - `:root[data-palette="<id>"]{…}` for light, and `:root[data-palette="<id>"][data-theme="dark"]{…}` for dark;
   - each sets only `--shell`, `--shell-dim`, `--bg`, `--surface`, `--line`, `--quiet` and `--muted`, from the
     plan's table (decision 3). `--line` and `--quiet` follow the ground, a step darker in light and lighter in dark.
-- [ ] T003 [P] In `tools/check-schedule.js`, widen the contrast check to every palette × light/dark:
+- [x] T003 [P] In `tools/check-schedule.js`, widen the contrast check to every palette × light/dark:
   - every ink, the nine and the six ready ones, holds 4.5:1 on `--surface`, on `--bg` and on its own tint (9% light,
     15% dark);
   - `--muted` holds 4.5:1 on `--surface`, and `--shell-fg` and `--shell-dim` hold 4.5:1 on `--shell`;
   - no palette block sets a kind ink or `--fg`;
   - two mutations, both caught by `--self-test`: an ink set inside a palette block, and a dark palette block
     missing a value.
-- [ ] T004 Until T005 lands, set `data-theme` by hand in the browser to check both themes. Then run parity: 0
+- [x] T004 Until T005 lands, set `data-theme` by hand in the browser to check both themes. Then run parity: 0
   differences (SC-004). **Commit**.
 
 ## Phase 2: Picking a palette and a theme (US1, US2)

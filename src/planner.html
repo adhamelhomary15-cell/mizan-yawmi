@@ -18,15 +18,7 @@
   --font-num:"Spectral",Georgia,"Times New Roman",serif;
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#16141A; --surface:#201D24; --fg:#EDE9E1; --muted:#A7A39A; --line:#36313B; --quiet:#3A3540; --danger:#FF9A76;
-    --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
-    --uni:#EE8E9C; --study:#F2A7B8; --course:#CFA0DD; --work:#D8B898; --gym:#E4C55C; --quran:#E8C96A; --personal:#EFD98F;
-    --k-teal:#7FD3C9; --k-blue:#A3C2F2; --k-green:#A9D68F; --k-slate:#B9C4D1; --k-copper:#F0A57D; --k-olive:#CBD48A;
-    --tint:15%; color-scheme:dark;
-  }
-}
+/* The one dark set. data-theme is always light or dark (feature 022), so no media-query copy is needed. */
 :root[data-theme="dark"]{
   --bg:#16141A; --surface:#201D24; --fg:#EDE9E1; --muted:#A7A39A; --line:#36313B; --quiet:#3A3540; --danger:#FF9A76;
   --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
@@ -34,6 +26,14 @@
   --k-teal:#7FD3C9; --k-blue:#A3C2F2; --k-green:#A9D68F; --k-slate:#B9C4D1; --k-copper:#F0A57D; --k-olive:#CBD48A;
   --tint:15%; color-scheme:dark;
 }
+/* Palettes (feature 022): the frame and the ground only. The kinds' inks and --fg never change (the Denomination
+   Rule); tools/check-schedule.js checks every ink on every palette, light and dark. Oxblood is :root above. */
+:root[data-palette="olive"]{--bg:#E9EADF; --surface:#FBFBF5; --muted:#5A5C4E; --line:#D0D2C2; --quiet:#D9DBCC; --shell:#434C14; --shell-dim:#DDE3BF;}
+:root[data-palette="olive"][data-theme="dark"]{--bg:#151611; --surface:#1E2019; --muted:#A6A796; --line:#33352B; --quiet:#383A2F; --shell:#262B0C; --shell-dim:#C3C9A0;}
+:root[data-palette="navy"]{--bg:#E4E8EE; --surface:#F8FAFC; --muted:#545B66; --line:#CBD2DC; --quiet:#D4DAE3; --shell:#1F2F4F; --shell-dim:#C7D2E6;}
+:root[data-palette="navy"][data-theme="dark"]{--bg:#12151B; --surface:#1A1F27; --muted:#A0A7B2; --line:#2E3540; --quiet:#343B46; --shell:#121C30; --shell-dim:#A9B8D3;}
+:root[data-palette="graphite"]{--bg:#E8E8E6; --surface:#FAFAF9; --muted:#57585A; --line:#D1D1CE; --quiet:#D9D9D6; --shell:#2E3135; --shell-dim:#D3D5D8;}
+:root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#1D1E20; --muted:#A5A6A8; --line:#333538; --quiet:#393B3E; --shell:#1E2023; --shell-dim:#BFC1C4;}
 html{scrollbar-color:var(--quiet) var(--bg)}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.6;caret-color:var(--course);accent-color:var(--course)}
 ::selection{background:color-mix(in srgb,var(--course) 28%,var(--surface));color:var(--fg)}
