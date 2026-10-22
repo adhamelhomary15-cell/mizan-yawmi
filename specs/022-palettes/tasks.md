@@ -80,16 +80,25 @@ description: "Task list for feature 022: colour palettes and a light, dark or au
 
 ## Phase 3: The soft change (US3)
 
-- [ ] T009 [US3] In `src/planner.html`, register every colour variable used in `:root` with
+- [x] T009 [US3] In `src/planner.html`, register every colour variable used in `:root` with
   `@property --x{syntax:'<color>';inherits:true;initial-value:<its light value>}`, and `--tint` with
   `'<percentage>'`.
-- [ ] T010 [US3] In `src/planner.html`, give `:root` a transition on those variables, `.45s
+- [x] T010 [US3] In `src/planner.html`, give `:root` a transition on those variables, `.45s
   cubic-bezier(.16,1,.3,1)`. Add `:root{transition:none}` to the existing `prefers-reduced-motion` rule.
-- [ ] T011 [P] [US3] In `tools/check-schedule.js`, check that every `--` colour set in `:root` is registered with
+- [x] T011 [P] [US3] In `tools/check-schedule.js`, check that every `--` colour set in `:root` is registered with
   `@property`, with one mutation: a variable left unregistered.
-- [ ] T012 [US3] Measure a theme change on a 4× CPU-throttled phone profile. If frames drop noticeably, keep the fade
+- [x] T012 [US3] Measure a theme change on a 4× CPU-throttled phone profile. If frames drop noticeably, keep the fade
   on `--bg`, `--surface`, `--line`, `--shell` and `--fg` only, and let the inks change at once (plan, Risks).
   **Commit**.
+
+  Measured on 2026-10-23 (Chromium, 375×812, CPU 4×, page open 3 s first, 700 ms after each change):
+  - all 24 colours: 31 to 33 frames (about 45 fps), worst frame 33 to 50 ms;
+  - 5 colours only: mostly 41 to 43 frames (about 60 fps), with an occasional slow frame of 67 to 83 ms;
+  - reduced motion: 43 to 44 frames, and the new colour at once;
+  - a check tap during the fade ticks the block.
+  Kept all 24: no frame went past 50 ms, and with 5 the rows' inks would jump while the ground fades, against US3.
+  A change in the first second after the page opens can take about 1 s on this profile, while the page is still
+  busy loading.
 
 ## Phase 4: Tests, docs, PR
 

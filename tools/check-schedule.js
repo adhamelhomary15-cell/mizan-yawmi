@@ -299,6 +299,13 @@ function runChecks(h, source) {
         && contrast(rgb(t.muted), surface) >= 4.5 && contrast(rgb(t['shell-fg']), shell) >= 4.5 && contrast(rgb(t['shell-dim']), shell) >= 4.5;
     }));
   });
+  // Feature 022: a colour left unregistered would jump while the others fade, and one left out of the transition too.
+  check('every colour in :root is registered with its light value, fades, and stops fading under reduced motion', () => {
+    const base = tokens(source, ':root'), colours = Object.keys(base).filter(k => base[k][0] === '#').concat('tint');
+    const faded = (source.match(/transition-property:([^;]+);/) || ['', ''])[1].split(',').map(s => s.trim());
+    return colours.length === 24 && colours.every(k => source.includes('@property --' + k + "{syntax:'" + (k === 'tint' ? '<percentage>' : '<color>') + "';inherits:true;initial-value:" + base[k] + '}')
+      && faded.indexOf('--' + k) >= 0) && /@media \(prefers-reduced-motion: reduce\)\{ :root,/.test(source);
+  });
   check('every colour class of a kind goes through kc', () => !/c-' \+ (b\.cat|main\.cat|cat|k)\b/.test(source));
   // Feature 020. The oracle keeps the whole week of every save with the date it started; a date's week is the last one
   // started on or before it.
@@ -411,6 +418,9 @@ if (process.argv.includes('--self-test')) {
     ['a kept block must fit the current day', s => s.replace("else if (!loose && bounds && (t < bounds.start", "else if (bounds && (t < bounds.start")],
     ['a palette changes a kind ink', s => s.replace(':root[data-palette="navy"]{--bg:', ':root[data-palette="navy"]{--uni:#7B1E2E; --bg:')],
     ['a dark palette block misses a value', s => s.replace(':root[data-palette="olive"][data-theme="dark"]{--bg:#151611; ', ':root[data-palette="olive"][data-theme="dark"]{')],
+    ['a colour is not registered', s => s.replace("@property --k-copper{syntax:'<color>';inherits:true;initial-value:#8A3A14}\n", '')],
+    ['a colour does not fade', s => s.replace('--shell-dim,--uni,', '--uni,')],
+    ['the fade runs under reduced motion', s => s.replace('{ :root,.fill,', '{ .fill,')],
     ['a palette ground fails contrast', s => s.replace(':root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#1D1E20;', ':root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#6A6B70;')]
   ];
   let missed = 0;

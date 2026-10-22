@@ -73,6 +73,36 @@
 :root[data-palette="navy"][data-theme="dark"]{--bg:#12151B; --surface:#1A1F27; --muted:#A0A7B2; --line:#2E3540; --quiet:#343B46; --shell:#121C30; --shell-dim:#A9B8D3;}
 :root[data-palette="graphite"]{--bg:#E8E8E6; --surface:#FAFAF9; --muted:#57585A; --line:#D1D1CE; --quiet:#D9D9D6; --shell:#2E3135; --shell-dim:#D3D5D8;}
 :root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#1D1E20; --muted:#A5A6A8; --line:#333538; --quiet:#393B3E; --shell:#1E2023; --shell-dim:#BFC1C4;}
+/* The soft change (feature 022): registered as colours, the variables fade from one palette or theme to the next, and
+   everything drawn with them fades together, at the rosette's pace. The first paint has nothing to fade from. */
+@property --bg{syntax:'<color>';inherits:true;initial-value:#E7ECE3}
+@property --surface{syntax:'<color>';inherits:true;initial-value:#FAFBF6}
+@property --fg{syntax:'<color>';inherits:true;initial-value:#1D1B17}
+@property --muted{syntax:'<color>';inherits:true;initial-value:#585C52}
+@property --line{syntax:'<color>';inherits:true;initial-value:#CDD3C6}
+@property --quiet{syntax:'<color>';inherits:true;initial-value:#D6DBCF}
+@property --danger{syntax:'<color>';inherits:true;initial-value:#B4300C}
+@property --shell{syntax:'<color>';inherits:true;initial-value:#6E1A28}
+@property --shell-fg{syntax:'<color>';inherits:true;initial-value:#FAFBF6}
+@property --shell-dim{syntax:'<color>';inherits:true;initial-value:#E9C9CF}
+@property --uni{syntax:'<color>';inherits:true;initial-value:#7B1E2E}
+@property --study{syntax:'<color>';inherits:true;initial-value:#94304B}
+@property --course{syntax:'<color>';inherits:true;initial-value:#5B2A6B}
+@property --work{syntax:'<color>';inherits:true;initial-value:#5A402B}
+@property --gym{syntax:'<color>';inherits:true;initial-value:#735600}
+@property --quran{syntax:'<color>';inherits:true;initial-value:#6A4E00}
+@property --personal{syntax:'<color>';inherits:true;initial-value:#7A5A0A}
+@property --k-teal{syntax:'<color>';inherits:true;initial-value:#0E5E58}
+@property --k-blue{syntax:'<color>';inherits:true;initial-value:#244F8C}
+@property --k-green{syntax:'<color>';inherits:true;initial-value:#2F5E22}
+@property --k-slate{syntax:'<color>';inherits:true;initial-value:#46515F}
+@property --k-copper{syntax:'<color>';inherits:true;initial-value:#8A3A14}
+@property --k-olive{syntax:'<color>';inherits:true;initial-value:#535C14}
+@property --tint{syntax:'<percentage>';inherits:true;initial-value:9%}
+:root{
+  transition-property:--bg,--surface,--fg,--muted,--line,--quiet,--danger,--shell,--shell-fg,--shell-dim,--uni,--study,--course,--work,--gym,--quran,--personal,--k-teal,--k-blue,--k-green,--k-slate,--k-copper,--k-olive,--tint;
+  transition-duration:.45s; transition-timing-function:cubic-bezier(.16,1,.3,1);
+}
 html{scrollbar-color:var(--quiet) var(--bg)}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.6;caret-color:var(--course);accent-color:var(--course)}
 ::selection{background:color-mix(in srgb,var(--course) 28%,var(--surface));color:var(--fg)}
@@ -561,7 +591,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   .tasksv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"head head" "tasks appts";gap:var(--s5) 36px;align-items:start}
   .a-tasks{grid-area:tasks} .a-appts{grid-area:appts}
 }
-@media (prefers-reduced-motion: reduce){ .fill,.balance .petal,.chk i,.btn{transition:none} }
+@media (prefers-reduced-motion: reduce){ :root,.fill,.balance .petal,.chk i,.btn{transition:none} }
 </style>
 
 <div id="app" dir="rtl" lang="ar">
