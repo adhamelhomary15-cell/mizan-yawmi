@@ -102,7 +102,7 @@ description: "Task list for feature 022: colour palettes and a light, dark or au
 
 ## Phase 4: Tests, docs, PR
 
-- [ ] T013 In `tests/e2e/look.spec.js`:
+- [x] T013 In `tests/e2e/look.spec.js`:
   - **US1**: pick «كحلي»: the band and the ground change and a block row's ink does not; after a reload it is still
     «كحلي», and the first frame already has `data-palette="navy"`;
   - **US2**:
@@ -120,7 +120,12 @@ description: "Task list for feature 022: colour palettes and a light, dark or au
     - a broken `mizan-look` reads as the defaults;
     - restoring a backup and importing settings leave the look as it was, and the backup file has no `mizan-look`;
   - **Status bar**: `theme-color` equals the band, in light and in dark.
-- [ ] T014 [P] Docs:
+
+  Found while writing them: `openApp` fixes the date through Playwright's clock, which also replaces
+  `requestAnimationFrame` and `performance.now`. The tests that read frames (the first frame and US3) open the app on
+  the real clock with `openLive` instead, and count drawn frames rather than timers. Result: 25 passed and 1 skipped
+  (offline on WebKit, as in `offline.spec.js`), stable over 8 runs and 5 repeats of each test.
+- [x] T014 [P] Docs:
   - README: «الشكل» in the Settings part;
   - PRODUCT: the palettes and the theme choice in Capabilities, and that they stay on the device;
   - DESIGN: the four palettes, what they change and what they keep (the Denomination Rule), and the 450ms fade.
