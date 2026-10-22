@@ -1,4 +1,4 @@
-const CACHE = 'mizan-11e38a87d9';
+const CACHE = 'mizan-479bfb1695';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 // no-cache: a new worker must store the new files, never a copy the browser kept for a few minutes
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, {cache: 'no-cache'})))).then(() => self.skipWaiting())); });

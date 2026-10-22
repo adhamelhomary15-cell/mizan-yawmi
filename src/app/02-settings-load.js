@@ -1,5 +1,7 @@
   /* ---------------- settings: load (stored file, else the embedded example) ---------------- */
-  const LOADED = (() => {
+  // What a page load reads: the stored settings when they are valid, else the example (marked as a problem when stored
+  // settings could not be used). The shell reads again after a save, an import or a reset (feature 020).
+  function readSettings(){
     let example = null;
     try { example = validateSettings(JSON.parse(document.getElementById('example-settings').textContent)).settings; } catch(e){}
     if (!example) example = {format:'mizan-settings', version:1, language:'ar', prayerMethod:'Egyptian', timezone:'Africa/Cairo', location:{lat:30.0444, lng:31.2357, label:'Sample city'}, categories:{rest:{label:'راحة', track:false}}, week:{0:{blocks:[['08:00','rest','مثال']]}}};
@@ -8,16 +10,7 @@
     const res = got.state === 'ok' ? validateSettings(got.data) : null;
     if (res && res.ok) return {settings: res.settings, isExample: false, problem: false, got};
     return {settings: example, isExample: true, problem: true, got};
-  })();
-  const CFG = LOADED.settings;
-  // Settings are read once per page. When the local copy was missing or damaged and the mirror brings them back, write
-  // them back and open the page again with them, once, saying so.
-  const RECOVERED_KEY = 'mizan-recovered';
-  reconcile('settings', LOADED.got.state === 'empty' || LOADED.got.state === 'damaged').then(r => {
-    if (!r || !r.recovered) return;
-    try { sessionStorage.setItem(RECOVERED_KEY, '1'); } catch(e){}
-    location.reload();
-  });
+  }
 
   /* ---------------- fixed names (weekdays) ---------------- */
   const DAY_NAMES = {6:'السبت',0:'الحد',1:'الاتنين',2:'التلات',3:'الأربع',4:'الخميس',5:'الجمعة'};
@@ -37,20 +30,67 @@
     move:{label:'مواصلات', long:'مواصلات', track:false},
     rest:{label:'راحة', long:'راحة', track:false}
   };
-  const CATS = {};
-  Object.keys(DEFAULT_CATS).forEach(k => { CATS[k] = Object.assign({}, DEFAULT_CATS[k], (CFG.categories || {})[k]); });
-  // Kinds the user added (feature 016), after the built-in ones, by number; a missing long name is the name.
-  const NEW_KINDS = Object.keys(CFG.categories || {}).filter(k => /^k\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1));
-  NEW_KINDS.forEach(k => { CATS[k] = Object.assign({long: CFG.categories[k].label}, CFG.categories[k]); });
-  const KIND_IDS = Object.keys(DEFAULT_CATS).concat(NEW_KINDS);
-  const SUBJ = CFG.subjects || {};
-  // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
-  // Each block ends where the next starts; the last ends at the end of the day.
-  const SCHED = CFG.week || {};
-  const COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : null;
-  const PLAN = CFG.course ? CFG.course.plan : [];
-  const TASK_TAGS = Object.assign({uni:CATS.uni.label, course:CATS.course.label, work:CATS.work.label, personal:CATS.personal.label}, CFG.taskTags || {});
-  const RULES = CFG.rules || [];
-  // Names of the two sides of the balance card, built from the category labels.
-  const BAL_A = CATS.uni.label + ' و' + CATS.course.label, BAL_B = CATS.work.label + ' و' + CATS.personal.label;
+  // Everything worked out from the settings. applySettings fills them all, when the page loads and after every change
+  // (feature 020), so no screen keeps a value from the settings before.
+  let LOADED;
+  let CFG;
+  let CATS;
+  let NEW_KINDS;
+  let KIND_IDS;
+  let SUBJ;
+  let SCHED;
+  let COURSE;
+  let PLAN;
+  let TASK_TAGS;
+  let RULES;
+  let BAL_A;
+  let BAL_B;
+  let START;
+  let END;
+  let SPAN;
+  let zoneFmt;
+  let FAMILY;
+  let AXIS_HOURS;
+  let ptCache;
+  function applySettings(loaded){
+    LOADED = loaded;
+    CFG = loaded.settings;
+    CATS = {};
+    Object.keys(DEFAULT_CATS).forEach(k => { CATS[k] = Object.assign({}, DEFAULT_CATS[k], (CFG.categories || {})[k]); });
+    // Kinds the user added (feature 016), after the built-in ones, by number; a missing long name is the name.
+    NEW_KINDS = Object.keys(CFG.categories || {}).filter(k => /^k\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1));
+    NEW_KINDS.forEach(k => { CATS[k] = Object.assign({long: CFG.categories[k].label}, CFG.categories[k]); });
+    KIND_IDS = Object.keys(DEFAULT_CATS).concat(NEW_KINDS);
+    SUBJ = CFG.subjects || {};
+    // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
+    // Each block ends where the next starts; the last ends at the end of the day.
+    SCHED = CFG.week || {};
+    COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : null;
+    PLAN = CFG.course ? CFG.course.plan : [];
+    TASK_TAGS = Object.assign({uni:CATS.uni.label, course:CATS.course.label, work:CATS.work.label, personal:CATS.personal.label}, CFG.taskTags || {});
+    RULES = CFG.rules || [];
+    // Names of the two sides of the balance card, built from the category labels.
+    BAL_A = CATS.uni.label + ' و' + CATS.course.label;
+    BAL_B = CATS.work.label + ' و' + CATS.personal.label;
+    // The user's day (feature 018): from the settings, or 07:00 to 01:00.
+    ({start: START, end: END} = dayBounds(CFG.day));
+    SPAN = END - START;
+    // Date and minute of a moment in the time zone from the settings.
+    zoneFmt = new Intl.DateTimeFormat('en-CA',{timeZone:CFG.timezone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+    // The balance side of each kind: the built-in ones as always, plus each added kind's own side.
+    FAMILY = NEW_KINDS.reduce((f, k) => { if (CATS[k].side) f[k] = CATS[k].side; return f; }, {uni:'a', study:'a', course:'a', work:'b', gym:'b', quran:'b'});
+    // The Week strip's hour labels: every 5 hours from the first full hour of the day (feature 018).
+    AXIS_HOURS = Array.from({length: 6}, (_, i) => Math.ceil(START / 60) * 60 + i * 300).filter(m => m < END);
+    // The saved schedule's prayer times, once per date, for these settings only.
+    ptCache = {};
+  }
+  applySettings(readSettings());
+  // When the local copy was missing or damaged and the mirror brings the settings back, write them back and open the
+  // page again with them, once, saying so.
+  const RECOVERED_KEY = 'mizan-recovered';
+  reconcile('settings', LOADED.got.state === 'empty' || LOADED.got.state === 'damaged').then(r => {
+    if (!r || !r.recovered) return;
+    try { sessionStorage.setItem(RECOVERED_KEY, '1'); } catch(e){}
+    location.reload();
+  });
 

@@ -28,6 +28,14 @@ const cspViolations = page => page.evaluate(() => window.__csp);
 const stored = (page, key) => page.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), key);
 const progress = async page => ((await stored(page, 'mizan-progress')) || {}).data;
 const noticeTitles = page => page.locator('.notice b').allInnerTexts();
+// Clicks the button that saves, imports or resets the settings, and waits until they apply: the button's screen is gone
+// and the toast names what happened (020: the page does not reopen).
+async function applyChange(page, name, line) {
+  await button(page, name).click();
+  await expect(button(page, name)).toHaveCount(0);
+  await expect(page.locator('.toast p')).toHaveText(line);
+}
+const saveSchedule = async page => { await button(page, 'احفظ الجدول').click(); await applyChange(page, 'أيوه، احفظ', 'اتحفظ الجدول'); };
 
 // Settings stored as the app stores them (013), and progress under the old key, written once per test.
 function seed(settings, progress) {
@@ -42,4 +50,4 @@ function seed(settings, progress) {
   }`;
 }
 
-module.exports = {THURSDAY_NIGHT, openApp, tab, button, cspViolations, stored, progress, noticeTitles, EXAMPLE, seed};
+module.exports = {THURSDAY_NIGHT, openApp, tab, button, cspViolations, stored, progress, noticeTitles, applyChange, saveSchedule, EXAMPLE, seed};

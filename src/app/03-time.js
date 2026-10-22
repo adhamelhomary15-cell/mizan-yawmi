@@ -1,6 +1,4 @@
   /* ---------------- time helpers ---------------- */
-  // The user's day (feature 018): from the settings, or 07:00 to 01:00.
-  const {start: START, end: END} = dayBounds(CFG.day), SPAN = END - START;
   const toMin = t => { const [a,b] = t.split(':').map(Number); return a*60 + b; };
   const pad = n => String(n).padStart(2,'0');
   function fmt(min){
@@ -25,8 +23,6 @@
     return mm ? hh + ' س و ' + mm + ' د' : hh + ' س';
   }
 
-  // Date and minute of a moment in the time zone from the settings.
-  const zoneFmt = new Intl.DateTimeFormat('en-CA',{timeZone:CFG.timezone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
   function zoneParts(d){
     const o = {}; zoneFmt.formatToParts(d).forEach(p => { o[p.type] = p.value; });
     return {iso: o.year + '-' + o.month + '-' + o.day, min: (Number(o.hour) % 24)*60 + Number(o.minute)};
