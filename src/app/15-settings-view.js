@@ -249,6 +249,24 @@
     </div>`;
   }
 
+  // The look (feature 022): the page's top script owns the palettes and keeps the choice (window.mizanLook). The
+  // swatches show each palette's light band, so they read the same in either theme.
+  const THEME_CHOICES = [['light', 'فاتح'], ['dark', 'غامق'], ['auto', 'تلقائي']];
+  function LookSection(){
+    const look = window.mizanLook, [chosen, setChosen] = useState(() => look && look.get());
+    if (!look) return null;
+    const pick = next => setChosen(look.set(next));
+    return html`<div class="sec">
+      <div class="sec-head"><h2>الشكل</h2></div>
+      <div class="panel form">
+        <div class="ed-colors" role="group" aria-label="فاتح أو غامق">${THEME_CHOICES.map(([id, name]) => html`<button type="button" class="swatch" key=${id} aria-pressed=${chosen.theme === id ? 'true' : 'false'} onClick=${() => pick({theme: id})}>${name}</button>`)}</div>
+        <p class="small muted">«تلقائي» بيمشي زي الموبايل.</p>
+        <div class="ed-colors" role="group" aria-label="الألوان">${look.palettes.map(p => html`<button type="button" class="swatch" key=${p.id} style=${{'--c': p.light}} aria-pressed=${chosen.palette === p.id ? 'true' : 'false'} onClick=${() => pick({palette: p.id})}><i aria-hidden="true"></i>${p.name}</button>`)}</div>
+        <p class="small muted">الشكل بيتحفظ على الجهاز ده بس، ومش بيتغيّر لما تستورد إعدادات أو ترجّع نسخة احتياطية.</p>
+      </div>
+    </div>`;
+  }
+
   function SettingsView({store, wk, sync, replaceAll, settingsChanged}){
     const [pending, setPending] = useState(null);
     const [msgs, setMsgs] = useState([]);
@@ -301,6 +319,7 @@
           <p class="small muted">الموقع: <bdi>${CFG.location.label || '—'}</bdi> · الطريقة: <bdi>${CFG.prayerMethod}</bdi> · اللغة: <bdi>${CFG.language}</bdi></p>
         </div>
       </div>
+      <${LookSection} />
       <div class="sec">
         <div class="sec-head"><h2>جدولك</h2></div>
         <div class="panel">

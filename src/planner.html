@@ -2,6 +2,45 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&family=Spectral:wght@700&display=swap">
+<script>
+/* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
+   It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
+   under its own key, outside the settings, the progress and the backup. */
+(function(){
+  const KEY = 'mizan-look', root = document.documentElement, phone = matchMedia('(prefers-color-scheme: dark)');
+  const palettes = [
+    {id: 'oxblood', name: 'عنابي', light: '#6E1A28', dark: '#3A1119'},
+    {id: 'olive', name: 'زيتي', light: '#434C14', dark: '#262B0C'},
+    {id: 'navy', name: 'كحلي', light: '#1F2F4F', dark: '#121C30'},
+    {id: 'graphite', name: 'رمادي', light: '#2E3135', dark: '#1E2023'}
+  ];
+  // A missing, broken or unknown field reads as its default.
+  const clean = v => ({
+    palette: v && palettes.some(p => p.id === v.palette) ? v.palette : 'oxblood',
+    theme: v && ['light', 'dark', 'auto'].indexOf(v.theme) >= 0 ? v.theme : 'auto'
+  });
+  let look;
+  try { look = clean(JSON.parse(localStorage.getItem(KEY))); } catch(e){ look = clean(null); }
+  function apply(){
+    const theme = look.theme === 'auto' ? (phone.matches ? 'dark' : 'light') : look.theme;
+    root.setAttribute('data-theme', theme);
+    root.setAttribute('data-palette', look.palette);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', palettes.find(p => p.id === look.palette)[theme]);
+  }
+  apply();
+  phone.addEventListener('change', () => { if (look.theme === 'auto') apply(); });
+  const get = () => ({palette: look.palette, theme: look.theme});
+  // Applies at once even when the browser refuses to keep it; the choice then lasts until the page closes.
+  function set(next){
+    look = clean(Object.assign(get(), next));
+    apply();
+    try { localStorage.setItem(KEY, JSON.stringify(look)); } catch(e){}
+    return get();
+  }
+  window.mizanLook = {palettes, get, set};
+})();
+</script>
 <style>
 /* Layout: phone-first RTL app. Oxblood shell (bottom bar on phones, side rail from 960px). World: Egyptian banknote inks on security paper; signature: the day's guilloche rosette. */
 :root{

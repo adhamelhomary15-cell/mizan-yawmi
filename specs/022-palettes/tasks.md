@@ -44,7 +44,7 @@ description: "Task list for feature 022: colour palettes and a light, dark or au
 
 ## Phase 2: Picking a palette and a theme (US1, US2)
 
-- [ ] T005 In `src/planner.html`, before `<style>`, add the top script (plan, decisions 1, 5, 6 and 7):
+- [x] T005 In `src/planner.html`, before `<style>`, add the top script (plan, decisions 1, 5, 6 and 7):
   - reads `mizan-look` as `{"palette":"oxblood","theme":"auto"}`; a missing, broken or unknown field reads as its
     default;
   - sets `data-theme` (`light` or `dark`, never `auto`) and `data-palette` on `<html>`;
@@ -53,17 +53,19 @@ description: "Task list for feature 022: colour palettes and a light, dark or au
   - exposes `window.mizanLook = {palettes, get(), set({palette, theme})}`. `palettes` is
     `[{id, name, light, dark}]`, with the Arabic names «عنابي», «زيتي», «كحلي», «رمادي»;
   - `set` writes the key inside `try`, and applies the choice even when the write fails;
-  - everything in `try`, under 50 lines (plan, Complexity Tracking).
-- [ ] T006 [US1] [US2] In `src/app/15-settings-view.js`, add `LookSection` under «المستخدم دلوقتي»:
+  - the storage read and write inside `try`, under 50 lines (plan, Complexity Tracking).
+- [x] T006 [US1] [US2] In `src/app/15-settings-view.js`, add `LookSection` under «المستخدم دلوقتي»:
   - title «الشكل»;
-  - a radio group of three: «فاتح» · «غامق» · «تلقائي», with «زي الموبايل» under «تلقائي»;
-  - a radio group of four palette swatches with their names, each showing its band colour from `mizanLook.palettes`;
-  - 44px targets, the chosen ones marked with `aria-checked`, arrow keys moving within a group;
+  - a group of three: «فاتح» · «غامق» · «تلقائي», with the line «تلقائي بيمشي زي الموبايل» under it;
+  - a group of four palette swatches with their names, each showing its light band colour from
+    `mizanLook.palettes`;
+  - the editor's kind-colour pattern (`.ed-colors` with `.swatch` buttons and `aria-pressed`, as in
+    `14b-editor-view.js`), so the targets are 44px and the keyboard works as it does there;
   - one tap calls `mizanLook.set`, with no confirmation;
   - the line «الشكل بيتحفظ على الجهاز ده بس، ومش بيتغيّر لما تستورد إعدادات أو ترجّع نسخة احتياطية.»
-- [ ] T007 [P] [US1] In `src/planner.html`, add the styles for the two groups. Swatches use the palette's band, a
-  one-pixel line, and no shadow (DESIGN.md).
-- [ ] T008 Run `tools/check-code.js` (the file stays under 600 lines) and `tools/check-security.js` (the new inline
+- [x] T007 [P] [US1] Styles for the two groups: none needed. The existing `.ed-colors` and `.swatch` styles already
+  give a one-pixel line, no shadow, and the band colour through `--c` (DESIGN.md).
+- [x] T008 Run `tools/check-code.js` (the file stays under 600 lines) and `tools/check-security.js` (the new inline
   script is in the policy). Then, in the browser at 375 px, light and dark:
   - every palette, and the kinds' inks unchanged;
   - reopen offline: the kept look, with no flash;
@@ -72,6 +74,9 @@ description: "Task list for feature 022: colour palettes and a light, dark or au
   - no sideways scroll.
 
   Show the owner the swatches (plan, Risks: bands near a kind's ink). **Commit**.
+
+  Not checked by hand, moved to T013: reopening offline, and «تلقائي» following a phone change while open (the
+  browser pane changes the emulated scheme without firing the `change` event; Playwright's `emulateMedia` does).
 
 ## Phase 3: The soft change (US3)
 
