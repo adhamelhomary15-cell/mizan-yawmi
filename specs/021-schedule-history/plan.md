@@ -1,6 +1,6 @@
 # Implementation Plan: Past Days Keep the Schedule They Had
 
-**Branch**: `020-schedule-history` | **Date**: 2026-10-21 | **Spec**: [spec.md](spec.md)
+**Branch**: `021-schedule-history` | **Date**: 2026-10-21 | **Spec**: [spec.md](spec.md)
 
 ## Summary
 
@@ -175,7 +175,7 @@ Phases 1 and 2 are one commit if `check-code` refuses the rules before their fir
 ## Risks
 
 - **Merging with 018** (day bounds, in progress in the other folder): 018 changes `02-settings-load.js`,
-  `14b-editor-view.js` and the validation too. 020 is merged after 018, by taking `main` into this branch and
+  `14b-editor-view.js` and the validation too. 021 is merged after 018, by taking `main` into this branch and
   rebuilding. The generated `index.html` and `sw.js` always conflict and are rebuilt, never merged by hand.
 - **Speed**: `listFor` runs for every day of the Week tab and of parity. `dayOn` walks at most about 60 entries, and
   is cached per date.

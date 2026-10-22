@@ -93,7 +93,7 @@ copy Monday onto Wednesday, and save. Monday and Wednesday show the change, and 
 4. **Given** unsaved changes, **When** the user leaves the editor, **Then** the app asks first. If they confirm,
    nothing is stored.
 5. **Given** a save, **Then** a summary says what changes («الاتنين: 2 بلوك اتغيروا»). It also says that the new week
-   applies to every day, past days too, as with an imported file (see Edge Cases). *Replaced by feature 020: the new
+   applies to every day, past days too, as with an imported file (see Edge Cases). *Replaced by feature 021: the new
    week starts today, and past days keep theirs.*
 6. **Given** a day that has two versions (from a file), **Then** the editor shows it as read-only with «اليوم ده ليه
    نسختين من ملف الإعدادات، عدّله من الملف». Saving keeps it exactly as it was.
@@ -160,7 +160,7 @@ shared with someone who has the same timetable.
 - **Past days follow the new week.** The app draws every day, past ones too, from the current schedule, as it does
   after an import. A tick belongs to a block's start time and kind, so a tick on a block whose start or kind changed
   stays in the data but no longer shows on that past day. The save summary says this plainly. Keeping the old week
-  for past days is a separate, later feature. *Done in feature 020 (`specs/020-schedule-history/`).*
+  for past days is a separate, later feature. *Done in feature 021 (`specs/021-schedule-history/`).*
 - **Unknown fields** in an imported file (for example `rules`, `taskTags`, `course`, or a field from a newer file)
   are kept unchanged when the editor saves.
 - **Two people editing:** the editor works on a copy taken when it opens. If the stored schedule changed meanwhile

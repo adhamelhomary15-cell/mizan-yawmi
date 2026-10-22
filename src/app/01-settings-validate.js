@@ -118,7 +118,7 @@
       else if (!clock(d.end) || (d.end > '05:00' && d.end < '20:00')) bad('invalid', 'day.end', 'end must be HH:MM from 20:00 to 23:59, or from 00:00 to 05:00 for the next morning');
       else bad('invalid', 'day', 'the day can be at most 24 hours long');
     }
-    // loose: a kept day (feature 020), whose kind or subject may since have been removed, and which was laid out
+    // loose: a kept day (feature 021), whose kind or subject may since have been removed, and which was laid out
     // within the bounds of its own time; ids need only a valid shape, and the current bounds do not apply.
     const checkBlocks = (list, path, loose) => {
       if (!Array.isArray(list) || !list.length) { bad('invalid', path, 'blocks must be a non-empty list'); return; }
@@ -178,7 +178,7 @@
       if (!isDayKey(k)) bad('invalid', 'week.' + k, 'day keys are 0 to 6');
       else checkDay(week[k], 'week.' + k, false);
     });
-    // Kept weeks (feature 020): [{until, days}] with until rising; a day is as in week, or null for no blocks. A kept
+    // Kept weeks (feature 021): [{until, days}] with until rising; a day is as in week, or null for no blocks. A kept
     // entry that fails is left out of the result with a warning, and the stored copy keeps it (see withHistory).
     const keptOk = [];
     if (obj.history !== undefined) {

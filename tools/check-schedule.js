@@ -55,7 +55,7 @@ const over = (ink, paper, p) => ink.map((v, i) => Math.round(v * p + paper[i] * 
 const tokens = (css, sel) => { const i = css.indexOf(sel + '{'), t = {}; if (i >= 0) css.slice(i, css.indexOf('}', i)).replace(/--([\w-]+):\s*([^;]+);/g, (_, k, v) => { t[k] = v.trim(); }); return t; };
 const KIND_COLORS = ['teal', 'blue', 'green', 'slate', 'copper', 'olive'];
 
-// Dates for the history checks (feature 020): days as YYYY-MM-DD, counted in UTC.
+// Dates for the history checks (feature 021): days as YYYY-MM-DD, counted in UTC.
 const addD = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 const wd = iso => new Date(iso + 'T00:00:00Z').getUTCDay();
 const datesOf = (today, keep) => ({today, yesterday: addD(today, -1), cutoff: addD(today, -(keep || 365))});

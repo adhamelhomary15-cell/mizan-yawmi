@@ -1,10 +1,12 @@
 # Feature Specification: Past Days Keep the Schedule They Had
 
-**Feature Branch**: `020-schedule-history`
+**Feature Branch**: `021-schedule-history`
 
 **Created**: 2026-10-21
 
 **Status**: Draft
+
+**Number**: started as 020 and renumbered 021 on 2026-10-22, since live settings (020) were merged first.
 
 **Input**: Suggested after 014 and chosen by the owner on 2026-10-21 («سجل للجدول»): when the user changes their week,
 the days that have passed keep the schedule they had, instead of being laid out again with the new week. The owner's

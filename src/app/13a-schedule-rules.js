@@ -207,7 +207,7 @@
     return min < end - 1440 ? {iso: addDays(iso, -1), min: min + 1440} : {iso, min};
   }
 
-  // Past days keep the week they had (feature 020). settings.history is [{until, days}] with until rising: an entry
+  // Past days keep the week they had (feature 021). settings.history is [{until, days}] with until rising: an entry
   // covers the dates after the one before it, up to its own until, and the current week covers the dates after the
   // last one. An entry lists only the days that differed from the week after it; a day it does not list is as in the
   // next newer entry, or in the current week. A listed day of null had no blocks.

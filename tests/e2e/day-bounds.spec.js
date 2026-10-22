@@ -1,13 +1,11 @@
 // Choosing when the day starts and ends (feature 018): an early start, a late night and the date at night, a block
 // left outside the day, and the guide. All data is generated.
 const {test, expect} = require('@playwright/test');
-const {openApp, tab, button, stored, EXAMPLE, seed} = require('./helpers');
+const {openApp, tab, button, stored, saveSchedule, EXAMPLE, seed} = require('./helpers');
 
 const settings = async page => ((await stored(page, 'mizan-settings')) || {}).data;
 const openEditor = async page => { await tab(page, 'الإعدادات'); await button(page, 'عدّل الجدول').click(); };
 const openDay = page => page.locator('summary', {hasText: 'يومك'}).click();
-const clickAndReload = (page, name) => Promise.all([page.waitForEvent('load'), button(page, name).click()]);
-const saveSchedule = async page => { await button(page, 'احفظ الجدول').click(); await clickAndReload(page, 'أيوه، احفظ'); };
 
 test('an early day: a 05:00 block is saved, opens Today, and the Week starts at 5ص', async ({page}) => {
   await openApp(page);

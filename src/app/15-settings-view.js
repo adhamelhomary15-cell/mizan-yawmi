@@ -208,7 +208,7 @@
     } catch(e){ return {ok: false}; }
   }
   // Saves the schedule in use as a settings file that «استيراد ملف إعدادات» takes back.
-  // The current week only (feature 020): the file imports anywhere as a normal settings file.
+  // The current week only (feature 021): the file imports anywhere as a normal settings file.
   function exportSettings(){
     const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json', out = JSON.parse(JSON.stringify(CFG));
     delete out.history; delete out.fromExample;
@@ -249,7 +249,7 @@
     </div>`;
   }
 
-  function SettingsView({store, wk, sync, replaceAll}){
+  function SettingsView({store, wk, sync, replaceAll, settingsChanged}){
     const [pending, setPending] = useState(null);
     const [msgs, setMsgs] = useState([]);
     const [done, setDone] = useState('');
@@ -274,20 +274,20 @@
     };
     const apply = () => {
       if (!saveStore('settings', settingsToSave(pending.settings))) { setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
-      location.reload();
+      settingsChanged('اتطبّقت الإعدادات الجديدة');
     };
     // Back to the example keeps the history, so past days keep their week; with no history there is nothing to keep.
     const reset = async () => {
       const out = settingsToSave(LOADED.example, true);
       if (!out.history) await removeStore('settings');
       else if (!saveStore('settings', out)) { setResetFailed(true); return; }
-      location.reload();
+      settingsChanged('رجعت للمثال');
     };
     // The schedule editor is a screen of Settings; an unsaved draft brings it back (see editorSession).
     const [screen, setScreen] = useState(() => editorSession ? 'editor' : guideRequested ? 'guide' : 'main');
     useEffect(() => { guideRequested = false; }, []);
     const edit = () => { openEditor(); setScreen('editor'); };
-    if (screen === 'editor') return html`<${ScheduleEditor} onClose=${() => setScreen('main')} />`;
+    if (screen === 'editor') return html`<${ScheduleEditor} onClose=${() => setScreen('main')} onSaved=${() => settingsChanged('اتحفظ الجدول', 'today')} />`;
     if (screen === 'guide') return html`<${Guide} onClose=${() => setScreen('main')} onEditor=${() => setScreen('editor')} />`;
     const sm = pending ? summaryOf(pending.settings) : null;
     return html`<div class="settingsv">

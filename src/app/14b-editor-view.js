@@ -9,7 +9,7 @@
     const original = draftOf(storedData('settings') || CFG);
     editorSession = {original, draft: draftOf(draft || original), savedAt: storedSavedAt()};
   }
-  // What a save stores (feature 020): next, with the week in use until yesterday kept for the days before today.
+  // What a save stores (feature 021): next, with the week in use until yesterday kept for the days before today.
   function settingsToSave(next, fromExample){
     const today = effectiveNow().iso;
     return withHistory(storedData('settings'), next, {today, yesterday: addDays(today, -1), cutoff: addDays(today, -365)}, fromExample);
@@ -173,7 +173,7 @@
     </details>`;
   }
 
-  function ScheduleEditor({onClose}){
+  function ScheduleEditor({onClose, onSaved}){
     const [draft, setDraftState] = useState(editorSession.draft);
     // next is a draft, or a function of the latest draft (editorSession.draft is always the latest)
     const setDraft = next => { const d = typeof next === 'function' ? next(editorSession.draft) : next; editorSession.draft = d; setDraftState(d); };
@@ -197,8 +197,7 @@
     const save = () => {
       if (storedSavedAt() !== editorSession.savedAt) { setCheck({moved: true}); return; }
       if (!saveStore('settings', settingsToSave(check.settings))) { setCheck({errors: ['المتصفح ده مش بيسمح بالحفظ، فالجدول مش هيتخزن.']}); return; }
-      editorSession = null;
-      location.reload();
+      onSaved();
     };
     const close = () => { if (editorDirty() && !leaving) { setLeaving(true); return; } editorSession = null; onClose(); };
     const ch = check && check.changes;

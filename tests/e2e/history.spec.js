@@ -1,11 +1,10 @@
-// Past days keep the schedule they had (feature 020): a change in the editor, a second save the same day, an import,
+// Past days keep the schedule they had (feature 021): a change in the editor, a second save the same day, an import,
 // going back to the example, a backup round trip, the export, and a kind removed since. Generated data only.
 const path = require('path');
 const {test, expect} = require('@playwright/test');
-const {openApp, tab, button, stored, EXAMPLE, seed} = require('./helpers');
+const {openApp, tab, button, stored, applyChange, EXAMPLE, seed} = require('./helpers');
 
 const settings = async page => ((await stored(page, 'mizan-settings')) || {}).data;
-const clickAndReload = (page, name) => Promise.all([page.waitForEvent('load'), button(page, name).click()]);
 // The day shown on Today at a date: the clock moves there and the page opens again.
 const openOn = async (page, iso) => {
   await page.clock.setFixedTime(new Date(iso + 'T15:00:00Z'));
@@ -28,6 +27,10 @@ test('a change in the editor leaves a past day and its week as they were', async
   await tab(page, 'الأسبوع');
   await page.locator('main button[aria-label="الأسبوع اللي فات"]').click();
   const lastWeek = await page.locator('main .weekv').innerText();
+  // next week is drawn once before the save, so a day kept from before the change would show after it
+  await page.locator('main button[aria-label="الأسبوع الجاي"]').click();
+  await page.locator('main button[aria-label="الأسبوع الجاي"]').click();
+  const nextWeek = await page.locator('main .weekv').innerText();
 
   await tab(page, 'الإعدادات');
   await button(page, 'عدّل الجدول').click();
@@ -36,12 +39,16 @@ test('a change in the editor leaves a past day and its week as they were', async
   await button(page, 'امسح البلوك').click();
   await button(page, 'احفظ الجدول').click();
   await expect(page.locator('.notice', {hasText: 'هتحفظ التغييرات دي؟'})).toContainText('الجدول الجديد بيبدأ من النهارده');
-  await clickAndReload(page, 'أيوه، احفظ');
+  await applyChange(page, 'أيوه، احفظ', 'اتحفظ الجدول');
   expect((await settings(page)).history).toEqual([{until: '2026-10-14', days: {'2': EXAMPLE.week['2']}}]);
 
+  // with no reload: last week as it was, next week without the block
   await tab(page, 'الأسبوع');
   await page.locator('main button[aria-label="الأسبوع اللي فات"]').click();
   await expect.poll(() => page.locator('main .weekv').innerText()).toBe(lastWeek);
+  await page.locator('main button[aria-label="الأسبوع الجاي"]').click();
+  await page.locator('main button[aria-label="الأسبوع الجاي"]').click();
+  await expect.poll(() => page.locator('main .weekv').innerText()).not.toBe(nextWeek);
   await openOn(page, '2026-10-06');
   await expect(page.locator('main ol li', {hasText: TRACKED[2]}).locator('[role=checkbox]')).toHaveAttribute('aria-checked', 'true');
   await openOn(page, '2026-10-20');
@@ -59,7 +66,7 @@ test('the summary names today, and a second save the same day adds no entry', as
     await button(page, 'تمام').click();
     await button(page, 'احفظ الجدول').click();
     await expect(page.locator('.notice', {hasText: 'هتحفظ التغييرات دي؟'})).toContainText('الخميس');
-    await clickAndReload(page, 'أيوه، احفظ');
+    await applyChange(page, 'أيوه، احفظ', 'اتحفظ الجدول');
   }
   const s = await settings(page);
   expect(s.history.map(h => h.until)).toEqual(['2026-10-14']);
@@ -70,7 +77,7 @@ test('an import, going back to the example and a backup round trip keep the hist
   await openApp(page, {at: new Date('2026-10-17T15:00:00Z'), before: seed(OWN)});
   await tab(page, 'الإعدادات');
   await page.locator('#settings-file').setInputFiles(exampleFile);
-  await clickAndReload(page, 'استبدل');
+  await applyChange(page, 'استبدل', 'اتطبّقت الإعدادات الجديدة');
   await openOn(page, '2026-10-13');
   expect(await dayTitles(page)).toContain('تلات بتاعي');
   await openOn(page, '2026-10-20');
@@ -88,7 +95,7 @@ test('an import, going back to the example and a backup round trip keep the hist
   const before = (await settings(page)).history;
 
   await button(page, 'رجّع المثال').click();
-  await clickAndReload(page, 'أيوه، ارجع للمثال');
+  await applyChange(page, 'أيوه، ارجع للمثال', 'رجعت للمثال');
   const reset = await settings(page);
   expect(reset.fromExample).toBe(true);
   expect(reset.history).toEqual(before);

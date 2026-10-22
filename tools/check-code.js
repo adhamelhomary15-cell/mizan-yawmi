@@ -10,7 +10,8 @@
  *   - no part is longer than 600 lines;
  *   - every top-level function, const and let in src/app is used somewhere;
  *   - nothing writes raw HTML into the page (dangerouslySetInnerHTML);
- *   - no string search for Arabic text decides behaviour (indexOf, includes, startsWith, endsWith).
+ *   - no string search for Arabic text decides behaviour (indexOf, includes, startsWith, endsWith);
+ *   - no value is worked out from the settings (CFG) at the top level outside applySettings in 02-settings-load.js.
  * Output is check names and file:name findings only.
  *
  * Exit codes: 0 all checks pass, 1 a check failed, 2 usage or I/O error.
@@ -70,6 +71,15 @@ function runChecks({order, parts, shell}) {
     }));
     return found;
   });
+  // A value worked out from the settings once, outside applySettings, would keep the old settings after a change
+  // (feature 020).
+  check('values worked out from the settings live in applySettings', () => {
+    const found = [];
+    Object.keys(parts).filter(f => f !== '02-settings-load.js').forEach(f => parts[f].split('\n').forEach((l, i) => {
+      if (/^  (const|let) [\w${}:, ]+=(?!\s*\(?[\w$, {}]*\)?\s*=>).*\bCFG\b/.test(l)) found.push(f + ':' + (i + 1));
+    }));
+    return found;
+  });
   return results;
 }
 
@@ -96,7 +106,8 @@ if (process.argv.includes('--self-test')) {
     ['a part missing from ORDER', d => { d.order = d.order.slice(1); }],
     ['a part listed twice', d => { d.order.push(first); }],
     ['raw HTML written into the page', d => { d.parts[first] += "  const raw = h('div', {dangerouslySetInnerHTML: {__html: ''}}); raw;\n"; }],
-    ['a search for Arabic text', d => { d.parts[first] += "  const special = t => t.indexOf('مثال') > -1; special;\n"; }]
+    ['a search for Arabic text', d => { d.parts[first] += "  const special = t => t.indexOf('مثال') > -1; special;\n"; }],
+    ['a value worked out from the settings outside applySettings', d => { d.parts[last] = '  const PLACE_NAME = CFG.location.label;\n  PLACE_NAME;\n' + d.parts[last]; }]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

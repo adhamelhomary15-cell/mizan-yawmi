@@ -1,6 +1,6 @@
 ---
 
-description: "Task list for feature 020: past days keep the schedule they had"
+description: "Task list for feature 021: past days keep the schedule they had"
 ---
 
 # Tasks: Past Days Keep the Schedule They Had
@@ -17,7 +17,7 @@ description: "Task list for feature 020: past days keep the schedule they had"
 - No mark, postponement or extra block changes when a week is saved (FR-011). Opening the app writes nothing.
 - Every path that writes the settings goes through `withHistory`. None of them writes `history` on its own.
 - A kept entry that fails the checks is carried on unchanged, never deleted.
-- Work in this worktree only (`E:\Claude\mizan-020-schedule-history`). The main folder is the 018 session's.
+- Work in this worktree only (`E:\Claude\mizan-021-schedule-history`). The main folder is the 018 session's.
 - Show the diff before each commit. Run `node tools/check-private.js --settings ../mizan-yawmi/.private/settings.json`
   with the files staged, and commit only on `RESULT: clean`.
 
@@ -84,7 +84,7 @@ description: "Task list for feature 020: past days keep the schedule they had"
 - [x] T014 [P] Docs:
   - the README «تعديل الجدول» part: past days keep their schedule, and the new week starts today;
   - PRODUCT: the history;
-  - the 014 spec line about past days, marked as replaced by 020.
+  - the 014 spec line about past days, marked as replaced by 021.
 - [ ] T015 Take `main` into this branch once 018 is merged, rebuild, and run every check, parity, the E2E tests and a
   375 px look. Tick the tasks, then push and open the PR. Merge when the owner asks.
 

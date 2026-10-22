@@ -78,7 +78,7 @@ const canon = v => Array.isArray(v) ? v.map(canon)
 const same = (x, y) => JSON.stringify(canon(x)) === JSON.stringify(canon(y));
 const FIELDS = ['s', 'e', 'cat', 'title', 'detail', 'subj', 'key'];
 
-// A day's note: from the day in use on the date where a build has dayOfDate (feature 020), else from its one week.
+// A day's note: from the day in use on the date where a build has dayOfDate (feature 021), else from its one week.
 const noteOn = (M, iso) => {
   const d = M.dayOfDate ? M.dayOfDate(iso) : M.SCHED && M.SCHED[new Date(iso + 'T00:00:00Z').getUTCDay()];
   return d ? d.note : undefined;

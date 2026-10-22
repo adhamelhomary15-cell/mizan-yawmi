@@ -109,7 +109,7 @@ function selfTest() {
     ['absorb naming an earlier block', withAbsorb('16:00'), false, 'invalid', 'absorb must name the start of a later block on this day'],
     ['absorb naming a block after the next anchored block', JSON.stringify((() => { const o = JSON.parse(withAbsorb('20:15')), b = o.week['0'].blocks[8]; while (b.length < 5) b.push(''); b[5] = {prayer: 'isha', dir: 'after', min: 0}; return o; })()), false, 'invalid', 'absorb must name a block before the next block tied to a prayer'],
     ['anchor with an unknown key besides absorb', withAbsorb('20:15', {later: true}), false, 'invalid', 'anchor has only prayer, dir, min and absorb'],
-    // kept weeks (feature 020): a bad entry is set aside with a warning, so the settings still load
+    // kept weeks (feature 021): a bad entry is set aside with a warning, so the settings still load
     ['a kept week with a removed kind and subject is accepted', withHistory([{until: '2026-01-04', days: {'0': {blocks: [['08:00', 'k7', 'old', '', 'S9']]}, '6': null}}]), true, null],
     ['a kept week with a bad time is only a warning', withHistory([{until: '2026-01-04', days: {'0': {blocks: [['8am', 'study', 'old']]}}}]), true, null],
     ['a kept week with a kind of a bad shape is only a warning', withHistory([{until: '2026-01-04', days: {'0': {blocks: [['08:00', 'nope', 'old']]}}}]), true, null],
