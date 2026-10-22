@@ -1,13 +1,10 @@
 // Making and editing the schedule in the app (features 014 and 016): the guide, the device location, the editor, a refused
 // save, a prayer tie through the seasons, a schedule file exported and imported back, and kinds the user adds.
 const {test, expect} = require('@playwright/test');
-const {openApp, tab, button, stored} = require('./helpers');
+const {openApp, tab, button, stored, applyChange, saveSchedule} = require('./helpers');
 
 const settings = async page => ((await stored(page, 'mizan-settings')) || {}).data;
 const openEditor = async page => { await tab(page, 'الإعدادات'); await button(page, 'عدّل الجدول').click(); };
-// Clicks a button that reloads the page, and waits for the new page.
-const clickAndReload = (page, name) => Promise.all([page.waitForEvent('load'), button(page, name).click()]);
-const saveSchedule = async page => { await button(page, 'احفظ الجدول').click(); await clickAndReload(page, 'أيوه، احفظ'); };
 const startGuide = async page => { await button(page, 'اعمل جدولك').click(); await expect(page.locator('main h1')).toHaveText('اعمل جدولك'); };
 
 test('the guide makes a week from a listed city, a template and subjects', async ({page}) => {
@@ -70,11 +67,11 @@ test('a block after midnight, copied to another day, is saved and exported, and 
   const file = info.outputPath('schedule.json');
   await download.saveAs(file);
   await button(page, 'رجّع المثال').click();
-  await clickAndReload(page, 'أيوه، ارجع للمثال');
+  await applyChange(page, 'أيوه، ارجع للمثال', 'رجعت للمثال');
   expect(await stored(page, 'mizan-settings')).toBeNull();
   await tab(page, 'الإعدادات');
   await page.locator('#settings-file').setInputFiles(file);
-  await clickAndReload(page, 'استبدل');
+  await applyChange(page, 'استبدل', 'اتطبّقت الإعدادات الجديدة');
   expect((await settings(page)).week).toEqual(s.week);
 });
 
@@ -165,7 +162,7 @@ test('a used kind cannot be deleted; once unused it goes, and the summary names 
   await expect(page.locator('#kl-k1')).toHaveCount(0);
   await button(page, 'احفظ الجدول').click();
   await expect(page.locator('.notice', {hasText: 'هتحفظ التغييرات دي؟'})).toContainText('الأنواع: تدريس');
-  await clickAndReload(page, 'أيوه، احفظ');
+  await applyChange(page, 'أيوه، احفظ', 'اتحفظ الجدول');
   expect((await settings(page)).categories.k1).toBeUndefined();
 });
 
@@ -178,10 +175,10 @@ test('an exported schedule brings its added kinds back on import', async ({page}
   const file = info.outputPath('kinds.json');
   await download.saveAs(file);
   await button(page, 'رجّع المثال').click();
-  await clickAndReload(page, 'أيوه، ارجع للمثال');
+  await applyChange(page, 'أيوه، ارجع للمثال', 'رجعت للمثال');
   await tab(page, 'الإعدادات');
   await page.locator('#settings-file').setInputFiles(file);
-  await clickAndReload(page, 'استبدل');
+  await applyChange(page, 'استبدل', 'اتطبّقت الإعدادات الجديدة');
   const after = await settings(page);
   expect(after.categories).toEqual(before.categories);
   expect(after.week['4']).toEqual(before.week['4']);

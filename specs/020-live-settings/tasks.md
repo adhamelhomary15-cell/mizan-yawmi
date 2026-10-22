@@ -36,8 +36,8 @@ description: "Task list for feature 020: settings changes without reopening the 
 
 ## Phase 3: Tests, docs, PR
 
-- [ ] T007 `tests/e2e/live-settings.spec.js`: US1, US1 with a new place, and US2, with no reload, and the screen equal
+- [x] T007 `tests/e2e/live-settings.spec.js`: US1, US1 with a new place, and US2, with no reload, and the screen equal
   to the screen after a reload. Update the tests in `schedule.spec.js` and `day-bounds.spec.js` that wait for a
   reload.
-- [ ] T008 [P] Docs: a README line, and B3 closed in `specs/010-code-health/review.md`.
-- [ ] T009 Run every check, parity, the year sweep, the E2E tests, and a 375 px look. Tick the tasks.
+- [x] T008 [P] Docs: a README line, and B3 closed in `specs/010-code-health/review.md`.
+- [x] T009 Run every check, parity, the year sweep, the E2E tests, and a 375 px look. Tick the tasks.
