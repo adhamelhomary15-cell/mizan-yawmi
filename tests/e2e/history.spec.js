@@ -103,6 +103,9 @@ test('an import, going back to the example and a backup round trip keep the hist
   await openOn(page, '2026-10-13');
   expect(await dayTitles(page)).toContain('تلات بتاعي');
 
+  // Back to the 18th before restoring: a restore on the 13th would be older than the reset saved on the 18th, and the
+  // newer copy on the device would rightly win when the page opens again.
+  await openOn(page, '2026-10-18');
   await tab(page, 'الإعدادات');
   await page.setInputFiles('#backup-file', backupFile);
   // The restore writes, then opens the page again. The history alone cannot tell the two apart (going back to the
