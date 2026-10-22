@@ -2,7 +2,9 @@
 // (the engine of Safari on iPhone). Never shipped with the app. Run tools/build.py first, then `npm test` here.
 const {defineConfig} = require('@playwright/test');
 
-const PORT = 4173;
+// E2E_PORT: another port when another folder of the repository (a git worktree) runs its tests at the same time,
+// since a server already on the port is reused and would serve that folder's build instead.
+const PORT = Number(process.env.E2E_PORT) || 4173;
 module.exports = defineConfig({
   testDir: '.',
   timeout: 30000,

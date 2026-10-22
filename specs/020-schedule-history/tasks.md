@@ -76,12 +76,12 @@ description: "Task list for feature 020: past days keep the schedule they had"
 
 ## Phase 4: Tests, docs, PR
 
-- [ ] T013 In `tests/e2e/history.spec.js`:
+- [x] T013 In `tests/e2e/history.spec.js`:
   - US1: a past ticked day survives a change, and last week's Week tab numbers are unchanged;
   - US2: the summary names today, and a second save today adds no entry;
   - US3: import, back to the example, a backup round trip, and an export with no `history`;
   - a removed kind shows «نوع اتمسح».
-- [ ] T014 [P] Docs:
+- [x] T014 [P] Docs:
   - the README «تعديل الجدول» part: past days keep their schedule, and the new week starts today;
   - PRODUCT: the history;
   - the 014 spec line about past days, marked as replaced by 020.
