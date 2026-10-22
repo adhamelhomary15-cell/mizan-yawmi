@@ -6,10 +6,13 @@
     try { example = validateSettings(JSON.parse(document.getElementById('example-settings').textContent)).settings; } catch(e){}
     if (!example) example = {format:'mizan-settings', version:1, language:'ar', prayerMethod:'Egyptian', timezone:'Africa/Cairo', location:{lat:30.0444, lng:31.2357, label:'Sample city'}, categories:{rest:{label:'راحة', track:false}}, week:{0:{blocks:[['08:00','rest','مثال']]}}};
     const got = loadStore('settings');
-    if (got.state === 'empty') return {settings: example, isExample: true, problem: false, got};
+    if (got.state === 'empty') return {settings: example, example, isExample: true, problem: false, got};
     const res = got.state === 'ok' ? validateSettings(got.data) : null;
-    if (res && res.ok) return {settings: res.settings, isExample: false, problem: false, got};
-    return {settings: example, isExample: true, problem: true, got};
+    // fromExample: the example stored with the history after «رجّع المثال»; keptAside: kept weeks the checks set
+    // aside, which stay in the stored copy (feature 021)
+    if (res && res.ok) return {settings: res.settings, example, isExample: !!res.settings.fromExample, problem: false, got,
+      keptAside: res.warnings.filter(w => w.code === 'history-entry').length};
+    return {settings: example, example, isExample: true, problem: true, got};
   }
 
   /* ---------------- fixed names (weekdays) ---------------- */
@@ -38,7 +41,7 @@
   let NEW_KINDS;
   let KIND_IDS;
   let SUBJ;
-  let SCHED;
+  let dayCache;
   let COURSE;
   let PLAN;
   let TASK_TAGS;
@@ -61,10 +64,14 @@
     NEW_KINDS = Object.keys(CFG.categories || {}).filter(k => /^k\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1));
     NEW_KINDS.forEach(k => { CATS[k] = Object.assign({long: CFG.categories[k].label}, CFG.categories[k]); });
     KIND_IDS = Object.keys(DEFAULT_CATS).concat(NEW_KINDS);
+    // A kind a kept week still uses but the settings no longer have (feature 021): its past blocks show under this
+    // name, never tracked. It is not in KIND_IDS, so the editor and the Week rows do not list it.
+    (CFG.history || []).forEach(h => Object.values(h.days).forEach(d => {
+      if (d) (Array.isArray(d.blocks) ? [d.blocks] : Object.values(d.blocks)).forEach(list => list.forEach(b => {
+        if (!CATS[b[1]]) CATS[b[1]] = {label: 'نوع اتمسح', long: 'نوع اتمسح', track: false};
+      }));
+    }));
     SUBJ = CFG.subjects || {};
-    // A day's blocks (from the settings) are [start, category, title ("Subject|action" splits), detail, subject].
-    // Each block ends where the next starts; the last ends at the end of the day.
-    SCHED = CFG.week || {};
     COURSE = CFG.course ? {name: CFG.course.name, sub: CFG.course.sub || ''} : null;
     PLAN = CFG.course ? CFG.course.plan : [];
     TASK_TAGS = Object.assign({uni:CATS.uni.label, course:CATS.course.label, work:CATS.work.label, personal:CATS.personal.label}, CFG.taskTags || {});
@@ -81,8 +88,10 @@
     FAMILY = NEW_KINDS.reduce((f, k) => { if (CATS[k].side) f[k] = CATS[k].side; return f; }, {uni:'a', study:'a', course:'a', work:'b', gym:'b', quran:'b'});
     // The Week strip's hour labels: every 5 hours from the first full hour of the day (feature 018).
     AXIS_HOURS = Array.from({length: 6}, (_, i) => Math.ceil(START / 60) * 60 + i * 300).filter(m => m < END);
-    // The saved schedule's prayer times, once per date, for these settings only.
+    // The saved schedule's prayer times, and the day in use on each date (feature 021), once per date, for these
+    // settings only.
     ptCache = {};
+    dayCache = {};
   }
   applySettings(readSettings());
   // When the local copy was missing or damaged and the mirror brings the settings back, write them back and open the

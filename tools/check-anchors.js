@@ -16,7 +16,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = require('./lib/source.js').readSource();
+const {readSource, dataSection} = require('./lib/source.js');
+const html = readSource();
 const START_MARK = '// start of anchor layout', END_MARK = '// end of anchor layout';
 
 function load(source) {
@@ -231,7 +232,7 @@ function loadApp(settingsText, useAdhan) {
   const ls = {getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; }};
   const doc = {getElementById: id => (id === 'example-settings' && example ? {textContent: example[1]} : null)};
   const win = {adhan, localStorage: ls, document: doc};
-  return new Function('window', 'document', 'localStorage', 'adhan', html.slice(a, b) + '\nreturn {blocksFor, listFor, dayNotice, layoutDay, prayers, weekday, START, END, LOADED};')(win, doc, ls, adhan);
+  return new Function('window', 'document', 'localStorage', 'adhan', dataSection(html, a, b) + '\nreturn {blocksFor, listFor, dayNotice, layoutDay, prayers, weekday, START, END, LOADED};')(win, doc, ls, adhan);
 }
 
 function sweepStats(settingsText, fromYear, toYear, label) {

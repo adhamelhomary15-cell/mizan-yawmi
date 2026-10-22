@@ -80,7 +80,8 @@ test('an imported file and then the example apply with no reload, and progress s
   await button(page, 'رجّع المثال').click();
   await applyChange(page, 'أيوه، ارجع للمثال', 'رجعت للمثال');
   await expect(exampleNotice(page)).toHaveCount(1);
-  expect(await stored(page, 'mizan-settings')).toBeNull();
+  // the past days showed the imported week, so the example is stored with it as history (feature 021)
+  expect((await stored(page, 'mizan-settings')).data.fromExample).toBe(true);
   await tab(page, 'اليوم');
   await expect(page.locator('.timeline li', {hasText: 'Imported block'})).toHaveCount(0);
   expect(await samePage(page)).toBe(true);

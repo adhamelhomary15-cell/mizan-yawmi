@@ -18,6 +18,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const {dataSection} = require('./lib/source.js');
 
 const argv = process.argv.slice(2);
 const opt = n => { const i = argv.indexOf('--' + n); return i >= 0 ? argv[i + 1] : undefined; };
@@ -42,7 +43,7 @@ function load(file, settingsText) {
   const b = html.indexOf(END_MARKER);
   if (a < 0 || b < 0 || b < a) throw new Error('cannot find the data section in ' + path.basename(file));
   // Functions the section may rely on that live elsewhere in the file are not needed; keep only the section.
-  let code = html.slice(a, b);
+  let code = dataSection(html, a, b);
   const ex = html.match(/<script type="application\/json" id="example-settings">([\s\S]*?)<\/script>/);
   const store = {};
   if (settingsText) store['mizan-settings-v1'] = settingsText;
@@ -54,7 +55,7 @@ function load(file, settingsText) {
   const fakeDocument = { getElementById: id => id === 'example-settings' && ex ? { textContent: ex[1] } : null };
   const useAdhan = NO_ADHAN ? undefined : adhan;
   const win = { adhan: useAdhan, localStorage: fakeStorage, document: fakeDocument };
-  const names = ['blocksFor', 'phaseFor', 'SCHED', 'CATS', 'SUBJ', 'COURSE', 'PLAN', 'RULES', 'TASK_TAGS'];
+  const names = ['blocksFor', 'phaseFor', 'SCHED', 'dayOfDate', 'CATS', 'SUBJ', 'COURSE', 'PLAN', 'RULES', 'TASK_TAGS'];
   const present = names.filter(n => new RegExp('(?:function|const|let)\\s+' + n + '\\b').test(code));
   const fn = new Function('window', 'document', 'localStorage', 'adhan',
     code + '\nreturn {' + present.map(n => n + ':' + n).join(',') + '};');
@@ -77,6 +78,11 @@ const canon = v => Array.isArray(v) ? v.map(canon)
 const same = (x, y) => JSON.stringify(canon(x)) === JSON.stringify(canon(y));
 const FIELDS = ['s', 'e', 'cat', 'title', 'detail', 'subj', 'key'];
 
+// A day's note: from the day in use on the date where a build has dayOfDate (feature 021), else from its one week.
+const noteOn = (M, iso) => {
+  const d = M.dayOfDate ? M.dayOfDate(iso) : M.SCHED && M.SCHED[new Date(iso + 'T00:00:00Z').getUTCDay()];
+  return d ? d.note : undefined;
+};
 const addDays = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return t.toISOString().slice(0, 10); };
 for (let i = 0; i < days; i++) {
   const iso = addDays(from, i);
@@ -84,11 +90,7 @@ for (let i = 0; i < days; i++) {
   const x = A.blocksFor(iso), y = B.blocksFor(iso);
   if (x.length !== y.length) { note(iso + ': block count differs (' + x.length + ' vs ' + y.length + ')'); continue; }
   x.forEach((bx, j) => FIELDS.forEach(f => { if (!same(bx[f], y[j][f])) note(iso + ': block ' + j + ' field ' + f + ' differs'); }));
-}
-for (const wd of [0, 1, 2, 3, 4, 5, 6]) {
-  comparisons++;
-  const nx = A.SCHED && A.SCHED[wd] ? A.SCHED[wd].note : undefined, ny = B.SCHED && B.SCHED[wd] ? B.SCHED[wd].note : undefined;
-  if ((nx || '') !== (ny || '')) note('weekday ' + wd + ': note differs');
+  if ((noteOn(A, iso) || '') !== (noteOn(B, iso) || '')) note(iso + ': note differs');
 }
 for (const name of ['CATS', 'SUBJ', 'COURSE', 'PLAN', 'RULES', 'TASK_TAGS']) {
   if (!(name in A) && !(name in B)) continue;

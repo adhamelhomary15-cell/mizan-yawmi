@@ -57,8 +57,10 @@ cities of the 57 OIC member states (GeoNames, CC BY 4.0), the device location on
   forward on update without loss; broken entries are set aside, never deleted.
 - The schedule, subjects, category labels, course plan, rules text, time zone, prayer location and method, the
   day-version rule, and language all come from a settings object: the stored settings file if there is one,
-  otherwise the embedded example. Settings are read once per page, so saving the schedule reloads it. The day's bounds
-  (07:00 to 01:00) are fixed, and a two-version day is edited only in the file. A day can have two versions that switch by a prayer-time threshold, and a block can be tied to a prayer
+  otherwise the embedded example. Settings are read once per page, so saving the schedule reloads it. The day's start
+  and end are a setting (07:00 to 01:00 by default), and a two-version day is edited only in the file. Past days keep
+  the week they had: saving, importing or going back to the example starts the new week today and keeps the earlier
+  weeks, only the days that changed, for at least a year; names, kinds, place and day bounds are always the current ones. A day can have two versions that switch by a prayer-time threshold, and a block can be tied to a prayer
   (for example 30 minutes before Maghrib) so it follows the real prayer time all year; the anchor can name a later
   block that takes the shift, so the rest of the evening keeps its times and free time is not squeezed.
 - Progress (ticks, tasks, added courses) lives on the device (localStorage) under its own key, separate from the

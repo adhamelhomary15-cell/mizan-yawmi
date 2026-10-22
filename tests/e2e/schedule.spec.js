@@ -68,7 +68,8 @@ test('a block after midnight, copied to another day, is saved and exported, and 
   await download.saveAs(file);
   await button(page, 'رجّع المثال').click();
   await applyChange(page, 'أيوه، ارجع للمثال', 'رجعت للمثال');
-  expect(await stored(page, 'mizan-settings')).toBeNull();
+  // the past days showed the saved week, so the example is stored with it as history (feature 021)
+  expect((await settings(page)).fromExample).toBe(true);
   await tab(page, 'الإعدادات');
   await page.locator('#settings-file').setInputFiles(file);
   await applyChange(page, 'استبدل', 'اتطبّقت الإعدادات الجديدة');

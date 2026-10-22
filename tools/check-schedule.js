@@ -27,7 +27,7 @@ function grabFunction(source, name) {
   }
   throw new Error(name + ' not found');
 }
-const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt, setDayBounds';
+const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt, setDayBounds, dayOn, withHistory, HISTORY_MAX_BYTES';
 const load = source => new Function(grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + block(source) + '\nreturn {dayBounds, validateSettings, ' + NAMES + '};')();
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -55,6 +55,21 @@ const over = (ink, paper, p) => ink.map((v, i) => Math.round(v * p + paper[i] * 
 const tokens = (css, sel) => { const i = css.indexOf(sel + '{'), t = {}; if (i >= 0) css.slice(i, css.indexOf('}', i)).replace(/--([\w-]+):\s*([^;]+);/g, (_, k, v) => { t[k] = v.trim(); }); return t; };
 const KIND_COLORS = ['teal', 'blue', 'green', 'slate', 'copper', 'olive'];
 
+// Dates for the history checks (feature 021): days as YYYY-MM-DD, counted in UTC.
+const addD = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+const wd = iso => new Date(iso + 'T00:00:00Z').getUTCDay();
+const datesOf = (today, keep) => ({today, yesterday: addD(today, -1), cutoff: addD(today, -(keep || 365))});
+// A random change to a week: a block retitled or added, a day removed, a two-version day made plain, a day replaced,
+// or nothing at all.
+function changeWeek(h, d, rnd, n){
+  const day = ONE_VERSION[rnd(ONE_VERSION.length)], op = rnd(6), list = d.week[day] && Array.isArray(d.week[day].blocks) ? d.week[day].blocks : null;
+  if (op === 0 && list) return h.setBlock(d, day, rnd(list.length), {title: 'save ' + n}).draft || d;
+  if (op === 1 && list) return h.addBlock(d, day, {start: hm(420 + 5 * rnd(200)), kind: 'study', title: 'added ' + n}).draft || d;
+  if (op === 2) { const x = h.draftOf(d); delete x.week[day]; return Object.keys(x.week).length ? x : d; }
+  if (op === 3) { const x = h.draftOf(d); x.week['3'] = {blocks: [['08:00', 'study', 'plain ' + n]]}; return x; }
+  if (op === 4) { const x = h.draftOf(d); x.week[day] = {blocks: [['09:00', 'rest', 'back ' + n]]}; return x; }
+  return d;
+}
 // Every block list of a draft: one per one-version day, and A and B of a two-version day.
 const SCHEDULE_ALL = d => Object.values(d.week).flatMap(w => !w.blocks ? [] : Array.isArray(w.blocks) ? [w.blocks] : Object.values(w.blocks));
 function runChecks(h, source) {
@@ -261,6 +276,77 @@ function runChecks(h, source) {
     }) && source.includes('.c-k-' + c + '{--c:var(--k-' + c + ')}'));
   });
   check('every colour class of a kind goes through kc', () => !/c-' \+ (b\.cat|main\.cat|cat|k)\b/.test(source));
+  // Feature 020. The oracle keeps the whole week of every save with the date it started; a date's week is the last one
+  // started on or before it.
+  check('300 random sequences of saves: every date shows the week in use on it, and the history stays valid', () => {
+    let seed = 2020; const rnd = n => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+    for (let k = 0; k < 300; k++) {
+      const first = freeze(base()), starts = [['0000-00-00', first.week]];
+      let stored = first, today = '2026-01-01';
+      for (let n = 0; n < 2 + rnd(8); n++) {
+        today = addD(today, [0, 1, 1, 3, 7, 40][rnd(6)]);
+        const next = changeWeek(h, h.draftOf(stored), rnd, n);
+        stored = freeze(h.withHistory(stored, next, datesOf(today, 4000)));
+        while (starts.length && starts[starts.length - 1][0] === today) starts.pop();
+        starts.push([today, next.week]);
+        const res = h.validateSettings(JSON.parse(JSON.stringify(stored)));
+        if (!res.ok || res.warnings.some(w => w.code === 'history-entry')) return false;
+      }
+      for (let x = addD(today, -120); x <= addD(today, 14); x = addD(x, 1)) {
+        const want = starts.filter(([from]) => from <= x).pop()[1][String(wd(x))] || null;
+        if (!eq(h.dayOn(stored, x, wd), want)) return false;
+      }
+    }
+    return true;
+  });
+  check('a kept entry holds only the days that changed, and an equal week adds nothing', () => {
+    const s = freeze(base()), next = h.setBlock(h.draftOf(s), '2', 0, {title: 'changed'}).draft;
+    const one = h.withHistory(s, next, datesOf('2026-03-10'));
+    const same = h.withHistory(one, h.draftOf(one), datesOf('2026-03-20'));
+    return eq(one.history, [{until: '2026-03-09', days: {'2': s.week['2']}}]) && eq(same.history, one.history);
+  });
+  check("a second save on the same day replaces that day's week, and saving the old week back clears it", () => {
+    const s = freeze(base()), d = datesOf('2026-03-10');
+    const a = h.withHistory(s, h.setBlock(h.draftOf(s), '2', 0, {title: 'A'}).draft, d);
+    const b = h.withHistory(a, h.setBlock(h.draftOf(a), '4', 0, {title: 'B'}).draft, d);
+    const back = h.withHistory(b, Object.assign(h.draftOf(b), {week: s.week}), d);
+    return b.history.length === 1 && eq(b.history[0].days, {'2': s.week['2'], '4': s.week['4']})
+      && b.history[0].until === '2026-03-09' && eq(h.dayOn(b, '2026-03-09', () => 2), s.week['2']) && back.history === undefined;
+  });
+  check('two-version days and removed days are kept as they were', () => {
+    const s = freeze(base()), x = h.draftOf(s);
+    x.week['3'] = {blocks: [['08:00', 'study', 'plain']]}; delete x.week['6'];
+    const out = h.withHistory(s, x, datesOf('2026-03-10'));
+    return eq(h.dayOn(out, '2026-03-04', wd), s.week['3']) && eq(h.dayOn(out, '2026-03-07', wd), s.week['6'])
+      && h.dayOn(out, '2026-03-14', wd) === null && eq(h.dayOn(out, '2026-03-11', wd), x.week['3']);
+  });
+  check('entries older than the cutoff go, and the history never makes the settings larger than the limit', () => {
+    const s = Object.assign(base(), {history: [{until: '2025-01-01', days: {'0': null}}, {until: '2026-01-01', days: {'1': null}}]});
+    const cut = h.withHistory(s, h.setBlock(h.draftOf(s), '2', 0, {title: 'x'}).draft, datesOf('2026-03-10'));
+    const note = 'n'.repeat(400), big = base();
+    big.history = Array.from({length: 4000}, (_, i) => ({until: addD('2015-01-01', i), days: {'2': {note, blocks: [['08:00', 'study', 'old ' + i]]}}}));
+    const capped = h.withHistory(big, h.setBlock(h.draftOf(big), '2', 0, {title: 'y'}).draft, datesOf('2026-03-10', 9000));
+    return eq(cut.history.map(e => e.until), ['2026-01-01', '2026-03-09']) && Buffer.byteLength(JSON.stringify(capped)) <= h.HISTORY_MAX_BYTES
+      && capped.history[capped.history.length - 1].until === '2026-03-09' && capped.history.length < big.history.length;
+  });
+  check('a bad kept entry is carried on but left out when loading, and an import never brings its own history', () => {
+    const bad = {until: '2026-01-02', days: {'0': {blocks: [['8am', 'study', 'x']]}}};
+    const s = Object.assign(base(), {history: [bad]});
+    const next = Object.assign(h.setBlock(h.draftOf(s), '2', 0, {title: 'z'}).draft, {history: [{until: '2026-02-02', days: {'1': null}}]});
+    const out = h.withHistory(s, next, datesOf('2026-03-10')), res = h.validateSettings(JSON.parse(JSON.stringify(out)));
+    return eq(out.history[0], bad) && out.history.length === 2 && res.ok && res.warnings.filter(w => w.code === 'history-entry').length === 1
+      && eq(res.settings.history.map(e => e.until), ['2026-03-09']);
+  });
+  check('a kept block of a removed kind or subject, or outside the current day, loads with no warning', () => {
+    const s = Object.assign(base(), {history: [{until: '2026-01-04', days: {'0': {blocks: [['05:00', 'k7', 'old', '', 'S9']]}, '6': null}}]});
+    const res = h.validateSettings(JSON.parse(JSON.stringify(s)));
+    return res.ok && !res.warnings.some(w => w.code === 'history-entry') && res.settings.history.length === 1;
+  });
+  check('fromExample is set only by the reset, and dropped by any other save', () => {
+    const s = freeze(base()), d = datesOf('2026-03-10');
+    const reset = h.withHistory(s, example, d, true), after = h.withHistory(reset, h.draftOf(reset), d);
+    return reset.fromExample === true && after.fromExample === undefined && h.validateSettings(JSON.parse(JSON.stringify(reset))).ok;
+  });
   check('the schedule rules block never mentions storage, the page or the network', () => {
     const b = block(source).split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');
     return !/localStorage|indexedDB|document\.|window\.|fetch\(|navigator\./.test(b);
@@ -290,9 +376,15 @@ if (process.argv.includes('--self-test')) {
     ['a built-in kind is removable', s => s.replace("if (!/^k\\d+$/.test(id)) return {ok: false, code: 'built-in'};", '')],
     ['a built-in kind takes a colour', s => s.replace("if (c.color !== undefined || c.side !== undefined) bad(", "if (false) bad(")],
     ['the day has no 24-hour limit', s => s.replace('return end - start <= 1440 ? {start, end} : null;', 'return end >= 0 ? {start, end} : null;')],
-    ['a block outside the day is accepted', s => s.replace("else if (bounds && (t < bounds.start || t >= bounds.end)) bad(", "else if (false) bad(")],
+    ['a block outside the day is accepted', s => s.replace("else if (!loose && bounds && (t < bounds.start || t >= bounds.end)) bad(", "else if (false) bad(")],
     ['times stop at 24:59', s => s.replace('return h <= 28 && m <= 59 ? h * 60 + m : null;', 'return h <= 24 && m <= 59 ? h * 60 + m : null;')],
-    ['the date turns at 01:00 whatever the end', s => s.replace('return min < end - 1440 ? {iso: addDays(iso, -1)', 'return min < 60 ? {iso: addDays(iso, -1)')]
+    ['the date turns at 01:00 whatever the end', s => s.replace('return min < end - 1440 ? {iso: addDays(iso, -1)', 'return min < 60 ? {iso: addDays(iso, -1)')],
+    ['a second save on the same day adds another entry', s => s.replace("history = history.filter(h => !keptShape(h) || h.until < dates.yesterday);", '')],
+    ['a kept entry holds the whole week', s => s.replace("if (JSON.stringify(was[day]) !== JSON.stringify(out.week[day] || null)) days[day] = was[day];", 'days[day] = was[day];')],
+    ['a kept entry ends today', s => s.replace("history.push({until: dates.yesterday, days});", 'history.push({until: dates.today, days});')],
+    ['old entries are never dropped', s => s.replace("history = history.filter(h => !keptShape(h) || h.until >= dates.cutoff);", '')],
+    ['a kept block must use a kind that still exists', s => s.replace("loose ? !(CATEGORY_IDS.indexOf(b[1]) >= 0 || isNewKind(b[1])) : ", '')],
+    ['a kept block must fit the current day', s => s.replace("else if (!loose && bounds && (t < bounds.start", "else if (bounds && (t < bounds.start")]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

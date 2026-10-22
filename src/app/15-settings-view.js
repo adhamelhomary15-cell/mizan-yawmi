@@ -208,9 +208,11 @@
     } catch(e){ return {ok: false}; }
   }
   // Saves the schedule in use as a settings file that «استيراد ملف إعدادات» takes back.
+  // The current week only (feature 021): the file imports anywhere as a normal settings file.
   function exportSettings(){
-    const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json';
-    try { downloadText(name, JSON.stringify(CFG, null, 2) + '\n'); return {ok: true, name}; } catch(e){ return {ok: false}; }
+    const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json', out = JSON.parse(JSON.stringify(CFG));
+    delete out.history; delete out.fromExample;
+    try { downloadText(name, JSON.stringify(out, null, 2) + '\n'); return {ok: true, name}; } catch(e){ return {ok: false}; }
   }
   function BackupSection({store, wk, sync, replaceAll}){
     const [last, setLast] = useState(readBackupMeta);
@@ -252,6 +254,7 @@
     const [msgs, setMsgs] = useState([]);
     const [done, setDone] = useState('');
     const [askReset, setAskReset] = useState(false);
+    const [resetFailed, setResetFailed] = useState(false);
     const [exported, setExported] = useState(null);   // {ok, name}
     const msgRef = useRef(null);
     useEffect(() => { if (msgs.length && msgRef.current) { try { msgRef.current.focus(); } catch(e){} } }, [msgs]);
@@ -270,11 +273,14 @@
       r.readAsText(f);
     };
     const apply = () => {
-      if (!saveStore('settings', pending.settings)) { setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
+      if (!saveStore('settings', settingsToSave(pending.settings))) { setMsgs(['المتصفح ده مش بيسمح بالحفظ، فالإعدادات مش هتتخزن.']); return; }
       settingsChanged('اتطبّقت الإعدادات الجديدة');
     };
+    // Back to the example keeps the history, so past days keep their week; with no history there is nothing to keep.
     const reset = async () => {
-      await removeStore('settings');
+      const out = settingsToSave(LOADED.example, true);
+      if (!out.history) await removeStore('settings');
+      else if (!saveStore('settings', out)) { setResetFailed(true); return; }
       settingsChanged('رجعت للمثال');
     };
     // The schedule editor is a screen of Settings; an unsaved draft brings it back (see editorSession).
@@ -290,7 +296,8 @@
         <div class="sec-head"><h2>المستخدم دلوقتي</h2></div>
         <div class="panel">
           <p><b>${LOADED.isExample ? 'جدول مثال عام' : (CFG.name || 'إعداداتي')}</b></p>
-          <p class="small muted">${LOADED.isExample ? 'مفيش ملف إعدادات متخزن. استورد ملفك عشان التطبيق يبقى بتاعك.' : 'الإعدادات دي متخزنة على الجهاز ده وبتشتغل من غير نت.'}${LOADED.problem ? ' (الإعدادات المتخزنة مكنتش صالحة فبنعرض المثال.)' : ''}</p>
+          <p class="small muted">${CFG.fromExample ? 'المثال متخزن، والأيام اللي فاتت بتفضل بجدولك القديم.' : LOADED.isExample ? 'مفيش ملف إعدادات متخزن. استورد ملفك عشان التطبيق يبقى بتاعك.' : 'الإعدادات دي متخزنة على الجهاز ده وبتشتغل من غير نت.'}${LOADED.problem ? ' (الإعدادات المتخزنة مكنتش صالحة فبنعرض المثال.)' : ''}</p>
+          ${LOADED.keptAside ? html`<p class="small" role="status">فيه ${LOADED.keptAside} من الأسابيع القديمة في السجل شكلها بايظ، فأيامها بتتعرض بالأسبوع اللي بعدها. هي محفوظة زي ما هي ومامسحناهاش.</p>` : null}
           <p class="small muted">الموقع: <bdi>${CFG.location.label || '—'}</bdi> · الطريقة: <bdi>${CFG.prayerMethod}</bdi> · اللغة: <bdi>${CFG.language}</bdi></p>
         </div>
       </div>
@@ -329,7 +336,7 @@
         <div class="sec-head"><h2>رجوع للمثال</h2></div>
         <div class="panel">
           <p class="small muted">بيمسح الإعدادات المتخزنة بس. علاماتك ومهامك وتقدمك بيفضلوا زي ما هم.</p>
-          ${askReset ? html`<${Notice} title="تأكيد: ترجع للجدول المثال؟"><span><button type="button" class="btn danger" onClick=${reset}>أيوه، ارجع للمثال</button> <button type="button" class="btn ghost" onClick=${() => setAskReset(false)}>لأ</button></span></${Notice}>`
+          ${askReset ? html`<${Notice} title="تأكيد: ترجع للجدول المثال؟"><span><button type="button" class="btn danger" onClick=${reset}>أيوه، ارجع للمثال</button> <button type="button" class="btn ghost" onClick=${() => setAskReset(false)}>لأ</button></span>${resetFailed ? html`<p class="form-err" role="alert">المتصفح ده مش بيسمح بالحفظ، فمرجعناش للمثال.</p>` : null}</${Notice}>`
             : html`<button type="button" class="btn" onClick=${() => setAskReset(true)}>رجّع المثال</button>`}
         </div>
       </div>`}

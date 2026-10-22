@@ -9,6 +9,11 @@
     const original = draftOf(storedData('settings') || CFG);
     editorSession = {original, draft: draftOf(draft || original), savedAt: storedSavedAt()};
   }
+  // What a save stores (feature 021): next, with the week in use until yesterday kept for the days before today.
+  function settingsToSave(next, fromExample){
+    const today = effectiveNow().iso;
+    return withHistory(storedData('settings'), next, {today, yesterday: addDays(today, -1), cutoff: addDays(today, -365)}, fromExample);
+  }
   const editorDirty = () => !!editorSession && JSON.stringify(editorSession.draft) !== JSON.stringify(editorSession.original);
   addEventListener('beforeunload', e => { if (editorDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
@@ -191,7 +196,7 @@
     };
     const save = () => {
       if (storedSavedAt() !== editorSession.savedAt) { setCheck({moved: true}); return; }
-      if (!saveStore('settings', check.settings)) { setCheck({errors: ['المتصفح ده مش بيسمح بالحفظ، فالجدول مش هيتخزن.']}); return; }
+      if (!saveStore('settings', settingsToSave(check.settings))) { setCheck({errors: ['المتصفح ده مش بيسمح بالحفظ، فالجدول مش هيتخزن.']}); return; }
       onSaved();
     };
     const close = () => { if (editorDirty() && !leaving) { setLeaving(true); return; } editorSession = null; onClose(); };
@@ -227,7 +232,7 @@
             ch.subjects ? html`<span class="small">المواد اتغيّرت</span>` : null,
             ch.place ? html`<span class="small">المكان اتغيّر</span>` : null,
             ch.day ? html`<span class="small">يومك اتغيّر</span>` : null,
-            html`<span class="small muted">الجدول الجديد بيسري على كل الأيام، واللي فاتت كمان. علامة على بلوك وقته أو نوعه اتغيّر بتفضل محفوظة، بس مش هتبان على اليوم ده.</span>`]}>
+            html`<span class="small muted">الجدول الجديد بيبدأ من النهارده (<bdi>${DAY_NAMES[weekday(effectiveNow().iso)]} ${dateLabel(effectiveNow().iso)}</bdi>)، والأيام اللي قبله بتفضل بجدولها. علامة عملتها النهارده على بلوك وقته أو نوعه اتغيّر بتفضل محفوظة، بس مش هتبان النهارده.</span>`]}>
             <span class="backup-act"><button type="button" class="btn primary" onClick=${save}>أيوه، احفظ</button><button type="button" class="btn ghost" onClick=${() => setCheck(null)}>لأ</button></span></${Notice}>` : null}
         <button type="button" class="btn primary" onClick=${trySave}>احفظ الجدول</button>
       </div>
