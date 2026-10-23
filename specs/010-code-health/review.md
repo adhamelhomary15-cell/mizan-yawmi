@@ -60,7 +60,7 @@ Ranked by value against risk.
 | C1 | No Content-Security-Policy. | A CSP `<meta>` in the build: scripts only inline, and `connect-src 'self'`. | Done in 012 (hash-based CSP). |
 | C2 | `main` is not protected; a push publishes the app. | Branch protection: PR required, and CI must pass. | Done in 012 (branch protection). |
 | C3 | GitHub Actions are pinned by tag (`@v4`). | Pin them to commit SHAs. | Done in 012. |
-| C4 | Every Pages site of the account shares one origin. | A known risk until the app opens to others (owner's choice, 2026-10-16): a custom domain or an organisation. | Recorded in README (012); open until the app opens to others. |
+| C4 | Every Pages site of the account shares one origin. | A known risk until the app opens to others (owner's choice, 2026-10-16): a custom domain or an organisation. | Recorded in README (012). Postponed with a rule (owner, 2026-10-23): checked that day, `mizan-yawmi` is the only repository of the account with Pages, so the risk is dormant; no other Pages site goes on this account until the move. Open until the app opens to others; the move needs a release with a notice and a backup button first, since the new address starts with empty storage. |
 
 ## Recommendation
 
