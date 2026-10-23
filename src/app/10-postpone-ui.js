@@ -39,14 +39,14 @@
       document.addEventListener('keydown', key);
       return () => document.removeEventListener('keydown', key);
     }, []);
-    const go = to => { act('اتأجلت "' + plainTitle(b.title, b.cat) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
+    const go = to => { act('اتأجلت "' + plainTitle(b.title, b.cat, mainCourseName(store)) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
     const pick = () => {
       const bl = dayBlocks(day, store), s = time ? hmToMin(time) : NaN;
       const r = checkManualPlace(bl, bl.filter(x => x.extra), s, len, START, END, c => !!CATS[c].track);
       if (!r.ok) { setErr(r.code === 'clash' ? 'الميعاد ده بيتداخل مع ' + plainTitle(r.title) + '.' : PLACE_ERR[r.code]); return; }
       go({iso: day, s, e: r.e});
     };
-    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + plainTitle(b.title, b.cat)}>
+    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + plainTitle(b.title, b.cat, mainCourseName(store))}>
       ${!manual ? html`<p class="small">هتتحط <bdi>${dayName(prop.iso)}</bdi> من <bdi>${fmtStr(prop.s)}</bdi> لحد <bdi>${fmtStr(prop.e)}</bdi></p>
         <span class="backup-act"><button type="button" class="btn primary" data-first="1" onClick=${() => go(prop)}>تمام</button><button type="button" class="btn" onClick=${() => setManual(true)}>غيّر</button><button type="button" class="btn ghost" onClick=${onClose}>لأ</button></span>`
       : html`${prop ? null : html`<p class="small">مفيش وقت فاضي يسعها في الأسبوع الجاي، اختار يوم وميعاد.</p>`}
@@ -144,7 +144,7 @@
   }
 
   function TodayView({iso, setIso, now, store, update, goTab, remove, act, actEdit}){
-    const skip = b => act('اتلغى "' + plainTitle(b.title, b.cat) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
+    const skip = b => act('اتلغى "' + plainTitle(b.title, b.cat, mainCourseName(store)) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
     const blocks = dayBlocks(iso, store);
     const p = prayers(iso);
     const appts = apptsFor(iso, store);
@@ -202,7 +202,7 @@
                   : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${st === 'moved' ? html` · اتأجل لـ <bdi>${dayName(movedTo(store, iso, b.key))}</bdi>` : null}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
               return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
-                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title, b.cat)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
+                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title, b.cat, mainCourseName(store))} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`

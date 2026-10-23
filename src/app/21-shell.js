@@ -91,7 +91,6 @@
       if (tabAfter) goTab(tabAfter);
       showToast(text);
     };
-    MAIN_NAME = (mainCourse(store) || {}).name || '';
 
     let view;
     if (tab === 'today') view = html`<${TodayView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
@@ -101,7 +100,7 @@
     else if (tab === 'settings') view = html`<${SettingsView} key=${settingsOpened + '-' + settingsEpoch} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} settingsChanged=${settingsChanged} />`;
     else view = html`<${TasksView} key=${settingsEpoch} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
 
-    return html`<div class="shell">
+    return html`<${MainCourseName.Provider} value=${mainCourseName(store)}><div class="shell">
       <nav class="nav" aria-label="أقسام">
         <p class="brand">ميزان يومي<small>${CATS.uni.label} · ${CATS.course.label} · ${CATS.work.label} · ${CATS.gym.label} · ${CATS.quran.label}</small></p>
         <div class="nav-in">
@@ -127,7 +126,7 @@
         <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
       </main>
       <div aria-live="polite">${toast ? html`<div class="toast" role="status"><p>${toast.text}</p>${toast.undo ? html`<button type="button" class="btn" onClick=${() => { toast.undo(); setToast(null); }}>رجّعها</button>` : null}</div>` : null}</div>
-    </div>`;
+    </div></${MainCourseName.Provider}>`;
   }
 
 

@@ -4,7 +4,7 @@
     root.innerHTML = '<p class="fail">الصفحة مقدرتش تحمّل مكتبة التشغيل. جرّب تفتحها تاني بعد شوية.</p>';
     return;
   }
-  const { h, render } = preact;
-  const { useState, useEffect, useRef, useMemo } = preactHooks;
+  const { h, render, createContext } = preact;
+  const { useState, useEffect, useRef, useMemo, useContext } = preactHooks;
   const html = htm.bind(h);
 
