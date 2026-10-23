@@ -110,7 +110,7 @@ description: "Task list for feature 023: a «الآن» line in Today's timeline
 
 ## Phase 4: PR
 
-- [ ] T012 Push and open the PR when the owner asks. Merge when the owner asks.
+- [x] T012 Push and open the PR when the owner asks. Merge when the owner asks.
 
 ## Summary
 
