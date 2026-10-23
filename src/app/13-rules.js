@@ -426,3 +426,20 @@
   }
   // end of guide rules
 
+  // start of now line
+  // Where the «الآن» line sits on today's timeline (feature 023): inside the block in progress at the share of its
+  // time that has passed, at the top of the next row in free time, or below the last row once the day's blocks are
+  // over. Blocks come in display order as {s, e} in the day's minutes. No storage, no page and no network here;
+  // tools/check-now.js runs this block.
+  function nowPlace(blocks, min){
+    if (!blocks.length) return null;
+    // When blocks overlap, the last one in progress: the one that started latest, as the now card prefers.
+    for (let i = blocks.length - 1; i >= 0; i--) {
+      const b = blocks[i];
+      if (b.s <= min && min < b.e) return {row: i, at: 'in', share: (min - b.s) / (b.e - b.s)};
+    }
+    const next = blocks.findIndex(b => b.s > min);
+    return next >= 0 ? {row: next, at: 'top'} : {row: blocks.length - 1, at: 'bottom'};
+  }
+  // end of now line
+

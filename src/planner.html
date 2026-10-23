@@ -235,6 +235,12 @@ button{font:inherit;color:inherit}
 .subj{font-weight:600}
 .meta{margin-top:2px;font-size:13px;color:var(--muted);text-wrap:pretty}
 .meta b{color:var(--c);font-weight:600}
+/* The «الآن» line (feature 023): on top of a row, so no row moves; it never crosses the check and takes no taps. */
+.row{position:relative}
+.nowline{position:absolute;inset-inline:56px 0;height:0;border-top:1px solid var(--fg);pointer-events:none;z-index:1;transition:top .45s cubic-bezier(.16,1,.3,1)}
+.nowline-t{position:absolute;inset-inline-end:0;top:0;transform:translateY(-50%);font-size:12px;font-weight:600;line-height:18px;padding:0 8px;white-space:nowrap;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px}
+.nowline.lo .nowline-t{transform:translateY(3px)}
+.nowline.hi .nowline-t{transform:translateY(calc(-100% - 3px))}
 .now-pill{display:inline-block;font-size:11px;font-weight:600;background:var(--fg);color:var(--bg);padding:0 8px;border-radius:999px;margin-inline-start:6px;vertical-align:2px}
 .marks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .mk{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:1px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--fg)}
@@ -591,7 +597,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   .tasksv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"head head" "tasks appts";gap:var(--s5) 36px;align-items:start}
   .a-tasks{grid-area:tasks} .a-appts{grid-area:appts}
 }
-@media (prefers-reduced-motion: reduce){ :root,.fill,.balance .petal,.chk i,.btn{transition:none} }
+@media (prefers-reduced-motion: reduce){ :root,.fill,.balance .petal,.chk i,.btn,.nowline{transition:none} }
 </style>
 
 <div id="app" dir="rtl" lang="ar">

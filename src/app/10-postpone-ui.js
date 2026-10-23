@@ -157,6 +157,11 @@
     const dayTasks = store.tasks.filter(t => !t.done && t.due && (t.due === iso || (isToday && t.due < iso)));
     const wd = weekday(iso);
     const ab = balanceOf([iso], store);
+    // The «الآن» line (feature 023): today only, on top of the row nowPlace names, so no row moves.
+    const place = isToday ? nowPlace(blocks, now.min) : null;
+    const nowTop = place && (place.at === 'in' ? (place.share * 100).toFixed(2) + '%' : place.at === 'top' ? '-3px' : 'calc(100% + 3px)');
+    // Near a row's edge the label sits on the row's side of the line, so it never spills into the next row.
+    const nowSide = place && place.at === 'in' ? (place.share < .25 ? ' lo' : place.share > .75 ? ' hi' : '') : '';
 
     return html`<div class="today-view">
       <div class="sec o-head">
@@ -180,7 +185,7 @@
 
         <div class="sec o-timeline">
           <ol class="timeline">
-            ${blocks.map(b => {
+            ${blocks.map((b, i) => {
               const quiet = b.cat === 'rest' || b.cat === 'move';
               const tracked = CATS[b.cat].track;
               const cur = isToday && now.min >= b.s && now.min < b.e;
@@ -212,6 +217,7 @@
                   ${b.extra ? html`<button type="button" class="btn ghost" onClick=${() => { setOpen(null); remove('اتمسحت "' + b.title + '"', s => { s.extras[iso] = (s.extras[iso] || []).filter(x => x.id !== b.extra); return s; }); }}>امسحها</button>` : null}
                 </div>` : null}
                 ${isOpen && postponing === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
+                ${place && place.row === i ? html`<span class=${'nowline at-' + place.at + nowSide} style=${{top: nowTop}} aria-hidden="true"><span class="nowline-t">الآن <${Time} min=${now.min} /></span></span>` : null}
               </li>`;
             })}
           </ol>
