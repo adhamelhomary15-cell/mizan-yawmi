@@ -114,6 +114,12 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # The official Playwright image for the version in tests/e2e/package-lock.json (1.63.0), pinned by digest. Its
+    # system packages and browsers are already installed (/ms-playwright), so the job no longer downloads 119 MB from
+    # Ubuntu's mirror, which took 14 minutes on slow days. When Playwright is upgraded, this tag and digest go with it.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      options: --ipc=host
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -128,11 +134,9 @@ jobs:
       - name: Build
         run: python3 tools/build.py
 
-      - name: Install Playwright and its browsers
+      - name: Install the test dependencies
         working-directory: tests/e2e
-        run: |
-          npm ci --ignore-scripts --no-audit --no-fund
-          npx playwright install --with-deps chromium webkit
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: End-to-end tests
         working-directory: tests/e2e
