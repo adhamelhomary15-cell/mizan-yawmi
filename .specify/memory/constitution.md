@@ -28,12 +28,32 @@ Rationale: progress is the app's truth; auto-checked blocks make the day look ba
 is not, which defeats the product. Bringing back the owner's own record of done work keeps that
 truth instead of faking it.
 
-### III. Private Progress Stays on the Device
-Progress, tasks, notes, and added courses live in localStorage on the owner's device and MUST NOT
-be sent anywhere unless the owner chooses a synced copy. No analytics, trackers, third-party
-network calls with user data, or AI plugins that read stored progress are allowed. Any new
-network dependency MUST be listed in the plan and approved under Principle I.
-Rationale: matches Product Principle 4; the user never agreed to share their day.
+### III. Private Data Stays on the Device, or Leaves It Encrypted
+Progress, tasks, notes, added courses, workouts and settings live on the owner's device. They MAY
+leave it only as the owner's **synced copy**, and only under all of these rules:
+- **Opt-in:** sync is off until the owner signs in and turns it on. Turning it off, or deleting
+  the account, MUST delete the server's copy. The app MUST keep working, offline and in full,
+  with sync off (Principle IV).
+- **End-to-end encryption:** data is encrypted on the device before it is sent, with a key that
+  never leaves the owner's devices. The key comes from the owner's password, and a recovery code
+  shown once when the account is made also opens it. The password itself MUST NOT be sent: sign-in
+  uses a separate value derived from it, so the server can never decrypt the data.
+- **What the server may hold, and nothing else:** the account's email address; a sign-in
+  verifier; the encrypted copy with its size and save times; the devices' push subscriptions; and
+  for reminders, the moments they are due, with no title, kind or text. Reminder text is written on
+  the device from its own data.
+- **Where requests go:** only to the app's own site and to the sync server. Each address MUST be
+  listed in the page's Content-Security-Policy and approved under Principle I, and so MUST any
+  service the server uses (for example, the one that sends sign-in emails).
+- **Server secrets** (push signing keys, email service keys) live only in the server's own
+  environment, never in the repository or the app.
+No analytics, trackers, third-party network calls with user data, or AI plugins that read stored
+data are allowed. Any other new network dependency MUST be listed in the plan and approved under
+Principle I.
+Rationale: matches Product Principle 4. The owner chose (2026-10-24) to keep their data safe across
+devices and to get reminders while the app is closed; encryption on the device keeps the day theirs
+even though a server holds a copy. A lost password and recovery code mean a lost server copy, never
+a lost device copy.
 
 ### IV. Honest, Offline-Capable Day
 Every block gets real time; work, prayer, and sleep are never squeezed to make the plan look
@@ -76,6 +96,10 @@ fully withdrawn.
   credentials or tokens in the repository, and MUST NOT be granted write or network access
   beyond the task at hand.
 - The deployed app MUST contain no secrets, API keys, or personal data (Principle VI).
+- The sync server's code lives in this repository, reviewed and tested like the app. It MUST NOT
+  log request bodies, and it MUST check every request against the account it claims.
+- Before sync or reminders are offered to anyone but the owner, the app MUST move off the shared
+  GitHub Pages origin (review item C4), since a page on that origin could read the stored key.
 - The local personal settings file MUST be listed in `.gitignore`, and a check MUST confirm it is
   untracked before any commit or push.
 - Brand commitments from `PRODUCT.md` are binding: name «ميزان يومي», no Islamic ornament as
@@ -104,4 +128,4 @@ PATCH for clarifications. Principles I and II are non-negotiable and can be rela
 MAJOR amendment. Every plan and review MUST verify compliance; any deviation MUST be justified
 in writing in the plan. Runtime guidance lives in `PRODUCT.md`, `DESIGN.md`, and `README.md`.
 
-**Version**: 2.0.1 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-15
+**Version**: 3.0.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-24
