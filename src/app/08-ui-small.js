@@ -13,17 +13,19 @@
   const Time = ({min}) => { const f = fmt(min); return html`<bdi class="t">${f.t}</bdi><span class="suf">${f.s}</span>`; };
   // Course blocks follow whichever course is main: in a block of kind course, the settings course's name ("Name" or
   // "Name|action") shows as the main course's name. Blocks of other kinds, such as lectures, keep their title.
-  const showTitle = (text, cat) => {
-    if (cat !== 'course' || !COURSE || !MAIN_NAME) return text;
-    if (text === COURSE.name) return MAIN_NAME;
-    return text.indexOf(COURSE.name + '|') === 0 ? MAIN_NAME + '|' + text.slice(COURSE.name.length + 1) : text;
+  const showTitle = (text, cat, mainName) => {
+    if (cat !== 'course' || !COURSE || !mainName) return text;
+    if (text === COURSE.name) return mainName;
+    return text.indexOf(COURSE.name + '|') === 0 ? mainName + '|' + text.slice(COURSE.name.length + 1) : text;
   };
+  // The main course's name, which the shell gives every screen (mainCourseName of the store), for Title.
+  const MainCourseName = createContext('');
   function Title({text, cat}){
-    const t = showTitle(text, cat);
+    const t = showTitle(text, cat, useContext(MainCourseName));
     if (t.indexOf('|') > -1){ const [s, a] = t.split('|'); return html`<bdi class="subj">${s}</bdi> · ${a}`; }
     return t;
   }
-  const plainTitle = (text, cat) => showTitle(text, cat).replace('|', ' · ');
+  const plainTitle = (text, cat, mainName) => showTitle(text, cat, mainName).replace('|', ' · ');
 
   // The balance as a guilloche rosette: university and course on one half, work and life on the other.
   // Each half has 36 fine petals; a petal is inked in a category's colour for its share of the half's planned time that got done.
