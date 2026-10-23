@@ -54,6 +54,10 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 const over = (ink, paper, p) => ink.map((v, i) => Math.round(v * p + paper[i] * (1 - p)));
 const tokens = (css, sel) => { const i = css.indexOf(sel + '{'), t = {}; if (i >= 0) css.slice(i, css.indexOf('}', i)).replace(/--([\w-]+):\s*([^;]+);/g, (_, k, v) => { t[k] = v.trim(); }); return t; };
 const KIND_COLORS = ['teal', 'blue', 'green', 'slate', 'copper', 'olive'];
+// Feature 022: the palettes besides oxblood (the plain :root), the only values a palette may set, and the nine inks.
+const PALETTES = ['olive', 'navy', 'graphite'];
+const PALETTE_KEYS = ['bg', 'surface', 'muted', 'line', 'quiet', 'shell', 'shell-dim'];
+const INKS = ['uni', 'study', 'course', 'work', 'gym', 'quran', 'personal'];
 
 // Dates for the history checks (feature 021): days as YYYY-MM-DD, counted in UTC.
 const addD = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
@@ -275,6 +279,33 @@ function runChecks(h, source) {
       return contrast(ink, bg) >= 4.5 && contrast(ink, over(ink, bg, tint)) >= 4.5;
     }) && source.includes('.c-k-' + c + '{--c:var(--k-' + c + ')}'));
   });
+  // Feature 022. Each palette's blocks are merged in cascade order (later blocks win at equal specificity), so a value
+  // a dark palette block forgets falls back to the light palette's, as in the browser.
+  check('every palette sets only the frame and ground, all of it, in light and dark', () => {
+    const ids = [...source.matchAll(/:root\[data-palette="(\w+)"\]\{/g)].map(m => m[1]);
+    return eq(ids, PALETTES) && PALETTES.every(p => ['', '[data-theme="dark"]'].every(theme => {
+      const keys = Object.keys(tokens(source, ':root[data-palette="' + p + '"]' + theme));
+      return eq(keys.slice().sort(), PALETTE_KEYS.slice().sort());
+    }));
+  });
+  check('every ink, the muted text and the band text hold AA contrast on every palette, light and dark', () => {
+    const base = tokens(source, ':root'), dark = tokens(source, ':root[data-theme="dark"]');
+    return ['oxblood'].concat(PALETTES).every(p => [false, true].every(isDark => {
+      const t = Object.assign({}, base, isDark ? dark : {}, tokens(source, ':root[data-palette="' + p + '"]'),
+        isDark ? tokens(source, ':root[data-palette="' + p + '"][data-theme="dark"]') : {});
+      const surface = rgb(t.surface), bg = rgb(t.bg), shell = rgb(t.shell), tint = parseFloat(t.tint) / 100;
+      const inks = INKS.concat(KIND_COLORS.map(c => 'k-' + c)).map(k => rgb(t[k]));
+      return inks.every(ink => contrast(ink, surface) >= 4.5 && contrast(ink, bg) >= 4.5 && contrast(ink, over(ink, surface, tint)) >= 4.5)
+        && contrast(rgb(t.muted), surface) >= 4.5 && contrast(rgb(t['shell-fg']), shell) >= 4.5 && contrast(rgb(t['shell-dim']), shell) >= 4.5;
+    }));
+  });
+  // Feature 022: a colour left unregistered would jump while the others fade, and one left out of the transition too.
+  check('every colour in :root is registered with its light value, fades, and stops fading under reduced motion', () => {
+    const base = tokens(source, ':root'), colours = Object.keys(base).filter(k => base[k][0] === '#').concat('tint');
+    const faded = (source.match(/transition-property:([^;]+);/) || ['', ''])[1].split(',').map(s => s.trim());
+    return colours.length === 24 && colours.every(k => source.includes('@property --' + k + "{syntax:'" + (k === 'tint' ? '<percentage>' : '<color>') + "';inherits:true;initial-value:" + base[k] + '}')
+      && faded.indexOf('--' + k) >= 0) && /@media \(prefers-reduced-motion: reduce\)\{ :root,/.test(source);
+  });
   check('every colour class of a kind goes through kc', () => !/c-' \+ (b\.cat|main\.cat|cat|k)\b/.test(source));
   // Feature 020. The oracle keeps the whole week of every save with the date it started; a date's week is the last one
   // started on or before it.
@@ -384,7 +415,13 @@ if (process.argv.includes('--self-test')) {
     ['a kept entry ends today', s => s.replace("history.push({until: dates.yesterday, days});", 'history.push({until: dates.today, days});')],
     ['old entries are never dropped', s => s.replace("history = history.filter(h => !keptShape(h) || h.until >= dates.cutoff);", '')],
     ['a kept block must use a kind that still exists', s => s.replace("loose ? !(CATEGORY_IDS.indexOf(b[1]) >= 0 || isNewKind(b[1])) : ", '')],
-    ['a kept block must fit the current day', s => s.replace("else if (!loose && bounds && (t < bounds.start", "else if (bounds && (t < bounds.start")]
+    ['a kept block must fit the current day', s => s.replace("else if (!loose && bounds && (t < bounds.start", "else if (bounds && (t < bounds.start")],
+    ['a palette changes a kind ink', s => s.replace(':root[data-palette="navy"]{--bg:', ':root[data-palette="navy"]{--uni:#7B1E2E; --bg:')],
+    ['a dark palette block misses a value', s => s.replace(':root[data-palette="olive"][data-theme="dark"]{--bg:#151611; ', ':root[data-palette="olive"][data-theme="dark"]{')],
+    ['a colour is not registered', s => s.replace("@property --k-copper{syntax:'<color>';inherits:true;initial-value:#8A3A14}\n", '')],
+    ['a colour does not fade', s => s.replace('--shell-dim,--uni,', '--uni,')],
+    ['the fade runs under reduced motion', s => s.replace('{ :root,.fill,', '{ .fill,')],
+    ['a palette ground fails contrast', s => s.replace(':root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#1D1E20;', ':root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#6A6B70;')]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

@@ -94,7 +94,7 @@ components:
 
 Every kind of time is a denomination with its own ink, the way each Egyptian pound note carries its colour. The ground is pale security paper, the inks are intaglio colours (oxblood, madder, plum, sepia, ochre), and the shell around the app is a solid oxblood band. The world lends type, palette, density and one signature move; layout, navigation and controls stay the standard ones for a phone app.
 
-It is used mostly outdoors in daylight, so the light theme is primary and every ink holds AA contrast on paper and on its own tint. A dark theme follows the OS for night review.
+It is used mostly outdoors in daylight, so the light theme is primary and every ink holds AA contrast on paper and on its own tint. A dark theme follows the phone for night review, or the user fixes light or dark in Settings.
 
 **Key Characteristics:**
 - Oxblood shell: bottom bar on phones, side rail from 960px.
@@ -123,6 +123,21 @@ It is used mostly outdoors in daylight, so the light theme is primary and every 
   blue `#244F8C` / `#A3C2F2`, green `#2F5E22` / `#A9D68F`, slate `#46515F` / `#B9C4D1`, copper `#8A3A14` / `#F0A57D`,
   olive `#535C14` / `#CBD48A`. `tools/check-schedule.js` checks each at AA on paper and on its own tint. Two added
   kinds may share an ink; the kind's name always shows beside it.
+
+### Palettes (feature 022)
+The user picks one of four palettes in Settings, «الشكل». A palette changes only the frame and the ground:
+`--shell`, `--shell-dim`, `--bg`, `--surface`, `--line`, `--quiet` and `--muted`. The inks, `--fg`, `--shell-fg`
+and `--danger` stay the same in every palette.
+
+| Palette | Light shell / paper / surface | Dark shell / paper / surface |
+|---|---|---|
+| Oxblood «عنابي» (default) | `#6E1A28` / `#E7ECE3` / `#FAFBF6` | `#3A1119` / `#16141A` / `#201D24` |
+| Olive «زيتي» | `#434C14` / `#E9EADF` / `#FBFBF5` | `#262B0C` / `#151611` / `#1E2019` |
+| Navy «كحلي» | `#1F2F4F` / `#E4E8EE` / `#F8FAFC` | `#121C30` / `#12151B` / `#1A1F27` |
+| Graphite «رمادي» | `#2E3135` / `#E8E8E6` / `#FAFAF9` | `#1E2023` / `#141516` / `#1D1E20` |
+
+`tools/check-schedule.js` checks every ink at AA on every palette's paper, surface and tint, in light and dark, and
+the band text on every shell. The phone's status bar takes the palette's shell.
 
 ### Named Rules
 **The Denomination Rule.** A category's ink is its identity everywhere: row tint, check circle, denomination numeral, week strip segment and rosette petals. Never use a category ink for anything that is not that category.
@@ -172,6 +187,11 @@ Check, start and end time, title with its meta line (category label in ink), den
 
 ### The rosette (signature)
 Two halves of 36 fine petals each around a centre disc. A petal is inked in a category's colour for its share of the half's planned time that got done; the rest stay `quiet`. The centre shows done hours in Spectral. Petal ink transitions over 450ms.
+
+### Changing the look
+When the palette or the theme changes, every colour fades to the new one together over 450ms, on the rosette's
+curve (`cubic-bezier(.16,1,.3,1)`). Nothing moves or resizes. Under reduced motion, and on the first paint, the
+colours show at once.
 
 ## Do's and Don'ts
 
