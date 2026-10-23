@@ -36,5 +36,5 @@
       return s;
     });
   }
-  let MAIN_NAME = '';
+  const mainCourseName = store => (mainCourse(store) || {}).name || '';
 
