@@ -38,7 +38,8 @@ cities of the 57 OIC member states (GeoNames, CC BY 4.0), the device location on
 
 ## Capabilities and Constraints
 
-- Tabs: Today (timeline with check-offs, prayer times, main-course target card, day progress, and an end-of-day
+- Tabs: Today (timeline with check-offs and a «الآن» line that crosses the block in progress at the share of its time
+  that has passed, following the clock, prayer times, main-course target card, day progress, and an end-of-day
   review where open blocks of kinds marked postponable, and tasks due that day, can be postponed into the next
   free time, with a proposal the user confirms or changes and one undo; after a day ends with open items, Today
   asks on its own, with the proposed places, and moves nothing until the user taps), Week (shape of the

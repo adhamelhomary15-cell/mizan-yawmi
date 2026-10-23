@@ -185,6 +185,15 @@ Seven equal chips; the selected one fills with oxblood, today carries a line bor
 ### Block rows
 Check, start and end time, title with its meta line (category label in ink), denomination numeral. Done and skipped rows strike the title and fade the numeral; skipped rows lose their tint and get a dashed border.
 
+### The «الآن» line
+On today's timeline, a one-pixel `--fg` line crosses the block in progress at the share of its time that has passed,
+or sits above the first row before the day's first block. It starts after the check column, so it never crosses the
+check, and takes no taps. A small pill at its inline end holds «الآن» and the time, on `--surface` with a one-pixel
+`--line` border; near a row's top or bottom the pill sits on the row's side of the line. The pill covers the
+denomination numeral near a block's top; the block's times stay clear. The line glides over 450ms on the rosette's
+curve when the app's clock refreshes (every 30 seconds), and jumps under reduced motion. It is not a category colour
+and adds no ornament.
+
 ### The rosette (signature)
 Two halves of 36 fine petals each around a centre disc. A petal is inked in a category's colour for its share of the half's planned time that got done; the rest stay `quiet`. The centre shows done hours in Spectral. Petal ink transitions over 450ms.
 

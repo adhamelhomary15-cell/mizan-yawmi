@@ -20,7 +20,10 @@ Today already shows where the user is in the day, at the level of a whole block:
 What it does not show:
 - **where inside a block** the moment is: ten minutes into a three-hour study block looks the same as ten minutes
   before its end;
-- **the moment at all when it falls between two blocks**, in free time: no row is marked.
+- **the moment before the day's first block**: no row is marked.
+
+The schedule has no gaps: a block ends where the next starts, and the last ends where the day ends
+(`src/app/04-prayers.js`). Free time is a block of its own (the «وقتك» kind), so it is covered by story 1.
 
 The app's "now" is refreshed every 30 seconds. The timeline's rows have different heights for different lengths of
 time, so the list is not drawn to a time scale.
@@ -51,22 +54,23 @@ block a third of the way down. Wait until 11:30 with the app open: the line has 
 
 ---
 
-### User Story 2 - Seeing the moment between two blocks (Priority: P2)
+### User Story 2 - Seeing the moment before the day's first block (Priority: P2)
 
-When the clock is in free time between two blocks, the line sits between those two rows, with «الآن» and the time.
+When the day has started but its first block has not, the line sits above the first row, with «الآن» and the time.
 
-**Why this priority**: Free time is where the user decides what to do next, and today nothing on the timeline shows
-it is now.
+**Why this priority**: Early in the day nothing on the timeline shows the moment, and the first block is what comes
+next.
 
-**Independent Test**: With blocks 10:00 to 11:00 and 12:00 to 13:00, and the clock at 11:20, open Today: the line sits
-between the two rows.
+**Independent Test**: With the day starting at 07:00 and the first block at 07:30, and the clock at 07:10, open
+Today: the line sits above the first row.
 
 **Acceptance Scenarios**:
 
-1. **Given** the clock is after one block ends and before the next starts, **When** Today shows, **Then** the line
-   sits between those two rows.
-2. **Given** the clock is before the first block or after the last, **When** Today shows, **Then** the line sits above
-   the first row or below the last.
+1. **Given** the clock is before the first block, **When** Today shows, **Then** the line sits above the first row.
+
+*Corrected on 2026-10-23, in phase 3:* this story first also covered free time between two blocks and the time after
+the last block. Neither can happen: the schedule has no gaps, and the last block ends where the day ends. The rule
+still handles both, and `tools/check-now.js` tests them on generated days.
 
 ---
 
@@ -97,7 +101,7 @@ between the two rows.
 ### Functional Requirements
 
 - **FR-001**: On today's timeline, a line MUST mark the current moment: inside the block in progress at the share of
-  its time that has passed, or between the two rows around it in free time, or above the first or below the last row.
+  its time that has passed, or above the first row before the first block starts.
 - **FR-002**: The line MUST carry «الآن» and the current time, in the app's time format.
 - **FR-003**: The line MUST follow the clock while the app is open, within 30 seconds, with no tap or reload.
 - **FR-004**: The line MUST show only on today's date, and never in the day review.

@@ -124,7 +124,8 @@ None stored. The rule's input and output are described in decision 1.
     the row's height (SC-001); the outline and «دلوقتي» are still there (FR-009); the label shows the time.
   - **US1, moving**: advance the clock 30 minutes; within the next 30-second refresh the line is lower, with the new
     time (SC-002).
-  - **US2**: at a time in free time, the line sits between the two rows; before the first block it sits above it.
+  - **US2**: before the first block, the line sits above its row. (Free time between rows and the time after the
+    last block cannot happen: the schedule has no gaps. `tools/check-now.js` covers them on generated days.)
   - **Taps**: the check under the line ticks the block, and the row opens (SC-003).
   - **Where it shows**: not on another day; with the review open, not inside the review panel, and still on the
     timeline under it.

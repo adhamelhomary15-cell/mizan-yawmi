@@ -81,23 +81,32 @@ description: "Task list for feature 023: a «الآن» line in Today's timeline
 
 ## Phase 3: Tests, docs
 
-- [ ] T008 Find which Playwright clock call advances both `Date` and the app's 30-second interval with `openApp`'s
+- [x] T008 Find which Playwright clock call advances both `Date` and the app's 30-second interval with `openApp`'s
   fixed time (plan, Risks), before writing the moving test.
-- [ ] T009 In `tests/e2e/now-line.spec.js`, with generated data and the example week:
+
+  Found: `page.clock.setFixedTime(<new time>)` then `page.clock.runFor(30000)` runs the app's refresh, and the line
+  and its time move.
+- [x] T009 In `tests/e2e/now-line.spec.js`, with generated data and the example week:
   - **US1**: inside a block, the line's offset in the row matches the share of time passed within 5% of the row's
     height; the outline, «دلوقتي» and the time label are there;
   - **US1, moving**: advance the clock 30 minutes; within the next refresh the line is lower and its time is new;
-  - **US2**: in free time, between the two rows; before the first block, above it;
+  - **US2**: before the first block, above it. (Free time between rows cannot happen: the schedule has no gaps,
+    `src/app/04-prayers.js`. The spec's story 2 is corrected to match.)
+  - **US1, a block ending**: at the next block's start, the line moves to its top;
   - **Taps**: the check under the line ticks the block, and the row opens;
   - **Where it shows**: not on another day; with the review open, not inside the review panel and still on the
     timeline;
   - **Layout**: every row's box is the same with and without the line; the page is at the top after opening.
   - **Reduced motion**: the line's `transition-duration` is 0 (FR-007).
-- [ ] T010 [P] Docs:
+- [x] T010 [P] Docs:
   - README: the line in the Today part;
   - PRODUCT: the line in the Today capabilities;
   - DESIGN: the «الآن» line under Components (one-pixel `--fg`, the label, the glide, reduced motion).
-- [ ] T011 Rebuild, then run every check, parity and the whole E2E suite. Tick the tasks. **Commit**.
+- [x] T011 Rebuild, then run every check, parity and the whole E2E suite. Tick the tasks. **Commit**.
+
+  Result: `now-line.spec.js` 18 passed on Chromium and WebKit, stable over 6 runs and 5 repeats of each test (90 of
+  90). The whole suite: 133 passed, 3 skipped (offline on WebKit). Every dev check passes; parity 0 on the example
+  and on a private settings file.
 
 ## Phase 4: PR
 
