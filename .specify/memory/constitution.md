@@ -39,7 +39,8 @@ leave it only as the owner's **synced copy**, and only under all of these rules:
   shown once when the account is made also opens it. The password itself MUST NOT be sent: sign-in
   uses a separate value derived from it, so the server can never decrypt the data.
 - **What the server may hold, and nothing else:** the account's email address; a sign-in
-  verifier; the encrypted copy with its size and save times; the devices' push subscriptions; and
+  verifier and the devices' sign-ins; the data key, encrypted by the password and by the recovery
+  code; the encrypted copy with its size and save times; the devices' push subscriptions; and
   for reminders, the moments they are due, with no title, kind or text. Reminder text is written on
   the device from its own data.
 - **Where requests go:** only to the app's own site and to the sync server. Each address MUST be
@@ -128,4 +129,4 @@ PATCH for clarifications. Principles I and II are non-negotiable and can be rela
 MAJOR amendment. Every plan and review MUST verify compliance; any deviation MUST be justified
 in writing in the plan. Runtime guidance lives in `PRODUCT.md`, `DESIGN.md`, and `README.md`.
 
-**Version**: 3.0.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-24
+**Version**: 3.0.1 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-24
