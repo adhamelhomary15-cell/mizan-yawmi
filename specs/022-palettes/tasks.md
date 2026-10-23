@@ -129,7 +129,7 @@ description: "Task list for feature 022: colour palettes and a light, dark or au
   - README: «الشكل» in the Settings part;
   - PRODUCT: the palettes and the theme choice in Capabilities, and that they stay on the device;
   - DESIGN: the four palettes, what they change and what they keep (the Denomination Rule), and the 450ms fade.
-- [ ] T015 Rebuild, then run every check, parity, the E2E tests and a 375 px look, offline. Tick the tasks, then push
+- [x] T015 Rebuild, then run every check, parity, the E2E tests and a 375 px look, offline. Tick the tasks, then push
   and open the PR when the owner asks. Merge when the owner asks.
 
 ## Summary
