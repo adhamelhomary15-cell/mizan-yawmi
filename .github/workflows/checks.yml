@@ -94,6 +94,11 @@ jobs:
           node tools/check-postpone.js
           node tools/check-postpone.js --self-test
 
+      - name: Now line rule
+        run: |
+          node tools/check-now.js
+          node tools/check-now.js --self-test
+
       - name: Exercise art
         run: |
           node tools/check-guides.js
