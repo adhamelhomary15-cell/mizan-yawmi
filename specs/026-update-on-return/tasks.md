@@ -57,7 +57,7 @@ description: "Task list for feature 026: new versions on return, and the version
 
 ## Phase 3: Tests, docs
 
-- [ ] T007 In `tests/e2e/version.spec.js` (Chromium and WebKit):
+- [x] T007 In `tests/e2e/version.spec.js` (Chromium and WebKit):
   - **US1**: with `ServiceWorkerRegistration.prototype.update` counted, hidden then visible calls it once; a second
     return within a minute does not; one after a minute does (Playwright's clock); offline, a return shows no error
     and the app keeps working;
@@ -66,9 +66,21 @@ description: "Task list for feature 026: new versions on return, and the version
     the line shows the code with no error;
   - **Data**: progress, settings and the look are the same before and after a check (FR-005).
   - **Network**: every request a return makes goes to the app's own origin (FR-006).
-- [ ] T008 [P] README «التحديث»: the app checks for a new version when you come back to it, and Settings shows the
+- [x] T008 [P] README «التحديث»: the app checks for a new version when you come back to it, and Settings shows the
   version and the day it arrived.
-- [ ] T009 Rebuild, then run every check, parity and the whole E2E suite. Tick the tasks. **Commit**.
+- [x] T009 Rebuild, then run every check, parity and the whole E2E suite. Tick the tasks. **Commit**.
+
+  Result: `version.spec.js` 12 passed on Chromium and WebKit, stable over 4 runs and 60 repeats. Two findings while
+  writing it:
+  - Playwright's WebKit does not report a service worker's own requests, so on WebKit the own-site check covers the
+    page's requests only; Chromium sees the worker's `sw.js` requests too.
+  - A browser may join the return's update check to one already running, so the test checks that the return asked
+    for an update (`update()` counted) rather than waiting for a new `sw.js` request.
+
+  Every dev check passes; parity 0 on the example and on a private settings file. The whole suite, run three times:
+  144 passed, 3 skipped (offline on WebKit) and 1 failed each time, a different older test each time: twice the
+  first-frame test in `look.spec.js` (022), and once a save in `schedule.spec.js` on WebKit. Each passes 20 of 20
+  alone; they fail only under the full suite's load. Not caused by 026, and left for its own fix.
 
 ## Phase 4: PR
 
