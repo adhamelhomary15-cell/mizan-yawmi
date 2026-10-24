@@ -197,6 +197,13 @@ and adds no ornament.
 ### The rosette (signature)
 Two halves of 36 fine petals each around a centre disc. A petal is inked in a category's colour for its share of the half's planned time that got done; the rest stay `quiet`. The centre shows done hours in Spectral. Petal ink transitions over 450ms.
 
+When a rosette appears (Today, the day review, Week, or another day or week picked), each petal's outline draws in as
+a line, one after another around each half from its start, 14 ms apart, so the whole rosette is drawn in about 0.9 s.
+The centre hours and the two shares count up from 0 with it, easing out gently; on the way the hours round to
+quarters and the shares to whole percents, and screen readers read only the final shares. A ticked block does not
+draw again: its petal fades its ink as before and the numbers change at once. Under reduced motion the rosette and its
+numbers show whole.
+
 ### Changing the look
 When the palette or the theme changes, every colour fades to the new one together over 450ms, on the rosette's
 curve (`cubic-bezier(.16,1,.3,1)`). Nothing moves or resizes. Under reduced motion, and on the first paint, the

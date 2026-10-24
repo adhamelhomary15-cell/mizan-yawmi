@@ -68,7 +68,7 @@ description: "Task list for feature 027: the balance comes alive when it opens"
 
 ## Phase 3: Tests, docs
 
-- [ ] T009 In `tests/e2e/balance.spec.js`, opening the app on the real clock (as `look.spec.js` and `now-line.spec.js`
+- [x] T009 In `tests/e2e/balance.spec.js`, opening the app on the real clock (as `look.spec.js` and `now-line.spec.js`
   do, since `openApp`'s clock replaces `requestAnimationFrame`), with ticked blocks so the rosette has ink:
   - **US1**:
     - on Week, Today and the review, every petal has a running `petal-draw` animation;
@@ -82,9 +82,19 @@ description: "Task list for feature 027: the balance comes alive when it opens"
     - the hidden final shares are there from the first frame; a value of 0 shows 0 at once;
   - **Ticking a block** with the rosette shown: no `petal-draw` animation starts, and the numbers change at once;
   - **Reduced motion**: no animation, and the final numbers in the first frame.
-- [ ] T010 [P] DESIGN.md, «The rosette»: it draws in when it appears (each petal's line, around each half, under a
+- [x] T010 [P] DESIGN.md, «The rosette»: it draws in when it appears (each petal's line, around each half, under a
   second) and its centre and shares count up with it; whole at once under reduced motion.
-- [ ] T011 Rebuild, then run every check, parity and the whole E2E suite. Tick the tasks. **Commit**.
+- [x] T011 Rebuild, then run every check, parity and the whole E2E suite. Tick the tasks. **Commit**.
+
+  Result: `balance.spec.js` 17 passed and 1 skipped (the pixel check on Chromium) on Chromium and WebKit, stable over
+  6 runs and 85 repeats. Found while writing it:
+  - On the app's first load the browser shows its first frame late, so the rosette shown at load finishes drawing
+    about 2 s after load, not 1. That is the drawing starting with the first frame, not a fault; the tests wait for the
+    drawing to end rather than a fixed time, and the one-second time was measured by hand in phase 1.
+  - `schedule.spec.js` read a share as the text of its `<b>`, which now holds the counting number and the hidden final
+    one; it reads the final value (`.sr-only`) now.
+  Every dev check passes; parity 0 on the example and on a private settings file. The whole suite, twice: 162 passed,
+  4 skipped, 0 failed.
 
 ## Phase 4: PR
 
