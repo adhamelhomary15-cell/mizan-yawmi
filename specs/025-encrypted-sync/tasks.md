@@ -88,12 +88,12 @@ description: "Task list for feature 025: encrypted sync across devices"
 
 ### Phase 3: crypto
 
-- [ ] T011 `src/app/01d-crypto.js`:
+- [x] T011 `src/app/01d-crypto.js`:
   - `deriveKeys(password, salt)`: PBKDF2 with 600,000 iterations, then HKDF into the wrapping key and the sign-in key;
   - `newDataKey`, `wrapKey` and `unwrapKey`;
   - `seal` and `open` (AES-GCM, with a new IV every time);
   - `newRecoveryCode` and `recoveryKey`.
-- [ ] T012 [P] `tools/check-crypto.js` in Node's Web Crypto:
+- [x] T012 [P] `tools/check-crypto.js` in Node's Web Crypto:
   - known answers for PBKDF2, HKDF and AES-GCM;
   - wrap and unwrap round trips;
   - a wrong password, and one changed bit, both refused;

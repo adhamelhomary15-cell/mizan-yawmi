@@ -11,6 +11,8 @@
 01b-storage.js
 # sync rules: a store as items, stamps, and the item-by-item merge of two devices (pure, feature 025)
 01c-sync-rules.js
+# sync crypto: keys from the password, the wrapped data key, sealing a store, the recovery code (feature 025)
+01d-crypto.js
 # settings: load, fixed weekday names, data derived from settings
 02-settings-load.js
 # time helpers
