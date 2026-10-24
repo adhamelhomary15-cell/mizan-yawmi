@@ -187,6 +187,12 @@ button{font:inherit;color:inherit}
 .balance .ring{fill:none;stroke:var(--line);stroke-width:1}
 .balance .petal{fill:none;stroke:var(--c);stroke-width:1.1;transition:stroke .45s cubic-bezier(.16,1,.3,1),stroke-width .45s cubic-bezier(.16,1,.3,1)}
 .balance .petal.off{stroke:var(--quiet);stroke-width:.8}
+/* Feature 027: each petal's outline draws in when the rosette appears, around each half from its start, within a
+   second. The dash lives only inside the animation (fill "backwards": it holds the start during the delay and is gone
+   at the end), so the finished rosette is drawn exactly as without it. The colour fade above stays for a ticked block,
+   which does not draw again. */
+.balance .petal{animation:petal-draw .4s cubic-bezier(.16,1,.3,1) backwards;animation-delay:calc(var(--i) * 14ms)}
+@keyframes petal-draw{from{stroke-dasharray:1;stroke-dashoffset:1}to{stroke-dasharray:1;stroke-dashoffset:0}}
 .balance .axis-line{stroke:var(--line);stroke-width:1}
 .balance .core{fill:var(--surface);stroke:var(--line);stroke-width:1}
 .balance .core-num{font-family:var(--font-num);font-weight:700;font-size:24px;fill:var(--fg)}
@@ -597,7 +603,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   .tasksv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"head head" "tasks appts";gap:var(--s5) 36px;align-items:start}
   .a-tasks{grid-area:tasks} .a-appts{grid-area:appts}
 }
-@media (prefers-reduced-motion: reduce){ :root,.fill,.balance .petal,.chk i,.btn,.nowline{transition:none} }
+@media (prefers-reduced-motion: reduce){ :root,.fill,.balance .petal,.chk i,.btn,.nowline{transition:none} .balance .petal{animation:none} }
 </style>
 
 <div id="app" dir="rtl" lang="ar">

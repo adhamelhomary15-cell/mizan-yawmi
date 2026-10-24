@@ -40,7 +40,8 @@
     };
     const petals = (side, from, cls) => inks(side).map((k, i) => {
       const ang = from + (i + 0.5) * 180 / N;
-      return html`<ellipse cx=${cx + 52} cy=${cy} rx="52" ry="15" transform=${`rotate(${ang.toFixed(2)} ${cx} ${cy})`} class=${k ? 'petal ' + kc(k) : 'petal off'} />`;
+      // pathLength 1 and the petal's place let the CSS draw each outline in turn when the rosette appears (feature 027).
+      return html`<ellipse cx=${cx + 52} cy=${cy} rx="52" ry="15" pathLength="1" style=${{'--i': i}} transform=${`rotate(${ang.toFixed(2)} ${cx} ${cy})`} class=${k ? 'petal ' + kc(k) : 'petal off'} />`;
     });
     let note;
     if (!a.done && !b.done) note = 'لسه مفيش حاجة متعلّمة ' + label + '.';

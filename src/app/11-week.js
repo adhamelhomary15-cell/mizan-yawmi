@@ -40,7 +40,7 @@
         <${WeekArrows} iso=${iso} setIso=${setIso} />
       </div>
 
-      <div class="sec a-balance"><h2>ميزان الأسبوع</h2><div class="panel"><${Balance} a=${bal.a} b=${bal.b} label="الأسبوع ده" /></div></div>
+      <div class="sec a-balance"><h2>ميزان الأسبوع</h2><div class="panel"><${Balance} key=${ws} a=${bal.a} b=${bal.b} label="الأسبوع ده" /></div></div>
 
       <div class="sec a-strips">
         <div class="sec-head"><h2>شكل الأسبوع</h2><p class="small muted">دوس على يوم تفتحه</p></div>
