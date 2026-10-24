@@ -102,15 +102,15 @@ description: "Task list for feature 025: encrypted sync across devices"
 
 ### Phase 4: the sync loop and «المزامنة»
 
-- [ ] T013 `src/app/06b-sync.js`: pull, merge, push, and retry on 409; changes wait while offline; a push 3 seconds after
+- [x] T013 `src/app/06b-sync.js`: pull, merge, push, and retry on 409; changes wait while offline; a push 3 seconds after
   the last edit; a poll every 30 seconds while the page is visible, and on focus or when online again; the
   `before-sync` snapshot when something local loses; a newer app version refused.
-- [ ] T014 Remove the `window.claude` path from `src/app/06-store.js`. The sync line tells the truth: «على الجهاز ده
+- [x] T014 Remove the `window.claude` path from `src/app/06-store.js`. The sync line tells the truth: «على الجهاز ده
   بس», or «متزامن، آخر مرة …» with any changes still waiting.
-- [ ] T015 `src/app/15b-sync-view.js`: sign up, confirm, the recovery code shown once, and sign in.
-- [ ] T016 The first join, choosing between «جدول الحساب» and «جدول الجهاز ده» after a backup is saved.
-- [ ] T017 Change the password, and «نسيت الباسورد» with and without the recovery code, warning first.
-- [ ] T018 «اخرج من الجهاز ده» and «اقفل المزامنة وامسح نسختها», which asks first.
+- [x] T015 `src/app/15b-sync-view.js`: sign up, confirm, the recovery code shown once, and sign in.
+- [x] T016 The first join, choosing between «جدول الحساب» and «جدول الجهاز ده» after a backup is saved.
+- [x] T017 Change the password, and «نسيت الباسورد» with and without the recovery code, warning first.
+- [x] T018 «اخرج من الجهاز ده» and «اقفل المزامنة وامسح نسختها», which asks first.
 - [ ] T019 **[gate: CSP]** `tools/build.py` reads the Worker's address from `server/address.txt`, a public URL only, into
   `connect-src`. `check-security.js` allows exactly that address, and nothing else.
 

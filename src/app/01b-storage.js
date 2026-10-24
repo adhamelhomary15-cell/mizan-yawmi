@@ -55,8 +55,11 @@
     snapshotBeforeFirstSave();
     const ok = writeJSON(STORE_KEYS[store], sealStore(store, CURRENT_VERSION[store], data, Date.now()));
     reconcile(store).then(openMirror).then(db => db && copyToMirror(db, store));
+    if (ok && syncHook) syncHook(store, data);
     return ok;
   }
+  // Set by the sync part once it has started (feature 025), so every save is stamped there; null while sync is off.
+  let syncHook = null;
   // Removes a store everywhere, so an older copy cannot come back after a reset.
   async function removeStore(store){
     removeKey(STORE_KEYS[store]);

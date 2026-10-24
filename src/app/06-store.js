@@ -1,4 +1,4 @@
-  /* ---------------- progress store: on the device through the storage path, plus the synced copy where there is one ---------------- */
+  /* ---------------- progress store: on the device through the storage path; the synced copy is in 06b (feature 025) ---------------- */
   const LOCAL_OK = (() => { try { localStorage.setItem('__probe', '1'); localStorage.removeItem('__probe'); return true; } catch(e){ return false; } })();
   const EMPTY = () => ({v:1, checks:{}, modules:{}, tasks:[], appts:[], courses:[], mainCourse:SETTINGS_COURSE_ID, extras:{}, phaseSeen:null, askedUpTo:null, setAside:[]});
   const isISO = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -26,7 +26,6 @@
     if (!first.current) first.current = loadStore('progress');
     const opened = first.current;
     const [store, setStore] = useState(() => opened.state === 'ok' ? normalize(opened.data) : EMPTY());
-    const [sync, setSync] = useState('local');
     // true after a write to this device failed, until the next one succeeds (the notice in App reads it)
     const [saveFailed, setSaveFailed] = useState(!LOCAL_OK);
     const noteSave = ok => setSaveFailed(f => f === !ok ? f : !ok);
@@ -34,7 +33,7 @@
     // entries a migration set aside. Data from a newer app, or that could not be brought forward, is never written over.
     const [health, setHealth] = useState({problem: opened.state === 'too-new' || opened.state === 'failed' ? opened.state : null, setAside: opened.setAside || 0});
     const locked = useRef(opened.state === 'too-new' || opened.state === 'failed');
-    const latest = useRef(store), ref = useRef(null), timer = useRef(null), chain = useRef(Promise.resolve());
+    const latest = useRef(store);
     const take = data => { const next = normalize(data); latest.current = next; setStore(next); };
     useEffect(() => {
       reconcile('progress', opened.state === 'empty' || opened.state === 'damaged', d => !!hasData(normalize(d))).then(r => {
@@ -43,74 +42,23 @@
         // a damaged copy is only news once the mirror could not bring the data back
         else if (opened.state === 'damaged') setHealth(h => ({...h, problem: 'damaged'}));
       });
-      return onOtherTab('progress', take);
+      const offTab = onOtherTab('progress', take), offSync = onSyncedIn('progress', take);
+      return () => { offTab(); offSync(); };
     }, []);
     const dismissHealth = () => setHealth({problem: null, setAside: 0});
 
-    function flush(){
-      timer.current = null;
-      const r = ref.current; if (!r) return;
-      const body = JSON.parse(JSON.stringify(latest.current));
-      chain.current = chain.current.then(() => r.set(body)).catch(err => {
-        if (err && err.code === 'unavailable'){
-          setTimeout(() => { if (!timer.current) timer.current = setTimeout(flush, 0); }, 1200 + Math.random()*800);
-        } else { ref.current = null; setSync('local'); }
-      });
-    }
-    function queue(delay){
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(flush, delay == null ? 600 : delay);
-    }
     function update(fn){
       if (locked.current) return;
       const next = normalize(fn(JSON.parse(JSON.stringify(latest.current))));
       latest.current = next; setStore(next); noteSave(saveLocal(next));
-      if (ref.current) queue();
     }
-    // A restore: the whole progress at once, and, when a synced copy is active, written there now rather than
-    // after the usual delay. Resolves true when that write finished (or there is no synced copy), false if it failed.
+    // A restore: the whole progress at once. The sync part sees it as any other save and sends it (feature 025).
     function replaceAll(nextRaw){
       const next = normalize(nextRaw);
       latest.current = next; setStore(next); noteSave(saveLocal(next));
-      if (timer.current) { clearTimeout(timer.current); timer.current = null; }
-      const r = ref.current;
-      if (!r) return Promise.resolve(true);
-      const body = JSON.parse(JSON.stringify(next));
-      const p = chain.current.then(() => r.set(body));
-      chain.current = p.catch(() => {});
-      return p.then(() => true, () => false);
+      return Promise.resolve(true);
     }
 
-    useEffect(() => {
-      let unsub = null, dead = false;
-      (async () => {
-        try {
-          if (!window.claude || typeof claude.use !== 'function') return;
-          const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
-          const id = user ? await user.id() : null;
-          if (!db || !id || dead) return;
-          const docRef = db.doc('data/users/' + id + '/tracker');
-          let first = true;
-          unsub = docRef.onSnapshot(snap => {
-            if (snap.metadata && snap.metadata.hasPendingWrites) return;
-            ref.current = docRef;
-            setSync('cloud');
-            if (timer.current) return;
-            if (first){
-              first = false;
-              if (!snap.exists){ if (hasData(latest.current)) queue(0); return; }
-            }
-            if (!snap.exists) return;
-            const next = normalize(snap.data());
-            if (JSON.stringify(next) !== JSON.stringify(latest.current)){
-              latest.current = next; setStore(next); noteSave(saveLocal(next));
-            }
-          }, () => { ref.current = null; setSync('local'); });
-        } catch(e){ setSync('local'); }
-      })();
-      return () => { dead = true; if (unsub) unsub(); };
-    }, []);
-
-    return [store, update, sync, replaceAll, saveFailed, {...health, dismiss: dismissHealth}];
+    return [store, update, replaceAll, saveFailed, {...health, dismiss: dismissHealth}];
   }
 

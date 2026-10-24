@@ -23,6 +23,8 @@
 05-courses.js
 # progress store (useStore): normalize, synced copy, save and health state
 06-store.js
+# sync: the device side of the encrypted synced copy (feature 025)
+06b-sync.js
 # day model: schedule, one-off blocks, status
 07-day-model.js
 # small UI pieces
@@ -49,6 +51,8 @@
 # schedule editor: blocks, preview, prayer tie, kinds, subjects, place, save
 14b-editor-view.js
 15-settings-view.js
+# «المزامنة» in Settings: sign up, sign in, the first join, the password, signing out (feature 025)
+15b-sync-view.js
 # workout log storage hook, timers, confirm dialog, exercise picker
 16-workouts.js
 # exercise drawings: tables, loading, download on tap

@@ -15,6 +15,7 @@
   function itemsOf(store, data){
     const items = new Map();
     if (store === 'settings') { items.set(pathOf('s'), data); return items; }
+    data = data || {};   // a store never saved yet
     Object.entries(SYNC_LISTS[store]).forEach(([field, kind]) => (data[field] || []).forEach(x => {
       if (kind !== 'k') { items.set(pathOf(kind, x.id), x); return; }
       const course = Object.assign({}, x);

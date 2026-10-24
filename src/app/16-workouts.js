@@ -21,7 +21,8 @@
         if (r && r.tooNew) { locked.current = true; setTooNew(true); }
         else if (r && r.recovered) { take(r.recovered); setRecovered(true); }
       });
-      return onOtherTab('workouts', take);
+      const offTab = onOtherTab('workouts', take), offSync = onSyncedIn('workouts', take);
+      return () => { offTab(); offSync(); };
     }, []);
     const update = fn => {
       if (locked.current) return;
