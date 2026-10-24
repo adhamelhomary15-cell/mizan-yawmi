@@ -49,13 +49,22 @@
     }, []);
     const install = async () => { if (!installEvt) return; try { await installEvt.prompt(); } catch(e){} setInstallEvt(null); };
     // A new version took over in the background (see sw.js): offer to open it now; the next open shows it anyway.
+    // Coming back to the app (feature 026): a phone resumes an installed app without reloading it, so the browser
+    // would not look for a new version; ask it to, at most once a minute. The page's load counts as the first look.
     const [newVersion, setNewVersion] = useState(false);
     useEffect(() => {
       const sw = navigator.serviceWorker;
       if (!sw || !sw.controller) return;   // the first install is not an update
       const onChange = () => setNewVersion(true);
+      let lastLook = Date.now();
+      const onReturn = () => {
+        if (document.visibilityState !== 'visible' || Date.now() - lastLook < 60000) return;
+        lastLook = Date.now();
+        sw.getRegistration().then(r => r && r.update()).catch(() => {});   // offline: nothing to do
+      };
       sw.addEventListener('controllerchange', onChange);
-      return () => sw.removeEventListener('controllerchange', onChange);
+      document.addEventListener('visibilitychange', onReturn);
+      return () => { sw.removeEventListener('controllerchange', onChange); document.removeEventListener('visibilitychange', onReturn); };
     }, []);
     const goTab = t => { setTab(t); try { window.scrollTo(0, 0); } catch(e){} };
     const goDay = d => { setIso(d); goTab('today'); };

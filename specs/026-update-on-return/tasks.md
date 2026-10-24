@@ -47,12 +47,12 @@ description: "Task list for feature 026: new versions on return, and the version
 
 ## Phase 2: The check on return (US1)
 
-- [ ] T005 [US1] In `src/app/21-shell.js`, in the effect with the `controllerchange` listener (plan, decision 1):
+- [x] T005 [US1] In `src/app/21-shell.js`, in the effect with the `controllerchange` listener (plan, decision 1):
   - listen to `visibilitychange`; when the page becomes visible and the last check was 60 seconds ago or more, call
     `navigator.serviceWorker.getRegistration()` then `registration.update()`, all inside `catch`;
   - the last check's time starts at the page's load, since the browser checks on load;
   - remove the listener on cleanup, as the `controllerchange` one is.
-- [ ] T006 Run `check-code` and parity, and in the browser check that a return calls the update once and nothing
+- [x] T006 Run `check-code` and parity, and in the browser check that a return calls the update once and nothing
   shows offline. **Commit**.
 
 ## Phase 3: Tests, docs
