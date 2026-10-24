@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="98991231e9"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-DOwwW8VyavQagscTBPH81itUzm7FH+IyK2iLOVfgOVM=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="6291549f71"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-lb3uQvvCv0okd87MkxL5rO3+N4/xZxUJ2HZOi1fIcmg=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self' https://mizan-sync.mizan.workers.dev; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -1382,6 +1382,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     }
     return items;
   }
+  // Whether two versions of a store hold the same items, whatever the order of their keys.
+  function sameStore(store, a, b){
+    const x = itemsOf(store, a), y = itemsOf(store, b);
+    return x.size === y.size && [...x].every(([p, v]) => y.has(p) && sameValue(v, y.get(p)));
+  }
   // The store back from its items, in the items' order.
   function fromItems(store, items){
     if (store === 'settings') return items.get(pathOf('s'));
@@ -1871,7 +1876,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   // tells this part (onStoreSave): it stamps what changed, and 3 seconds later sends the merged, sealed store. A pull
   // merges the server's copy item by item (the sync rules), keeps the device's stores aside first when one of its
   // items gives way, and hands the result to the screens (onSyncedIn), as a save from another tab is.
-  const SYNC_URL = "";            // tools/build.py puts server/address.txt here; empty: sync is not offered yet
+  const SYNC_URL = "https://mizan-sync.mizan.workers.dev";            // tools/build.py puts server/address.txt here; empty: sync is not offered yet
   const SYNC_RECORD = 'mizan-sync';  // localStorage: {email, device, versions, dirty, lastSync, keyByPassword}
   const PUSH_DELAY = 3000, POLL_EVERY = 30000;
   const sync = {started: false, on: false, token: null, key: null, record: null, stamps: {}, known: {}, timer: null, running: null,
@@ -1901,7 +1906,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const kvPut = (key, value) => kv('readwrite', s => s.put(value, key));
   const saveRecord = () => writeJSON(SYNC_RECORD, sync.record);
 
-  function setStatus(status){ sync.status = status; sync.watchers.forEach(w => w(status)); }
+  function setSyncStatus(status){ sync.status = status; sync.watchers.forEach(w => w(status)); }
   // The screens' view of sync: {status, email, lastSync, waiting}; status is off, unavailable, syncing, ok, offline,
   // signin (sign in again), or too-new.
   function syncView(){
@@ -1942,13 +1947,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   function onStoreSave(store, data){
     if (!sync.on) return;
     const before = sync.known[store];
-    if (before !== undefined) sync.stamps[store] = stampChanges(store, before, data, sync.stamps[store] || {}, Date.now(), sync.record.device);
     sync.known[store] = JSON.parse(JSON.stringify(data));
+    if (before !== undefined && sameStore(store, before, data)) return;       // a merge written back, or no change
+    if (before !== undefined) sync.stamps[store] = stampChanges(store, before, data, sync.stamps[store] || {}, Date.now(), sync.record.device);
     sync.record.dirty[store] = true; saveRecord();
     kvPut('stamps', sync.stamps); kvPut('known', sync.known);
     clearTimeout(sync.timer);
     sync.timer = setTimeout(syncAll, PUSH_DELAY);
-    setStatus(sync.status === 'ok' ? 'ok' : sync.status);
+    setSyncStatus(sync.status === 'ok' ? 'ok' : sync.status);
   }
 
   // One store: pull, merge, keep the device's stores aside if something gives way, apply, and push with the next
@@ -1958,20 +1964,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       const remote = await api('GET', '/store/' + name), r = sync.record;
       if (remote.version === r.versions[name] && !r.dirty[name]) return;
       const theirs = remote.version ? await open(sync.key, remote) : {version: CURRENT_VERSION[name], data: null, stamps: {}};
-      if (theirs.version > CURRENT_VERSION[name]) { setStatus('too-new'); throw new Error('too-new'); }
+      if (theirs.version > CURRENT_VERSION[name]) { setSyncStatus('too-new'); throw new Error('too-new'); }
       const local = storedData(name);
       const merged = theirs.data === null ? {data: local, stamps: sync.stamps[name] || {}, lost: []}
         : local === null ? {data: theirs.data, stamps: theirs.stamps, lost: []}
         : mergeStore(name, {data: local, stamps: sync.stamps[name] || {}}, theirs);
       if (merged.lost.length) await kvPut('before-sync', {at: Date.now(), stores: Object.fromEntries(STORE_NAMES.map(n => [n, storedData(n)]))});
-      if (merged.data !== null && JSON.stringify(merged.data) !== JSON.stringify(local)) {
+      if (merged.data !== null && (local === null || !sameStore(name, merged.data, local))) {
         sync.known[name] = JSON.parse(JSON.stringify(merged.data));      // so this save stamps nothing new
         saveStore(name, merged.data);
         sync.listeners[name].forEach(take => take(merged.data));
       }
       sync.stamps[name] = dropOldTombstones(merged.stamps, Date.now());
       let version = remote.version;
-      if (merged.data !== null && (r.dirty[name] || JSON.stringify(merged.data) !== JSON.stringify(theirs.data))) {
+      if (merged.data !== null && (r.dirty[name] || theirs.data === null || !sameStore(name, merged.data, theirs.data))) {
         const sealed = await seal(sync.key, {format: 'mizan-sync', store: name, version: CURRENT_VERSION[name], data: merged.data, stamps: sync.stamps[name]});
         try { version = (await api('PUT', '/store/' + name, Object.assign({version: remote.version + 1}, sealed))).version; }
         catch (e) { if (e.status === 409) continue; throw e; }
@@ -1984,14 +1990,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   function syncAll(){
     if (!sync.on || !SYNC_URL) return Promise.resolve();
     if (sync.running) return sync.running;
-    setStatus('syncing');
+    setSyncStatus('syncing');
     sync.running = (async () => {
       try {
         for (const name of STORE_NAMES) await syncStore(name);
-        sync.record.lastSync = Date.now(); setStatus('ok');
+        sync.record.lastSync = Date.now(); setSyncStatus('ok');
       } catch (e) {
-        if (e.status === 401) setStatus('signin');
-        else if (sync.status !== 'too-new') setStatus('offline');
+        if (e.status === 401) setSyncStatus('signin');
+        else if (sync.status !== 'too-new') setSyncStatus('offline');
       } finally { saveRecord(); sync.running = null; }
     })();
     return sync.running;
@@ -2002,7 +2008,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     try {
       const v = await api('GET', '/versions'), r = sync.record;
       if (STORE_NAMES.some(n => v[n] !== r.versions[n] || r.dirty[n])) await syncAll();
-    } catch (e) { setStatus(e.status === 401 ? 'signin' : 'offline'); }
+    } catch (e) { setSyncStatus(e.status === 401 ? 'signin' : 'offline'); }
   }
 
   // Starts sync on this device from what was kept: changes made while it was closed (a restore, say) are stamped now.
@@ -2014,14 +2020,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     Object.assign(sync, {on: true, token, key, stamps: stamps || {}, known: known || {}});
     STORE_NAMES.forEach(n => {
       const now = storedData(n);
-      if (sync.known[n] !== undefined && JSON.stringify(sync.known[n]) !== JSON.stringify(now)) {
+      if (sync.known[n] !== undefined && !(sync.known[n] === null ? now === null : now !== null && sameStore(n, sync.known[n], now))) {
         sync.stamps[n] = stampChanges(n, sync.known[n], now, sync.stamps[n] || {}, Date.now(), sync.record.device);
         sync.record.dirty[n] = true;
       }
       sync.known[n] = now;
     });
     syncHook = onStoreSave;
-    setStatus('ok');
+    setSyncStatus('ok');
     if (!sync.started) {
       sync.started = true;
       setInterval(poll, POLL_EVERY);
@@ -2050,7 +2056,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     clearTimeout(sync.timer);
     removeKey(SYNC_RECORD); sync.record = null;
     await kv('readwrite', s => s.clear());
-    setStatus('off');
+    setSyncStatus('off');
   }
   startSync();
   /* ---------------- day model: schedule + one-off blocks + status ---------------- */
@@ -4435,11 +4441,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
   /* ---------------- «المزامنة» in Settings (feature 025; the engine is 06b, the crypto 01d) ---------------- */
   // An email link opens the app at #sync-confirm=<token> or #sync-reset=<token>; read once, then the address is cleaned.
-  const SYNC_LINK = (() => {
+  // The first «المزامنة» to show takes it (takeSyncLink), so a later visit to Settings never uses it again.
+  let syncLink = (() => {
     const m = /^#sync-(confirm|reset)=([A-Za-z0-9_-]+)$/.exec(location.hash || '');
     if (m) history.replaceState(null, '', location.pathname + location.search);
     return m ? {kind: m[1], token: m[2]} : null;
   })();
+  const takeSyncLink = () => { const l = syncLink; syncLink = null; return l; };
   const PASSWORD_MIN = 10;
   const SYNC_ERRORS = {
     short: 'الباسورد لازم يبقى ' + PASSWORD_MIN + ' حروف على الأقل.', differ: 'الباسورد والتأكيد مش زي بعض.',
@@ -4503,14 +4511,15 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 
   function SyncSection({store, wk}){
     const view = useSyncView();
-    const [screen, setScreen] = useState(SYNC_LINK ? SYNC_LINK.kind : 'main');
+    const [link] = useState(takeSyncLink);
+    const [screen, setScreen] = useState(link ? link.kind : 'main');
     const [note, setNote] = useState(''), [code, setCode] = useState(newRecoveryCode), [join, setJoin] = useState(null);
     const [aside, setAside] = useState(null), [askOff, setAskOff] = useState(false);
     const form = useForm();
     useEffect(() => { kvGet('before-sync').then(v => setAside(v || null)); }, [view.lastSync]);
     useEffect(() => {
-      if (!SYNC_LINK || SYNC_LINK.kind !== 'confirm') return;
-      api('POST', '/confirm', {token: SYNC_LINK.token}).then(() => setNote('اتأكد إيميلك. ادخل بإيميلك وباسوردك.'), () => setNote(SYNC_ERRORS.token)).then(() => setScreen('signin'));
+      if (!link || link.kind !== 'confirm') return;
+      api('POST', '/confirm', {token: link.token}).then(() => setNote('اتأكد إيميلك. ادخل بإيميلك وباسوردك.'), () => setNote(SYNC_ERRORS.token)).then(() => setScreen('signin'));
     }, []);
     const go = s => { setScreen(s); setNote(''); form.setErr(''); };
     const start = async j => { await beginSync(j.email, j.token, j.key, j.keyByPassword, j.keep); setJoin(null); go('main'); };
@@ -4526,7 +4535,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           if (!isMail(f.email)) fail('email'); const bad = checkPassword(f.pass || '', f.again || ''); if (bad) fail(bad); if (!f.saved) fail('saved');
           await signUp(f.email.trim().toLowerCase(), f.pass, code); setCode(newRecoveryCode()); go('main'); setNote('بعتنالك إيميل. افتح اللينك اللي فيه على الجهاز ده عشان تأكد الحساب.'); })}>اعمل الحساب</button>
           <button type="button" class="btn ghost" onClick=${() => go('main')}>لأ</button></span></div>`;
-    else if (screen === 'signin' || view.status === 'signin') body = html`<div class="form">
+    else if (screen === 'signin' || (screen === 'main' && view.status === 'signin')) body = html`<div class="form">
         ${form.field('email', 'الإيميل', 'email', {auto: 'email'})}${form.field('pass', 'الباسورد', 'password', {auto: 'current-password'})}
         <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
           if (!isMail(f.email)) fail('email');
@@ -4544,7 +4553,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
           if (!isMail(f.email)) fail('email'); const bad = checkPassword(f.pass || '', f.again || ''); if (bad) fail(bad);
           if (f.code && !isRecoveryCode(f.code)) fail('code');
-          const nextCode = await finishReset(SYNC_LINK.token, f.email.trim().toLowerCase(), f.pass, f.code || '');
+          const nextCode = await finishReset(link.token, f.email.trim().toLowerCase(), f.pass, f.code || '');
           go('main'); setNote(nextCode ? 'كود الاسترجاع الجديد: ' + nextCode + ' اكتبه في مكان أمين، مش هيظهر تاني.' : 'اتغيّر الباسورد، والنسخة المتزامنة زي ما هي.'); })}>غيّر الباسورد</button></span></div>`;
     else if (screen === 'password') body = html`<div class="form">
         ${form.field('old', 'الباسورد الحالي', 'password', {auto: 'current-password'})}${form.field('pass', 'باسورد جديد', 'password', {auto: 'new-password'})}${form.field('again', 'الباسورد الجديد تاني', 'password', {auto: 'new-password'})}
@@ -5265,7 +5274,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const saveNow = () => { const r = downloadBackup(store, wk); setSaveMsg(r.ok ? {ok: true, name: r.name} : {ok: false}); };
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
-    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return SYNC_LINK || hsh === 'settings' ? 'settings' : ['today','week','course','tasks','workout'].includes(hsh) ? hsh : 'today'; });
+    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return syncLink || hsh === 'settings' ? 'settings' : ['today','week','course','tasks','workout'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
     // One-time notice after the day version (A late / B early) switches. phaseSeen is the last version the owner saw:

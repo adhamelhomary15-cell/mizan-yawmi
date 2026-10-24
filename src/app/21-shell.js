@@ -27,7 +27,7 @@
     const saveNow = () => { const r = downloadBackup(store, wk); setSaveMsg(r.ok ? {ok: true, name: r.name} : {ok: false}); };
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
-    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return SYNC_LINK || hsh === 'settings' ? 'settings' : ['today','week','course','tasks','workout'].includes(hsh) ? hsh : 'today'; });
+    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return syncLink || hsh === 'settings' ? 'settings' : ['today','week','course','tasks','workout'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
     // One-time notice after the day version (A late / B early) switches. phaseSeen is the last version the owner saw:

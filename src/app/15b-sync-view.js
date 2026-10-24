@@ -1,10 +1,12 @@
   /* ---------------- «المزامنة» in Settings (feature 025; the engine is 06b, the crypto 01d) ---------------- */
   // An email link opens the app at #sync-confirm=<token> or #sync-reset=<token>; read once, then the address is cleaned.
-  const SYNC_LINK = (() => {
+  // The first «المزامنة» to show takes it (takeSyncLink), so a later visit to Settings never uses it again.
+  let syncLink = (() => {
     const m = /^#sync-(confirm|reset)=([A-Za-z0-9_-]+)$/.exec(location.hash || '');
     if (m) history.replaceState(null, '', location.pathname + location.search);
     return m ? {kind: m[1], token: m[2]} : null;
   })();
+  const takeSyncLink = () => { const l = syncLink; syncLink = null; return l; };
   const PASSWORD_MIN = 10;
   const SYNC_ERRORS = {
     short: 'الباسورد لازم يبقى ' + PASSWORD_MIN + ' حروف على الأقل.', differ: 'الباسورد والتأكيد مش زي بعض.',
@@ -68,14 +70,15 @@
 
   function SyncSection({store, wk}){
     const view = useSyncView();
-    const [screen, setScreen] = useState(SYNC_LINK ? SYNC_LINK.kind : 'main');
+    const [link] = useState(takeSyncLink);
+    const [screen, setScreen] = useState(link ? link.kind : 'main');
     const [note, setNote] = useState(''), [code, setCode] = useState(newRecoveryCode), [join, setJoin] = useState(null);
     const [aside, setAside] = useState(null), [askOff, setAskOff] = useState(false);
     const form = useForm();
     useEffect(() => { kvGet('before-sync').then(v => setAside(v || null)); }, [view.lastSync]);
     useEffect(() => {
-      if (!SYNC_LINK || SYNC_LINK.kind !== 'confirm') return;
-      api('POST', '/confirm', {token: SYNC_LINK.token}).then(() => setNote('اتأكد إيميلك. ادخل بإيميلك وباسوردك.'), () => setNote(SYNC_ERRORS.token)).then(() => setScreen('signin'));
+      if (!link || link.kind !== 'confirm') return;
+      api('POST', '/confirm', {token: link.token}).then(() => setNote('اتأكد إيميلك. ادخل بإيميلك وباسوردك.'), () => setNote(SYNC_ERRORS.token)).then(() => setScreen('signin'));
     }, []);
     const go = s => { setScreen(s); setNote(''); form.setErr(''); };
     const start = async j => { await beginSync(j.email, j.token, j.key, j.keyByPassword, j.keep); setJoin(null); go('main'); };
@@ -91,7 +94,7 @@
           if (!isMail(f.email)) fail('email'); const bad = checkPassword(f.pass || '', f.again || ''); if (bad) fail(bad); if (!f.saved) fail('saved');
           await signUp(f.email.trim().toLowerCase(), f.pass, code); setCode(newRecoveryCode()); go('main'); setNote('بعتنالك إيميل. افتح اللينك اللي فيه على الجهاز ده عشان تأكد الحساب.'); })}>اعمل الحساب</button>
           <button type="button" class="btn ghost" onClick=${() => go('main')}>لأ</button></span></div>`;
-    else if (screen === 'signin' || view.status === 'signin') body = html`<div class="form">
+    else if (screen === 'signin' || (screen === 'main' && view.status === 'signin')) body = html`<div class="form">
         ${form.field('email', 'الإيميل', 'email', {auto: 'email'})}${form.field('pass', 'الباسورد', 'password', {auto: 'current-password'})}
         <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
           if (!isMail(f.email)) fail('email');
@@ -109,7 +112,7 @@
         <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
           if (!isMail(f.email)) fail('email'); const bad = checkPassword(f.pass || '', f.again || ''); if (bad) fail(bad);
           if (f.code && !isRecoveryCode(f.code)) fail('code');
-          const nextCode = await finishReset(SYNC_LINK.token, f.email.trim().toLowerCase(), f.pass, f.code || '');
+          const nextCode = await finishReset(link.token, f.email.trim().toLowerCase(), f.pass, f.code || '');
           go('main'); setNote(nextCode ? 'كود الاسترجاع الجديد: ' + nextCode + ' اكتبه في مكان أمين، مش هيظهر تاني.' : 'اتغيّر الباسورد، والنسخة المتزامنة زي ما هي.'); })}>غيّر الباسورد</button></span></div>`;
     else if (screen === 'password') body = html`<div class="form">
         ${form.field('old', 'الباسورد الحالي', 'password', {auto: 'current-password'})}${form.field('pass', 'باسورد جديد', 'password', {auto: 'new-password'})}${form.field('again', 'الباسورد الجديد تاني', 'password', {auto: 'new-password'})}

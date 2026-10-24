@@ -33,7 +33,7 @@
   const kvPut = (key, value) => kv('readwrite', s => s.put(value, key));
   const saveRecord = () => writeJSON(SYNC_RECORD, sync.record);
 
-  function setStatus(status){ sync.status = status; sync.watchers.forEach(w => w(status)); }
+  function setSyncStatus(status){ sync.status = status; sync.watchers.forEach(w => w(status)); }
   // The screens' view of sync: {status, email, lastSync, waiting}; status is off, unavailable, syncing, ok, offline,
   // signin (sign in again), or too-new.
   function syncView(){
@@ -74,13 +74,14 @@
   function onStoreSave(store, data){
     if (!sync.on) return;
     const before = sync.known[store];
-    if (before !== undefined) sync.stamps[store] = stampChanges(store, before, data, sync.stamps[store] || {}, Date.now(), sync.record.device);
     sync.known[store] = JSON.parse(JSON.stringify(data));
+    if (before !== undefined && sameStore(store, before, data)) return;       // a merge written back, or no change
+    if (before !== undefined) sync.stamps[store] = stampChanges(store, before, data, sync.stamps[store] || {}, Date.now(), sync.record.device);
     sync.record.dirty[store] = true; saveRecord();
     kvPut('stamps', sync.stamps); kvPut('known', sync.known);
     clearTimeout(sync.timer);
     sync.timer = setTimeout(syncAll, PUSH_DELAY);
-    setStatus(sync.status === 'ok' ? 'ok' : sync.status);
+    setSyncStatus(sync.status === 'ok' ? 'ok' : sync.status);
   }
 
   // One store: pull, merge, keep the device's stores aside if something gives way, apply, and push with the next
@@ -90,20 +91,20 @@
       const remote = await api('GET', '/store/' + name), r = sync.record;
       if (remote.version === r.versions[name] && !r.dirty[name]) return;
       const theirs = remote.version ? await open(sync.key, remote) : {version: CURRENT_VERSION[name], data: null, stamps: {}};
-      if (theirs.version > CURRENT_VERSION[name]) { setStatus('too-new'); throw new Error('too-new'); }
+      if (theirs.version > CURRENT_VERSION[name]) { setSyncStatus('too-new'); throw new Error('too-new'); }
       const local = storedData(name);
       const merged = theirs.data === null ? {data: local, stamps: sync.stamps[name] || {}, lost: []}
         : local === null ? {data: theirs.data, stamps: theirs.stamps, lost: []}
         : mergeStore(name, {data: local, stamps: sync.stamps[name] || {}}, theirs);
       if (merged.lost.length) await kvPut('before-sync', {at: Date.now(), stores: Object.fromEntries(STORE_NAMES.map(n => [n, storedData(n)]))});
-      if (merged.data !== null && JSON.stringify(merged.data) !== JSON.stringify(local)) {
+      if (merged.data !== null && (local === null || !sameStore(name, merged.data, local))) {
         sync.known[name] = JSON.parse(JSON.stringify(merged.data));      // so this save stamps nothing new
         saveStore(name, merged.data);
         sync.listeners[name].forEach(take => take(merged.data));
       }
       sync.stamps[name] = dropOldTombstones(merged.stamps, Date.now());
       let version = remote.version;
-      if (merged.data !== null && (r.dirty[name] || JSON.stringify(merged.data) !== JSON.stringify(theirs.data))) {
+      if (merged.data !== null && (r.dirty[name] || theirs.data === null || !sameStore(name, merged.data, theirs.data))) {
         const sealed = await seal(sync.key, {format: 'mizan-sync', store: name, version: CURRENT_VERSION[name], data: merged.data, stamps: sync.stamps[name]});
         try { version = (await api('PUT', '/store/' + name, Object.assign({version: remote.version + 1}, sealed))).version; }
         catch (e) { if (e.status === 409) continue; throw e; }
@@ -116,14 +117,14 @@
   function syncAll(){
     if (!sync.on || !SYNC_URL) return Promise.resolve();
     if (sync.running) return sync.running;
-    setStatus('syncing');
+    setSyncStatus('syncing');
     sync.running = (async () => {
       try {
         for (const name of STORE_NAMES) await syncStore(name);
-        sync.record.lastSync = Date.now(); setStatus('ok');
+        sync.record.lastSync = Date.now(); setSyncStatus('ok');
       } catch (e) {
-        if (e.status === 401) setStatus('signin');
-        else if (sync.status !== 'too-new') setStatus('offline');
+        if (e.status === 401) setSyncStatus('signin');
+        else if (sync.status !== 'too-new') setSyncStatus('offline');
       } finally { saveRecord(); sync.running = null; }
     })();
     return sync.running;
@@ -134,7 +135,7 @@
     try {
       const v = await api('GET', '/versions'), r = sync.record;
       if (STORE_NAMES.some(n => v[n] !== r.versions[n] || r.dirty[n])) await syncAll();
-    } catch (e) { setStatus(e.status === 401 ? 'signin' : 'offline'); }
+    } catch (e) { setSyncStatus(e.status === 401 ? 'signin' : 'offline'); }
   }
 
   // Starts sync on this device from what was kept: changes made while it was closed (a restore, say) are stamped now.
@@ -146,14 +147,14 @@
     Object.assign(sync, {on: true, token, key, stamps: stamps || {}, known: known || {}});
     STORE_NAMES.forEach(n => {
       const now = storedData(n);
-      if (sync.known[n] !== undefined && JSON.stringify(sync.known[n]) !== JSON.stringify(now)) {
+      if (sync.known[n] !== undefined && !(sync.known[n] === null ? now === null : now !== null && sameStore(n, sync.known[n], now))) {
         sync.stamps[n] = stampChanges(n, sync.known[n], now, sync.stamps[n] || {}, Date.now(), sync.record.device);
         sync.record.dirty[n] = true;
       }
       sync.known[n] = now;
     });
     syncHook = onStoreSave;
-    setStatus('ok');
+    setSyncStatus('ok');
     if (!sync.started) {
       sync.started = true;
       setInterval(poll, POLL_EVERY);
@@ -182,6 +183,6 @@
     clearTimeout(sync.timer);
     removeKey(SYNC_RECORD); sync.record = null;
     await kv('readwrite', s => s.clear());
-    setStatus('off');
+    setSyncStatus('off');
   }
   startSync();

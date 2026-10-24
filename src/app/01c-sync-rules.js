@@ -31,6 +31,11 @@
     }
     return items;
   }
+  // Whether two versions of a store hold the same items, whatever the order of their keys.
+  function sameStore(store, a, b){
+    const x = itemsOf(store, a), y = itemsOf(store, b);
+    return x.size === y.size && [...x].every(([p, v]) => y.has(p) && sameValue(v, y.get(p)));
+  }
   // The store back from its items, in the items' order.
   function fromItems(store, items){
     if (store === 'settings') return items.get(pathOf('s'));

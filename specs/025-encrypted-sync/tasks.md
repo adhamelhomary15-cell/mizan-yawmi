@@ -111,18 +111,18 @@ description: "Task list for feature 025: encrypted sync across devices"
 - [x] T016 The first join, choosing between «جدول الحساب» and «جدول الجهاز ده» after a backup is saved.
 - [x] T017 Change the password, and «نسيت الباسورد» with and without the recovery code, warning first.
 - [x] T018 «اخرج من الجهاز ده» and «اقفل المزامنة وامسح نسختها», which asks first.
-- [ ] T019 **[gate: CSP]** `tools/build.py` reads the Worker's address from `server/address.txt`, a public URL only, into
+- [x] T019 **[gate: CSP]** `tools/build.py` reads the Worker's address from `server/address.txt`, a public URL only, into
   `connect-src`. `check-security.js` allows exactly that address, and nothing else.
 
 ### Phase 5: tests, docs, PR
 
-- [ ] T020 `tests/e2e/sync.spec.js`, with two contexts against `server/dev.js`:
+- [x] T020 `tests/e2e/sync.spec.js`, with two contexts against `server/dev.js`:
   - US1 to US5;
   - offline on one device;
   - no request to the server with sync off.
-- [ ] T021 [P] Docs: the README «المزامنة» part (what is sent, what the server sees, the recovery code, signing out
+- [x] T021 [P] Docs: the README «المزامنة» part (what is sent, what the server sees, the recovery code, signing out
   versus turning sync off); PRODUCT; and constitution compliance noted in the plan.
-- [ ] T022 Every check, parity 0 with sync off, the E2E suite twice, and a look at 375 px. **Commit, push, open PR 025b.**
+- [x] T022 Every check, parity 0 with sync off, the E2E suite twice, and a look at 375 px. **Commit, push, open PR 025b.**
 
 ## The owner's deploy (after both PRs)
 
