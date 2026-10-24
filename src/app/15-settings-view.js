@@ -267,6 +267,24 @@
     </div>`;
   }
 
+  // The version (feature 026): the running one from the page's <meta>, and the one the service worker has installed,
+  // with the day it reached this device (./version in its cache). A refused Cache API shows the code alone.
+  function VersionLine(){
+    const meta = document.querySelector('meta[name="mizan-version"]'), code = meta ? meta.content : '';
+    const [installed, setInstalled] = useState(null);   // {code, at}
+    useEffect(() => {
+      if (!('caches' in window)) return;
+      caches.keys().then(keys => {
+        const ours = keys.filter(k => /^mizan-[0-9a-f]{10}$/.test(k)), k = ours.find(n => n.slice(6) !== code) || ours[0];
+        return k ? caches.open(k).then(c => c.match('./version')).then(r => r ? r.json() : {code: k.slice(6)}) : null;
+      }).then(v => { if (v && v.code) setInstalled(v); }).catch(() => {});
+    }, []);
+    if (!code) return html`<p class="small muted">النسخة: مش معروفة</p>`;
+    const shown = html`<bdi dir="ltr">${code}</bdi>`;
+    if (installed && installed.code !== code) return html`<p class="small">النسخة: ${shown}. فيه نسخة أحدث جاهزة <button type="button" class="btn" onClick=${() => location.reload()}>افتحها</button></p>`;
+    return html`<p class="small muted">النسخة: ${shown}${installed && installed.at ? ' · وصلت ' + dateLabel(zoneParts(new Date(installed.at)).iso) : ''}</p>`;
+  }
+
   function SettingsView({store, wk, sync, replaceAll, settingsChanged}){
     const [pending, setPending] = useState(null);
     const [msgs, setMsgs] = useState([]);
@@ -317,6 +335,7 @@
           <p class="small muted">${CFG.fromExample ? 'المثال متخزن، والأيام اللي فاتت بتفضل بجدولك القديم.' : LOADED.isExample ? 'مفيش ملف إعدادات متخزن. استورد ملفك عشان التطبيق يبقى بتاعك.' : 'الإعدادات دي متخزنة على الجهاز ده وبتشتغل من غير نت.'}${LOADED.problem ? ' (الإعدادات المتخزنة مكنتش صالحة فبنعرض المثال.)' : ''}</p>
           ${LOADED.keptAside ? html`<p class="small" role="status">فيه ${LOADED.keptAside} من الأسابيع القديمة في السجل شكلها بايظ، فأيامها بتتعرض بالأسبوع اللي بعدها. هي محفوظة زي ما هي ومامسحناهاش.</p>` : null}
           <p class="small muted">الموقع: <bdi>${CFG.location.label || '—'}</bdi> · الطريقة: <bdi>${CFG.prayerMethod}</bdi> · اللغة: <bdi>${CFG.language}</bdi></p>
+          <${VersionLine} />
         </div>
       </div>
       <${LookSection} />

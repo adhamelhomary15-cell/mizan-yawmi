@@ -103,6 +103,12 @@ src = src.replace('const CITIES = [];', 'const CITIES = ' + json.dumps(cities, e
 # 4. Wrap in a full document with the app manifest and service worker.
 title = re.search(r'<title>.*?</title>', src).group(0)
 src = src.replace(title, '', 1)
+# The look script and the colour style go in the head (FR-005 of 022): a browser may draw as soon as <body> opens,
+# and the embedded fonts come first in the body, so a frame could otherwise show the white page on a dark phone.
+look = re.search(r'<script>\s*/\* The look \(feature 022\).*?</script>\s*<style>.*?</style>', src, re.S)
+if not look:
+    raise SystemExit('look script and colour style not found')
+src = src.replace(look.group(0), '', 1)
 head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
         '<meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest">'
@@ -112,7 +118,7 @@ head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         'body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>')
 sw_reg = ("<script>if('serviceWorker' in navigator){addEventListener('load',function(){"
           "navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){});});}</script>")
-page = head + title + '</head><body>' + src + sw_reg + '</body></html>'
+page = head + title + look.group(0) + '</head><body>' + src + sw_reg + '</body></html>'
 
 # 4b. Content-Security-Policy (feature 012): the browser runs only the inline scripts and styles hashed here, and
 #     the page may talk only to its own site. A <meta> policy, because GitHub Pages cannot send headers.
@@ -140,6 +146,10 @@ def csp_for(html):
 
 CHARSET = '<meta charset="utf-8">'
 page = page.replace(CHARSET, CHARSET + '<meta http-equiv="Content-Security-Policy" content="' + csp_for(page) + '">', 1)
+# The version is a hash of the finished page, so it is added to the page afterwards, where Settings reads it
+# (feature 026). The same source still gives the same files; a <meta> is outside the Content-Security-Policy.
+version = hashlib.sha1(page.encode()).hexdigest()[:10]
+page = page.replace(CHARSET, CHARSET + '<meta name="mizan-version" content="' + version + '">', 1)
 write('index.html', page)
 
 # 5. Manifest.
@@ -154,12 +164,13 @@ manifest = {
 write('manifest.webmanifest', json.dumps(manifest, ensure_ascii=False, indent=2))
 
 # 6. Service worker. The cache name changes with every build, so phones drop the old copy; downloaded
-#    exercise drawings live in mizan-guides-* and survive updates.
-version = hashlib.sha1(page.encode()).hexdigest()[:10]
+#    exercise drawings live in mizan-guides-* and survive updates. ./version records the day this version reached
+#    the device, for Settings (feature 026); the build cannot write a date and stay the same for the same source.
 write('sw.js', f"""const CACHE = 'mizan-{version}';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 // no-cache: a new worker must store the new files, never a copy the browser kept for a few minutes
-self.addEventListener('install', e => {{ e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, {{cache: 'no-cache'}})))).then(() => self.skipWaiting())); }});
+self.addEventListener('install', e => {{ e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, {{cache: 'no-cache'}})))
+  .then(() => c.put('./version', new Response(JSON.stringify({{code: '{version}', at: Date.now()}}), {{headers: {{'Content-Type': 'application/json'}}}})))).then(() => self.skipWaiting())); }});
 self.addEventListener('activate', e => {{ e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && !k.startsWith('mizan-guides-')).map(k => caches.delete(k)))).then(() => self.clients.claim())); }});
 // Cache first, so the app opens at once even on a weak signal. A new version comes as a new worker (the cache name
 // changes with every build); the page offers to open it once it takes over.

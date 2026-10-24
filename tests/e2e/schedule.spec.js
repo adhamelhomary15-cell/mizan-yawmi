@@ -142,9 +142,10 @@ test('an added kind shows in its colour, can be ticked, counts on its side, and 
   expect((await settings(page)).categories.k1).toEqual({label: 'تدريس', track: true, color: 'copper', side: 'b'});
   const row = page.locator('.timeline li.c-k-copper');
   await expect(row.locator('.meta b')).toHaveText('تدريس');
-  await expect(page.locator('.balance-legend .b b')).toHaveText('0%');
+  // The share's final value (027: the shown number counts up beside it).
+  await expect(page.locator('.balance-legend .b .sr-only')).toHaveText('0%');
   await row.locator('[role=checkbox]').click();
-  await expect(page.locator('.balance-legend .b b')).not.toHaveText('0%');
+  await expect(page.locator('.balance-legend .b .sr-only')).not.toHaveText('0%');
   await tab(page, 'الأسبوع');
   await expect(page.locator('.stat.c-k-copper')).toContainText('تدريس');
 });
