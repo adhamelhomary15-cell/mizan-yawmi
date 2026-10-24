@@ -23,20 +23,33 @@ async function openLive(page, before) {
   await page.goto('index.html');
   await expect(page.locator('nav button').first()).toBeVisible();
 }
-// The page can be visible to Playwright before its first frame is drawn, so the record is waited for.
-const recorded = async page => { await expect.poll(() => page.evaluate(() => !!window.__first)).toBe(true); return page.evaluate(() => window.__first); };
-// The first frame: recorded by a requestAnimationFrame set before any of the page's scripts, which runs before the
-// first paint.
-const firstFrame = () => {
-  requestAnimationFrame(() => {
+// What each frame shows while the page loads (FR-005: no flash of other colours): recorded by a requestAnimationFrame
+// loop set before any of the page's scripts, which runs before each paint, until the app has drawn its bar. The ground
+// is the body's background, the browser's own white until the colours are parsed. Every frame is kept, not only the
+// first: under load the first frame can come before the look script, and a later one could still be unthemed.
+const loadFrames = () => {
+  window.__frames = [];
+  const tick = () => {
     const d = document.documentElement;
-    window.__first = {palette: d.getAttribute('data-palette'), theme: d.getAttribute('data-theme'), bg: getComputedStyle(d).getPropertyValue('--bg').trim()};
+    window.__frames.push({palette: d.getAttribute('data-palette'), theme: d.getAttribute('data-theme'), bg: document.body && getComputedStyle(document.body).backgroundColor});
+    if (document.querySelector('nav button')) window.__loaded = true; else requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+};
+// The page can be visible to Playwright before the frame that shows it is drawn, so that frame is waited for. Returns
+// the frames that differ from the loaded page.
+const otherFrames = async page => {
+  await expect.poll(() => page.evaluate(() => !!window.__loaded)).toBe(true);
+  return page.evaluate(() => {
+    const d = document.documentElement;
+    const now = {palette: d.getAttribute('data-palette'), theme: d.getAttribute('data-theme'), bg: getComputedStyle(document.body).backgroundColor};
+    return window.__frames.filter(f => JSON.stringify(f) !== JSON.stringify(now));
   });
 };
 
 test.describe('US1: picking a palette', () => {
   test('a palette changes the band and the ground, never a kind\'s ink, and is kept with no flash', async ({page}) => {
-    await openLive(page, firstFrame);
+    await openLive(page, loadFrames);
     const ink = await root(page, '--uni'), oldBand = await band(page), oldBg = await root(page, '--bg');
     await tab(page, 'الإعدادات');
     expect(await pressed(page)).toEqual(['تلقائي', 'عنابي']);
@@ -48,9 +61,8 @@ test.describe('US1: picking a palette', () => {
     expect(await pressed(page)).toEqual(['تلقائي', 'كحلي']);
     await page.reload();
     await expect(page.locator('nav button').first()).toBeVisible();
-    const first = await recorded(page);
-    expect(first.palette).toBe('navy');
-    expect(first.bg).toBe(await root(page, '--bg'));
+    expect(await attr(page, 'data-palette')).toBe('navy');
+    expect(await otherFrames(page)).toEqual([]);
     expect(await cspViolations(page)).toEqual([]);
   });
 
@@ -69,8 +81,9 @@ test.describe('US2: light, dark or automatic', () => {
   test.describe('on a dark phone', () => {
     test.use({colorScheme: 'dark'});
     test('a first open with no choice is dark, with «تلقائي» chosen', async ({page}) => {
-      await openLive(page, firstFrame);
-      expect((await recorded(page)).theme).toBe('dark');
+      await openLive(page, loadFrames);
+      expect(await attr(page, 'data-theme')).toBe('dark');
+      expect(await otherFrames(page)).toEqual([]);
       await tab(page, 'الإعدادات');
       expect(await pressed(page)).toEqual(['تلقائي', 'عنابي']);
     });
