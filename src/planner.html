@@ -103,7 +103,7 @@
   transition-property:--bg,--surface,--fg,--muted,--line,--quiet,--danger,--shell,--shell-fg,--shell-dim,--uni,--study,--course,--work,--gym,--quran,--personal,--k-teal,--k-blue,--k-green,--k-slate,--k-copper,--k-olive,--tint;
   transition-duration:.45s; transition-timing-function:cubic-bezier(.16,1,.3,1);
 }
-html{scrollbar-color:var(--quiet) var(--bg)}
+html{scrollbar-color:var(--quiet) var(--bg);scroll-padding-bottom:calc(128px + env(safe-area-inset-bottom, 0px))}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.6;caret-color:var(--course);accent-color:var(--course)}
 ::selection{background:color-mix(in srgb,var(--course) 28%,var(--surface));color:var(--fg)}
 #app{min-height:60vh}
