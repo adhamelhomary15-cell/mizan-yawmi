@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-LdJpo5OxJz2IVm6nrCChDm6nzREC+Dsrlarow0xll4A=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-d/wzfca41vaHx6Vm562cgj9JBArTSEs2PdmgLu5gThA=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="24d2762763"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-zmJUpWAHRTH1aPecqYW/Ky8EuQPOSmh+N+QHShS0Qy0=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-d/wzfca41vaHx6Vm562cgj9JBArTSEs2PdmgLu5gThA=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -3987,6 +3987,24 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
+  // The version (feature 026): the running one from the page's <meta>, and the one the service worker has installed,
+  // with the day it reached this device (./version in its cache). A refused Cache API shows the code alone.
+  function VersionLine(){
+    const meta = document.querySelector('meta[name="mizan-version"]'), code = meta ? meta.content : '';
+    const [installed, setInstalled] = useState(null);   // {code, at}
+    useEffect(() => {
+      if (!('caches' in window)) return;
+      caches.keys().then(keys => {
+        const ours = keys.filter(k => /^mizan-[0-9a-f]{10}$/.test(k)), k = ours.find(n => n.slice(6) !== code) || ours[0];
+        return k ? caches.open(k).then(c => c.match('./version')).then(r => r ? r.json() : {code: k.slice(6)}) : null;
+      }).then(v => { if (v && v.code) setInstalled(v); }).catch(() => {});
+    }, []);
+    if (!code) return html`<p class="small muted">النسخة: مش معروفة</p>`;
+    const shown = html`<bdi dir="ltr">${code}</bdi>`;
+    if (installed && installed.code !== code) return html`<p class="small">النسخة: ${shown}. فيه نسخة أحدث جاهزة <button type="button" class="btn" onClick=${() => location.reload()}>افتحها</button></p>`;
+    return html`<p class="small muted">النسخة: ${shown}${installed && installed.at ? ' · وصلت ' + dateLabel(zoneParts(new Date(installed.at)).iso) : ''}</p>`;
+  }
+
   function SettingsView({store, wk, sync, replaceAll, settingsChanged}){
     const [pending, setPending] = useState(null);
     const [msgs, setMsgs] = useState([]);
@@ -4037,6 +4055,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           <p class="small muted">${CFG.fromExample ? 'المثال متخزن، والأيام اللي فاتت بتفضل بجدولك القديم.' : LOADED.isExample ? 'مفيش ملف إعدادات متخزن. استورد ملفك عشان التطبيق يبقى بتاعك.' : 'الإعدادات دي متخزنة على الجهاز ده وبتشتغل من غير نت.'}${LOADED.problem ? ' (الإعدادات المتخزنة مكنتش صالحة فبنعرض المثال.)' : ''}</p>
           ${LOADED.keptAside ? html`<p class="small" role="status">فيه ${LOADED.keptAside} من الأسابيع القديمة في السجل شكلها بايظ، فأيامها بتتعرض بالأسبوع اللي بعدها. هي محفوظة زي ما هي ومامسحناهاش.</p>` : null}
           <p class="small muted">الموقع: <bdi>${CFG.location.label || '—'}</bdi> · الطريقة: <bdi>${CFG.prayerMethod}</bdi> · اللغة: <bdi>${CFG.language}</bdi></p>
+          <${VersionLine} />
         </div>
       </div>
       <${LookSection} />
@@ -4796,13 +4815,22 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     }, []);
     const install = async () => { if (!installEvt) return; try { await installEvt.prompt(); } catch(e){} setInstallEvt(null); };
     // A new version took over in the background (see sw.js): offer to open it now; the next open shows it anyway.
+    // Coming back to the app (feature 026): a phone resumes an installed app without reloading it, so the browser
+    // would not look for a new version; ask it to, at most once a minute. The page's load counts as the first look.
     const [newVersion, setNewVersion] = useState(false);
     useEffect(() => {
       const sw = navigator.serviceWorker;
       if (!sw || !sw.controller) return;   // the first install is not an update
       const onChange = () => setNewVersion(true);
+      let lastLook = Date.now();
+      const onReturn = () => {
+        if (document.visibilityState !== 'visible' || Date.now() - lastLook < 60000) return;
+        lastLook = Date.now();
+        sw.getRegistration().then(r => r && r.update()).catch(() => {});   // offline: nothing to do
+      };
       sw.addEventListener('controllerchange', onChange);
-      return () => sw.removeEventListener('controllerchange', onChange);
+      document.addEventListener('visibilitychange', onReturn);
+      return () => { sw.removeEventListener('controllerchange', onChange); document.removeEventListener('visibilitychange', onReturn); };
     }, []);
     const goTab = t => { setTab(t); try { window.scrollTo(0, 0); } catch(e){} };
     const goDay = d => { setIso(d); goTab('today'); };
