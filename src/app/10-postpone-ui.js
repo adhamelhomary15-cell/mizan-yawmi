@@ -110,7 +110,7 @@
       ${open.length > 1 ? html`<button type="button" class="btn review-all" onClick=${() => act('اتعلّم ' + open.length + ' بلوك إنهم خلصوا', s => { const c = s.checks[iso] || {}; open.forEach(b => { c[b.key] = true; }); s.checks[iso] = c; return s; })}><${CheckSvg} />علّمهم كلهم خلصوا</button>` : null}
       ${later ? html`<p class="small muted">فاضل <bdi class="num">${later}</bdi> بلوك لسه ميعادهم مجاش.</p>` : null}
       <${DayProgress} iso=${iso} store=${store} />
-      <${Balance} a=${ab.a} b=${ab.b} label=${isToday ? 'النهارده' : 'اليوم ده'} />
+      <${Balance} key=${iso} a=${ab.a} b=${ab.b} label=${isToday ? 'النهارده' : 'اليوم ده'} />
     </section>`;
   }
 
@@ -243,7 +243,7 @@
           </div>
         </div>` : null}
         <div class="sec o-prayers"><h2>مواعيد الصلاة</h2><${PrayerCard} iso=${iso} now=${now} /></div>
-        <div class="sec o-balance"><h2>ميزان اليوم</h2><div class="panel"><${Balance} a=${ab.a} b=${ab.b} label="النهارده" /></div></div>
+        <div class="sec o-balance"><h2>ميزان اليوم</h2><div class="panel"><${Balance} key=${iso} a=${ab.a} b=${ab.b} label="النهارده" /></div></div>
       </aside>
     </div>`;
   }
