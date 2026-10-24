@@ -103,6 +103,12 @@ src = src.replace('const CITIES = [];', 'const CITIES = ' + json.dumps(cities, e
 # 4. Wrap in a full document with the app manifest and service worker.
 title = re.search(r'<title>.*?</title>', src).group(0)
 src = src.replace(title, '', 1)
+# The look script and the colour style go in the head (FR-005 of 022): a browser may draw as soon as <body> opens,
+# and the embedded fonts come first in the body, so a frame could otherwise show the white page on a dark phone.
+look = re.search(r'<script>\s*/\* The look \(feature 022\).*?</script>\s*<style>.*?</style>', src, re.S)
+if not look:
+    raise SystemExit('look script and colour style not found')
+src = src.replace(look.group(0), '', 1)
 head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
         '<meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest">'
@@ -112,7 +118,7 @@ head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         'body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>')
 sw_reg = ("<script>if('serviceWorker' in navigator){addEventListener('load',function(){"
           "navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){});});}</script>")
-page = head + title + '</head><body>' + src + sw_reg + '</body></html>'
+page = head + title + look.group(0) + '</head><body>' + src + sw_reg + '</body></html>'
 
 # 4b. Content-Security-Policy (feature 012): the browser runs only the inline scripts and styles hashed here, and
 #     the page may talk only to its own site. A <meta> policy, because GitHub Pages cannot send headers.
