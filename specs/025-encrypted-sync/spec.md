@@ -10,7 +10,7 @@
 - the server runs on Cloudflare Workers;
 - accounts use email and password, and the password is never sent: separate keys come from it for encryption and for
   sign-in, and a recovery code is shown once;
-- sync comes first, and reminders (026) come later on the same server.
+- sync comes first, and reminders come later, as a feature of their own on the same server.
 
 ## Background
 
@@ -20,7 +20,7 @@ backup file the owner saves by hand. But if the phone is lost, or the browser cl
 on its own), everything since the last backup file is gone. And a second device, such as a laptop, starts empty.
 
 Constitution 3.0.0 allows one way out: a **synced copy** that the owner turns on, encrypted on the device with a key
-the server never sees. This feature builds it. Reminders, which will use the same server, are feature 026.
+the server never sees. This feature builds it. Reminders, which will use the same server, are a later feature (026 went to another feature, so its number comes then).
 
 The app already has an older "synced copy" path that only works when the app runs inside another host's page. It never
 runs in the installed app, and this feature replaces it.
@@ -256,7 +256,7 @@ must not do that by mistake.
 - The owner keeps saving backup files as before. Sync adds a copy; it does not replace the backup file.
 - The free tiers of the server and the email sender are enough for one person.
 - Out of scope:
-  - reminders (026);
+  - reminders (a later feature);
   - signing in with Google or another provider;
   - sharing;
   - showing past versions from the server;
