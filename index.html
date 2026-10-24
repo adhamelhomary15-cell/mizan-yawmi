@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="dd8b8d6e47"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-hpaBAvhVmiNQHiI1XDuTD9UItqWkXc1bmkUwQ0uWrmo=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-ZvL9GZQXg7IZNtKXDMlHlesogcqbOE/VKLr5xv/B5Kg=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="f211947d7c"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-dGP9yHa+FPUjFotGTeAxPSI77aTyP2nDDKiP9fKSwJg=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -105,6 +105,8 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size
 #app{min-height:60vh}
 .wrap{max-width:720px;margin:0 auto;padding-inline:var(--s4);padding-block:18px 128px;display:flex;flex-direction:column;gap:var(--s5)}
 p{margin:0}
+/* Read by screen readers, not shown: the final value beside a number that counts up (feature 027). */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 h1,h2,h3{margin:0;text-wrap:balance}
 h1{font-family:var(--font-display);font-weight:700;font-size:32px;line-height:1.2}
 h2{font-family:var(--font-display);font-weight:500;font-size:18px;line-height:1.35}
@@ -1819,6 +1821,31 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   const plainTitle = (text, cat, mainName) => showTitle(text, cat, mainName).replace('|', ' · ');
 
+  // A number that counts up from 0 when it first appears, over the rosette's drawing time, easing out gently, as the
+  // staggered petals arrive about evenly (feature 027). A later value, as after a tick, shows at once; so does every
+  // value under reduced motion.
+  const COUNT_MS = 890;
+  const countsUp = v => v > 0 && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function useCountUp(value){
+    const [shown, setShown] = useState(() => countsUp(value) ? 0 : value);
+    const first = useRef(true);
+    useEffect(() => {
+      if (!first.current) { setShown(value); return; }
+      first.current = false;
+      if (!countsUp(value)) return;
+      let frame, start = null;
+      const step = now => {
+        if (start === null) start = now;
+        const t = Math.min(1, (now - start) / COUNT_MS);
+        setShown(t < 1 ? value * (1 - (1 - t) * (1 - t)) : value);
+        if (t < 1) frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(frame);
+    }, [value]);
+    return shown;
+  }
+
   // The balance as a guilloche rosette: university and course on one half, work and life on the other.
   // Each half has 36 fine petals; a petal is inked in a category's colour for its share of the half's planned time that got done.
   function Balance({a, b, label}){
@@ -1842,6 +1869,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     else note = BAL_B + ' واخدين أكتر من حقهم، و' + BAL_A + ' متأخرين.';
     const pct = v => Math.round(v * 100) + '%';
     const total = a.done + b.done;
+    // The centre and the two shares count up with the petals; on the way the hours round to quarters, as hoursText
+    // writes them, and the shares to whole percents. Screen readers get the final shares only.
+    const shownTotal = useCountUp(total), shownA = useCountUp(Math.round(pa * 100)), shownB = useCountUp(Math.round(pb * 100));
+    const centre = shownTotal === total ? total : Math.round(shownTotal / 15) * 15;
+    const share = (shown, v) => html`<b><span aria-hidden="true">${Math.round(shown)}%</span><span class="sr-only">${pct(v)}</span></b>`;
     return html`<div class="balance">
       <svg viewBox="0 0 240 240" role="img" aria-label=${note}>
         <circle class="ring" cx=${cx} cy=${cy} r="110" />
@@ -1850,12 +1882,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         <g>${petals(b, 90, 'b')}</g>
         <line class="axis-line" x1=${cx} y1="6" x2=${cx} y2="234" />
         <circle class="core" cx=${cx} cy=${cy} r="34" />
-        <text class="core-num" x=${cx} y=${cy + 6} text-anchor="middle">${hoursText(total)}</text>
+        <text class="core-num" x=${cx} y=${cy + 6} text-anchor="middle">${hoursText(centre)}</text>
         <text class="core-lbl" x=${cx} y=${cy + 22} text-anchor="middle">ساعة</text>
       </svg>
       <div class="balance-legend">
-        <div class="a"><span>${BAL_A}</span><b>${pct(pa)}</b><span class="small muted"><bdi class="num">${hoursText(a.done)}</bdi> من <bdi class="num">${hoursText(a.plan)}</bdi> س</span></div>
-        <div class="b"><span>${BAL_B}</span><b>${pct(pb)}</b><span class="small muted"><bdi class="num">${hoursText(b.done)}</bdi> من <bdi class="num">${hoursText(b.plan)}</bdi> س</span></div>
+        <div class="a"><span>${BAL_A}</span>${share(shownA, pa)}<span class="small muted"><bdi class="num">${hoursText(a.done)}</bdi> من <bdi class="num">${hoursText(a.plan)}</bdi> س</span></div>
+        <div class="b"><span>${BAL_B}</span>${share(shownB, pb)}<span class="small muted"><bdi class="num">${hoursText(b.done)}</bdi> من <bdi class="num">${hoursText(b.plan)}</bdi> س</span></div>
       </div>
       <p class="balance-note">${note}</p>
     </div>`;

@@ -78,12 +78,14 @@ All gates pass, before and after the design.
 3. **The numbers count with one small hook.**
    - **Decision**: `useCountUp(value)` in `src/app/08-ui-small.js`:
      - on mount, unless reduced motion is set, it eases from 0 to `value` over 890 ms with `requestAnimationFrame`,
-       on the petals' curve, so it ends with the last petal (FR-003);
+       so it ends with the last petal (FR-003). The ease is a gentle ease-out, `1 − (1 − t)²`: the petals arrive about
+       evenly, one after another, so a steep ease (tried first: `1 − (1 − t)⁴`) reached the final number by 540 ms and
+       then stood still while the petals went on; the gentle one reaches it at about 790 ms;
      - after mount, a new `value` shows at once (FR-006), and the frame loop is cancelled on unmount;
      - with reduced motion, or a value of 0, it returns the value at once (FR-005, spec Edge Cases).
      The centre uses it on the done minutes (shown through `hoursText`), and the legend on the two shares (0 to 100).
-   - **Rounding**: the numbers on the way are rounded like the final ones (`hoursText`, whole percentages), so the text
-     never shows extra digits.
+   - **Rounding**: on the way, the centre rounds to quarter hours, which `hoursText` writes as ¼, ½ and ¾ (other values
+     it writes with a decimal, «3.2»), and the shares to whole percentages; the final value is shown exactly as before.
    - **Why a hook, not a rules block**: the only calculation is an eased fraction of the value, `value × ease(t)`; there
      is no rule to check apart from its start, its end and its shape, which the E2E covers. AGENTS.md's rules block is
      for decisions the screens depend on, and this is how a number appears.

@@ -27,6 +27,31 @@
   }
   const plainTitle = (text, cat, mainName) => showTitle(text, cat, mainName).replace('|', ' · ');
 
+  // A number that counts up from 0 when it first appears, over the rosette's drawing time, easing out gently, as the
+  // staggered petals arrive about evenly (feature 027). A later value, as after a tick, shows at once; so does every
+  // value under reduced motion.
+  const COUNT_MS = 890;
+  const countsUp = v => v > 0 && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function useCountUp(value){
+    const [shown, setShown] = useState(() => countsUp(value) ? 0 : value);
+    const first = useRef(true);
+    useEffect(() => {
+      if (!first.current) { setShown(value); return; }
+      first.current = false;
+      if (!countsUp(value)) return;
+      let frame, start = null;
+      const step = now => {
+        if (start === null) start = now;
+        const t = Math.min(1, (now - start) / COUNT_MS);
+        setShown(t < 1 ? value * (1 - (1 - t) * (1 - t)) : value);
+        if (t < 1) frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(frame);
+    }, [value]);
+    return shown;
+  }
+
   // The balance as a guilloche rosette: university and course on one half, work and life on the other.
   // Each half has 36 fine petals; a petal is inked in a category's colour for its share of the half's planned time that got done.
   function Balance({a, b, label}){
@@ -50,6 +75,11 @@
     else note = BAL_B + ' واخدين أكتر من حقهم، و' + BAL_A + ' متأخرين.';
     const pct = v => Math.round(v * 100) + '%';
     const total = a.done + b.done;
+    // The centre and the two shares count up with the petals; on the way the hours round to quarters, as hoursText
+    // writes them, and the shares to whole percents. Screen readers get the final shares only.
+    const shownTotal = useCountUp(total), shownA = useCountUp(Math.round(pa * 100)), shownB = useCountUp(Math.round(pb * 100));
+    const centre = shownTotal === total ? total : Math.round(shownTotal / 15) * 15;
+    const share = (shown, v) => html`<b><span aria-hidden="true">${Math.round(shown)}%</span><span class="sr-only">${pct(v)}</span></b>`;
     return html`<div class="balance">
       <svg viewBox="0 0 240 240" role="img" aria-label=${note}>
         <circle class="ring" cx=${cx} cy=${cy} r="110" />
@@ -58,12 +88,12 @@
         <g>${petals(b, 90, 'b')}</g>
         <line class="axis-line" x1=${cx} y1="6" x2=${cx} y2="234" />
         <circle class="core" cx=${cx} cy=${cy} r="34" />
-        <text class="core-num" x=${cx} y=${cy + 6} text-anchor="middle">${hoursText(total)}</text>
+        <text class="core-num" x=${cx} y=${cy + 6} text-anchor="middle">${hoursText(centre)}</text>
         <text class="core-lbl" x=${cx} y=${cy + 22} text-anchor="middle">ساعة</text>
       </svg>
       <div class="balance-legend">
-        <div class="a"><span>${BAL_A}</span><b>${pct(pa)}</b><span class="small muted"><bdi class="num">${hoursText(a.done)}</bdi> من <bdi class="num">${hoursText(a.plan)}</bdi> س</span></div>
-        <div class="b"><span>${BAL_B}</span><b>${pct(pb)}</b><span class="small muted"><bdi class="num">${hoursText(b.done)}</bdi> من <bdi class="num">${hoursText(b.plan)}</bdi> س</span></div>
+        <div class="a"><span>${BAL_A}</span>${share(shownA, pa)}<span class="small muted"><bdi class="num">${hoursText(a.done)}</bdi> من <bdi class="num">${hoursText(a.plan)}</bdi> س</span></div>
+        <div class="b"><span>${BAL_B}</span>${share(shownB, pb)}<span class="small muted"><bdi class="num">${hoursText(b.done)}</bdi> من <bdi class="num">${hoursText(b.plan)}</bdi> س</span></div>
       </div>
       <p class="balance-note">${note}</p>
     </div>`;

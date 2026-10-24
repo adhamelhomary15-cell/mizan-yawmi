@@ -48,19 +48,23 @@ description: "Task list for feature 027: the balance comes alive when it opens"
 
 ## Phase 2: The numbers count up (US2)
 
-- [ ] T005 [US2] In `src/app/08-ui-small.js`, add `useCountUp(value)` (plan, decision 3):
+- [x] T005 [US2] In `src/app/08-ui-small.js`, add `useCountUp(value)` (plan, decision 3):
   - on mount, unless `matchMedia('(prefers-reduced-motion: reduce)')` matches or the value is 0, eases from 0 to the
-    value over 890 ms with `requestAnimationFrame`, on `cubic-bezier(.16,1,.3,1)`'s shape;
+    value over 890 ms with `requestAnimationFrame`, easing out gently (`1 − (1 − t)²`, plan, decision 3);
   - after mount, a new value shows at once;
   - cancels its frame on unmount.
-- [ ] T006 [US2] In `Balance`:
+- [x] T006 [US2] In `Balance`:
   - the centre shows `hoursText(useCountUp(total))`;
   - each share shows the counting whole percentage, `aria-hidden`, beside a `.sr-only` span with the final one;
   - the hours under each share do not count.
-- [ ] T007 [P] [US2] In `src/planner.html`, add `.sr-only` (the usual clip pattern). If the legend shifts while a share
+- [x] T007 [P] [US2] In `src/planner.html`, add `.sr-only` (the usual clip pattern). If the legend shifts while a share
   counts, give the shares `font-variant-numeric: tabular-nums` (plan, Risks).
-- [ ] T008 Build, run `check-code` and parity. In the browser at 375 px: the numbers end on their final values with the
+- [x] T008 Build, run `check-code` and parity. In the browser at 375 px: the numbers end on their final values with the
   last petal, the legend does not shift, and reduced motion shows the final numbers at once. **Commit**.
+
+  Done on 2026-10-24: sampled every frame on Week, the centre went 0, 2¾, 5¼, 7¼, 8½, 9½, 10¼ and the shares to 16% and
+  14%, reaching them at about 790 ms; the legend stayed in one place, so no tabular figures were needed. A tick changed
+  the numbers within 50 ms; with reduced motion the final numbers were in the first frame.
 
 ## Phase 3: Tests, docs
 
