@@ -74,12 +74,12 @@ description: "Task list for feature 025: encrypted sync across devices"
 
 ### Phase 2: sync rules (pure)
 
-- [ ] T009 `src/app/01c-sync-rules.js`, listed in `ORDER` after `01b-storage.js`:
+- [x] T009 `src/app/01c-sync-rules.js`, listed in `ORDER` after `01b-storage.js`:
   - `itemsOf(store, data)` and `fromItems(store, items)`, which round-trip every store;
   - `stampNow(last, now, device)` (hybrid time);
   - `mergeStore(store, local, remote)`, which returns `{data, stamps, lost}`;
   - the 60-day tombstone cleanup.
-- [ ] T010 [P] `tools/check-sync.js`:
+- [x] T010 [P] `tools/check-sync.js`:
   - an oracle over 2 to 4 devices with random offline edits and random sync orders;
   - every pair of edits to the same item;
   - clock skew;

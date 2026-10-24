@@ -9,6 +9,8 @@
 01a-data-rules.js
 # device storage: the save path for the three stores, the IndexedDB mirror, daily snapshots
 01b-storage.js
+# sync rules: a store as items, stamps, and the item-by-item merge of two devices (pure, feature 025)
+01c-sync-rules.js
 # settings: load, fixed weekday names, data derived from settings
 02-settings-load.js
 # time helpers
