@@ -33,29 +33,31 @@ description: "Task list for feature 025: encrypted sync across devices"
 
 ## PR 025a: the server (changes nothing in the app)
 
-- [ ] T001 `server/schema.sql`: the five tables of the plan's data model, with an index on `signins.account_id` and on
+- [x] T001 `server/schema.sql`: the five tables of the plan's data model, with an index on `signins.account_id` and on
   `email_tokens.expires_at`.
-- [ ] T002 `server/worker.js`, the account routes:
+- [x] T002 `server/worker.js`, the account routes:
   - `/prelogin`: the salt, or HMAC(pepper, email) for an unknown email;
   - `/signup`: refuses a known email the same way as a new one, so the answer does not tell;
   - `/confirm`;
   - `/signin`: the verifier is SHA-256(sign-in key ‖ pepper); failures are slowed as in decision 8;
   - `/signout`.
   - Tokens are random 256-bit values, and the server stores their SHA-256 only.
-- [ ] T003 `server/worker.js`, the data routes:
+- [x] T003 `server/worker.js`, the data routes:
   - `/versions`;
   - `GET` and `PUT /store/<name>`: a `PUT` succeeds only with version + 1, and otherwise answers 409 with the current
     copy;
   - the size is capped at 2 MB per store;
   - every request is checked against the sign-in's account.
-- [ ] T004 `server/worker.js`, the password routes:
+- [x] T004 `server/worker.js`, the password routes:
   - `/password`: a new verifier and the data key rewrapped, given the old sign-in key;
   - `/reset/start`: an email with a single-use link valid for 1 hour;
+  - `/reset/key`: the data key wrapped by the recovery code, for the device to open with the code it holds (the link
+    is not spent, so the device can still choose to keep or wipe);
   - `/reset/finish`: with the recovery code, the copy is kept; without it, the copy is deleted;
   - `DELETE /account`: every row of the account, in every table.
-- [ ] T005 Email through a small sender interface: `resend` in the Worker, and `file` in `server/dev.js`, which writes
+- [x] T005 Email through a small sender interface: `resend` in the Worker, and `file` in `server/dev.js`, which writes
   the email to a local file for the tests. **[gate: Resend]** applies to the real key only, not to this code.
-- [ ] T006 `server/test.js`, with Node's `node:sqlite` as D1 and no new package:
+- [x] T006 `server/test.js`, with Node's `node:sqlite` as D1 and no new package:
   - every route;
   - another account's token refused;
   - the version rule;
@@ -63,9 +65,9 @@ description: "Task list for feature 025: encrypted sync across devices"
   - a delete that leaves no row in any table;
   - a check that a sample payload's plain words appear nowhere in the database (SC-004);
   - an unknown email gets the same salt every time, and a different one from a known email.
-- [ ] T007 `server/dev.js`: the Worker on a local port, with `node:sqlite` and the `file` sender, for the E2E tests.
+- [x] T007 `server/dev.js`: the Worker on a local port, with `node:sqlite` and the `file` sender, for the E2E tests.
   `server/wrangler.toml` holds the Worker's name and the D1 binding name, and no ids or secrets.
-- [ ] T008 CI: a step that runs `node server/test.js`. README: a short `server/` part (what it holds, and that the app
+- [x] T008 CI: a step that runs `node server/test.js`. README: a short `server/` part (what it holds, and that the app
   does not need it). Parity 0. **Commit, push, open PR 025a.**
 
 ## PR 025b: the app

@@ -1,0 +1,19 @@
+# The sync server's Cloudflare settings (feature 025). Public values only: the database id, the Resend key and the
+# pepper are set by the owner in their own Cloudflare account, never here (constitution 3.0.1, Principle III).
+#   npx wrangler d1 create mizan-sync            then put the id it prints in database_id, locally, uncommitted
+#   npx wrangler d1 execute mizan-sync --remote --file=schema.sql
+#   npx wrangler secret put PEPPER
+#   npx wrangler secret put RESEND_KEY
+#   npx wrangler deploy
+name = "mizan-sync"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+APP_URL = "https://adhamelhomary15-cell.github.io/mizan-yawmi/"
+EMAIL_FROM = "ميزان يومي <onboarding@resend.dev>"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mizan-sync"
+database_id = "set-locally-by-the-owner"

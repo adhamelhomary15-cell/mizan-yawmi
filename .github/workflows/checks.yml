@@ -104,6 +104,12 @@ jobs:
           node tools/check-guides.js
           node tools/check-guides.js --self-test
 
+      - name: Sync server
+        # The Worker's own handler on Node's built-in SQLite (feature 025); no network and no package.
+        run: |
+          node server/test.js
+          node server/test.js --self-test
+
       - name: Privacy check works
         # The owner's private settings are not in the repo, so CI can only prove the checker itself works.
         # The real scan runs locally before each commit (AGENTS.md).
