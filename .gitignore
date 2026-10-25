@@ -12,5 +12,8 @@ mizan-settings-*.json
 
 # end-to-end tests (dev-only)
 tests/e2e/node_modules/
+# the sync server's deploy tool and its local state (dev-only, feature 025)
+server/node_modules/
+server/.wrangler/
 tests/e2e/test-results/
 tests/e2e/playwright-report/
