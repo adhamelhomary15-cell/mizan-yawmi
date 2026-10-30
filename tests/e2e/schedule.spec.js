@@ -23,6 +23,9 @@ test('the guide makes a week from a listed city, a template and subjects', async
   expect(s.location.label).toBe('القاهرة');
   expect(s.prayerMethod).toBe('Egyptian');
   expect(Object.values(s.subjects)).toEqual(['مادة تجريبية']);
+  // study, the course and the wird can be postponed into «وقتك», as in the example (a guide-made schedule had none)
+  expect(['study', 'course', 'quran'].map(k => s.categories[k].postpone)).toEqual([true, true, true]);
+  expect(s.categories.personal.free).toBe(true);
   await expect(page.locator('.notice', {hasText: 'ده جدول مثال عام'})).toHaveCount(0);
 });
 

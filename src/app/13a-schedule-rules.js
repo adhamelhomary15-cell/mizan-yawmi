@@ -169,12 +169,16 @@
     SCHEDULE_DAYS.forEach(day => { week[day] = {blocks: clone(day === '5' || day === '6' ? t.weekend : t.workday)}; });
     return week;
   }
-  // A whole settings object for the guide. categories are the app's default kinds.
+  // What a new schedule can postpone, as in the example settings: study, the course and the daily wird can wait, and
+  // «وقتك» is the free time they move to. Without these, nothing in a schedule from the guide could be postponed.
+  const NEW_SCHEDULE_FLAGS = {study: {postpone: true}, course: {postpone: true}, quran: {postpone: true}, personal: {free: true}};
+  // A whole settings object for the guide. categories are the app's default kinds; a flag they set wins.
   function newSettings(place, templateId, subjectNames, categories){
-    const subjects = {};
+    const subjects = {}, cats = clone(categories);
     subjectNames.filter(Boolean).forEach((name, i) => { subjects['S' + (i + 1)] = name; });
+    Object.keys(NEW_SCHEDULE_FLAGS).forEach(k => { if (cats[k]) cats[k] = Object.assign({}, NEW_SCHEDULE_FLAGS[k], cats[k]); });
     return {format: 'mizan-settings', version: 1, name: 'جدولي', language: 'ar', timezone: place.timezone, location: clone(place.location),
-      prayerMethod: place.prayerMethod, categories: clone(categories), subjects, week: weekFromTemplate(templateId)};
+      prayerMethod: place.prayerMethod, categories: cats, subjects, week: weekFromTemplate(templateId)};
   }
 
   // The day's start and end (feature 018). The app's default, 07:00 to 01:00, is stored as no `day`, so a file that
