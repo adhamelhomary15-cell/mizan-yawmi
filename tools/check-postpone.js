@@ -17,7 +17,7 @@ const path = require('path');
 const {readSource, ruleBlock} = require('./lib/source.js');
 const html = readSource();
 const block = source => ruleBlock(source, 'postpone rules');
-const load = source => new Function(block(source) + '\nreturn {freeStretches, proposePlaces, checkManualPlace, daysToAsk};')();
+const load = source => new Function(block(source) + '\nreturn {freeStretches, proposePlaces, checkManualPlace, daysToAsk, taskNextDay};')();
 
 const START = 420, END = 1500;
 const isFree = c => c === 'personal';
@@ -149,6 +149,23 @@ function runChecks(h, source) {
     }
     return true;
   });
+  check('a postponed task: today and overdue go to tomorrow, a later date moves one day, across a month and a year', () => {
+    const t = '2026-10-30';
+    return h.taskNextDay(t, t, addDays) === '2026-10-31' && h.taskNextDay('2026-10-29', t, addDays) === '2026-10-31'
+      && h.taskNextDay('2026-09-20', t, addDays) === '2026-10-31' && h.taskNextDay('2026-11-02', t, addDays) === '2026-11-03'
+      && h.taskNextDay('2026-10-31', t, addDays) === '2026-11-01' && h.taskNextDay('2026-12-31', t, addDays) === '2027-01-01'
+      && h.taskNextDay('2027-02-28', t, addDays) === '2027-03-01' && h.taskNextDay('2026-12-31', '2027-01-05', addDays) === '2027-01-06';
+  });
+  check('a postponed task always goes to the day after the later of its date and today, over two years of pairs', () => {
+    for (let k = 0; k < 730; k += 13) {
+      const today = addDays('2026-01-01', k);
+      for (let o = -60; o <= 60; o++) {
+        const due = addDays(today, o), got = h.taskNextDay(due, today, addDays);
+        if (dayNo(got) !== Math.max(dayNo(due), dayNo(today)) + 1) return false;
+      }
+    }
+    return true;
+  });
   check('the rules block never mentions checks, done marks, storage or the network', () => {
     const b = block(source).split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');
     return !/\bchecks\b|\.done\b|=\s*true\b|localStorage|fetch\(|XMLHttp|sendBeacon|WebSocket|navigator\./.test(b);
@@ -173,6 +190,9 @@ if (process.argv.includes('--self-test')) {
     ['the start is not clipped to from', s => s.replace('Math.max(b.s, from || 0)', 'b.s')],
     ['days to ask have no 7-day limit', s => s.replace('let d = askedUpTo < first ? first : addDays(askedUpTo, 1)', 'let d = addDays(askedUpTo, 1)')],
     ['days to ask include today', s => s.replace("const last = addDays(today, -1), first", "const last = today, first")],
+    ['a postponed task always goes to tomorrow', s => s.replace('return addDays(due > today ? due : today, 1);', 'return addDays(today, 1);')],
+    ['a postponed task always goes to its date + 1', s => s.replace('return addDays(due > today ? due : today, 1);', 'return addDays(due, 1);')],
+    ['a postponed task goes after the earlier of the two', s => s.replace('return addDays(due > today ? due : today, 1);', 'return addDays(due < today ? due : today, 1);')],
     ['the first run asks about more than yesterday', s => s.replace('if (askedUpTo === null || askedUpTo === undefined) return [last];', 'if (askedUpTo === null || askedUpTo === undefined) return [first, last];')]
   ];
   let missed = 0;

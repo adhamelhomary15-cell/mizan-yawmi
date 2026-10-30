@@ -23,8 +23,11 @@
   };
   // The open tasks due on a day.
   const tasksDue = (store, iso) => store.tasks.filter(t => !t.done && t.due === iso);
-  // One task moved to another day, with its undo message.
-  const postponeTask = (act, iso, t, to) => act('اتأجلت المهمة لـ ' + dayName(to), applyPostpone(iso, [], [t.id], to));
+  // One task moved to another day. Its undo puts back that task's date only, so a block ticked in the meantime stays.
+  const postponeTask = (actEdit, t, to) => {
+    const setDue = due => s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.due = due; return s; };
+    actEdit('اتأجلت المهمة لـ ' + dayName(to), setDue(to), setDue(t.due));
+  };
   const finishTask = id => s => { const x = s.tasks.find(y => y.id === id); if (x) x.done = true; return s; };
   const PLACE_ERR = {none: 'اختار ميعاد.', late: 'الميعاد ده بيعدّي آخر اليوم.'};
 
@@ -60,7 +63,7 @@
     </div>`;
   }
 
-  function Review({iso, now, store, update, skip, act, onClose}){
+  function Review({iso, now, store, update, skip, act, actEdit, onClose}){
     const isToday = iso === now.iso;
     const tracked = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
     const open = tracked.filter(b => statusOf(store, iso, b.key) === null && (!isToday || b.s <= now.min));
@@ -98,7 +101,7 @@
           <div class="review-text"><span class="title">${t.text}</span><span class="meta"><b>مهمة</b> · ميعادها اليوم ده</span></div>
           <div class="review-actions">
             <button type="button" class="btn primary" onClick=${() => update(finishTask(t.id))}><${CheckSvg} />خلّصتها</button>
-            <button type="button" class="btn" onClick=${() => postponeTask(act, iso, t, taskTo)}>أجّلها</button>
+            <button type="button" class="btn" onClick=${() => postponeTask(actEdit, t, taskTo)}>أجّلها</button>
           </div>
         </li>`)}
       </ul>` : null}
@@ -181,7 +184,7 @@
       </div>
 
       <div class="today-main">
-        <div class="o-now">${reviewing ? html`<${Review} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} act=${act} onClose=${() => setReviewing(false)} />`
+        <div class="o-now">${reviewing ? html`<${Review} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} act=${act} actEdit=${actEdit} onClose=${() => setReviewing(false)} />`
           : isToday ? html`<${AskPostpone} now=${now} store=${store} update=${update} actEdit=${actEdit} onReview=${d => { setIso(d); setReviewing(true); }} /><${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} onReview=${() => setReviewing(true)} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
 
         <div class="sec o-timeline">
@@ -235,11 +238,11 @@
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">
-            ${dayTasks.map(t => { const late = t.due < iso, tomorrow = addDays(now.iso, 1); return html`<div class=${'titem c-' + t.tag + (late ? ' has-act' : '')}>
+            ${dayTasks.map(t => { const late = t.due < iso; return html`<div class=${'titem c-' + t.tag + (late ? ' has-act' : '')}>
               <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(finishTask(t.id))} />
               <span class="ttext">${t.text}</span>
               <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
-              ${late ? html`<button type="button" class="btn" onClick=${() => postponeTask(act, iso, t, tomorrow)}>أجّلها</button>` : null}
+              ${late ? html`<button type="button" class="btn" onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>` : null}
             </div>`; })}
           </div>
         </div>` : null}
