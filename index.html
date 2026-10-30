@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="6291549f71"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-lb3uQvvCv0okd87MkxL5rO3+N4/xZxUJ2HZOi1fIcmg=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self' https://mizan-sync.mizan.workers.dev; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="4b0baded3b"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-jt3onl9Ru90UDa2NkpX1bP/6fGcIvVEnsRd9e8zdBtI=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self' https://mizan-sync.mizan.workers.dev; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -3426,12 +3426,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     SCHEDULE_DAYS.forEach(day => { week[day] = {blocks: clone(day === '5' || day === '6' ? t.weekend : t.workday)}; });
     return week;
   }
-  // A whole settings object for the guide. categories are the app's default kinds.
+  // What a new schedule can postpone, as in the example settings: study, the course and the daily wird can wait, and
+  // «وقتك» is the free time they move to. Without these, nothing in a schedule from the guide could be postponed.
+  const NEW_SCHEDULE_FLAGS = {study: {postpone: true}, course: {postpone: true}, quran: {postpone: true}, personal: {free: true}};
+  // A whole settings object for the guide. categories are the app's default kinds; a flag they set wins.
   function newSettings(place, templateId, subjectNames, categories){
-    const subjects = {};
+    const subjects = {}, cats = clone(categories);
     subjectNames.filter(Boolean).forEach((name, i) => { subjects['S' + (i + 1)] = name; });
+    Object.keys(NEW_SCHEDULE_FLAGS).forEach(k => { if (cats[k]) cats[k] = Object.assign({}, NEW_SCHEDULE_FLAGS[k], cats[k]); });
     return {format: 'mizan-settings', version: 1, name: 'جدولي', language: 'ar', timezone: place.timezone, location: clone(place.location),
-      prayerMethod: place.prayerMethod, categories: clone(categories), subjects, week: weekFromTemplate(templateId)};
+      prayerMethod: place.prayerMethod, categories: cats, subjects, week: weekFromTemplate(templateId)};
   }
 
   // The day's start and end (feature 018). The app's default, 07:00 to 01:00, is stored as no `day`, so a file that

@@ -146,6 +146,13 @@ function runChecks(h, source) {
     return place.prayerMethod === 'Egyptian' && Object.keys(h.WEEK_TEMPLATES).every(t =>
       valid(h.newSettings(place, t, [], KINDS)) && valid(h.newSettings(place, t, ['رياضة 1', 'فيزيا'], KINDS)));
   });
+  check('a new schedule can postpone what the example can, into the same free time, and keeps a flag it was given', () => {
+    const place = h.placeOf({ar: 'القاهرة', en: 'Cairo', cc: 'EG', lat: 30.0444, lng: 31.2357, tz: 'Africa/Cairo'});
+    const made = h.newSettings(place, 'empty', [], freeze(JSON.parse(JSON.stringify(KINDS)))).categories;
+    const given = h.newSettings(place, 'empty', [], Object.assign({}, KINDS, {study: {label: 'مذاكرة', postpone: false}})).categories;
+    return Object.keys(KINDS).every(k => ['postpone', 'free'].every(f => !!made[k][f] === !!(example.categories[k] || {})[f]))
+      && made.study.postpone === true && given.study.postpone === false && KINDS.study.postpone === undefined;
+  });
   check('a schedule written out and read back gives the same week', () => {
     let d = h.draftOf(base());
     d = h.setAnchor(d, '2', 2, {prayer: 'asr', dir: 'after', min: 15}).draft;
@@ -395,6 +402,8 @@ function report(results) {
 if (process.argv.includes('--self-test')) {
   const mutations = [
     ['copying a day writes every day', s => s.replace("toDays.filter(t => t !== from && !skipped.includes(t))", "SCHEDULE_DAYS.filter(t => t !== from && !skipped.includes(t))")],
+    ['a new schedule cannot postpone', s => s.replace("if (cats[k]) cats[k] = Object.assign({}, NEW_SCHEDULE_FLAGS[k], cats[k]);", '')],
+    ['a new schedule overrides a flag it was given', s => s.replace("Object.assign({}, NEW_SCHEDULE_FLAGS[k], cats[k])", "Object.assign({}, cats[k], NEW_SCHEDULE_FLAGS[k])")],
     ['a renamed kind gets a new id', s => s.replace('    d.categories[id] = k;\n', "    d.categories[id + '2'] = k;\n")],
     ['a subject in use is removed', s => s.replace("if (uses.length) return {ok: false, code: 'in-use', uses};", '')],
     ['a day note is dropped', s => s.replace("d.week[day] = Object.assign({}, d.week[day] || {}, {blocks:", "d.week[day] = Object.assign({}, {blocks:")],
