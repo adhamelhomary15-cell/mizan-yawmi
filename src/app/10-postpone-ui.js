@@ -238,11 +238,11 @@
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">
-            ${dayTasks.map(t => { const late = t.due < iso; return html`<div class=${'titem c-' + t.tag + (late ? ' has-act' : '')}>
+            ${dayTasks.map(t => { const late = t.due < iso; return html`<div class=${'titem has-act c-' + t.tag}>
               <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(finishTask(t.id))} />
               <span class="ttext">${t.text}</span>
               <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
-              ${late ? html`<button type="button" class="btn" onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>` : null}
+              <button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>
             </div>`; })}
           </div>
         </div>` : null}

@@ -67,7 +67,7 @@ test('a block of a kind that cannot be postponed has no «أجّلها» on the 
   await expect(row(page, 'مثال: شغل').first().locator('.row-actions button', {hasText: 'أجّلها'})).toHaveCount(0);
 });
 
-test('a late task moves to tomorrow with «أجّلها», and «رجّعها» brings it back undone', async ({page}) => {
+test('a late task moves to tomorrow with «أجّلها», and «رجّعها» brings it back undone; a task for today has «أجّلها» too (028)', async ({page}) => {
   await openApp(page, {before: () => {
     if (sessionStorage.getItem('seeded')) return;
     sessionStorage.setItem('seeded', '1');
@@ -75,7 +75,7 @@ test('a late task moves to tomorrow with «أجّلها», and «رجّعها» 
       tasks: [{id: 't1', text: 'Generated late task', tag: 'uni', due: '2026-10-13', done: false}, {id: 't2', text: 'Generated task for today', tag: 'work', due: '2026-10-15', done: false}]}));
   }});
   const tasks = page.locator('.o-tasks .titem');
-  await expect(tasks.filter({hasText: 'Generated task for today'}).locator('button', {hasText: 'أجّلها'})).toHaveCount(0);
+  await expect(tasks.filter({hasText: 'Generated task for today'}).locator('button', {hasText: 'أجّلها'})).toBeVisible();
   await tasks.filter({hasText: 'Generated late task'}).locator('button', {hasText: 'أجّلها'}).click();
   await expect.poll(async () => (await progress(page)).tasks.map(t => [t.id, t.due, t.done])).toEqual([['t1', '2026-10-16', false], ['t2', '2026-10-15', false]]);
   await page.locator('.toast button', {hasText: 'رجّعها'}).click();

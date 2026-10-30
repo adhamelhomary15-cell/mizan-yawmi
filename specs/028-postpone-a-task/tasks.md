@@ -43,7 +43,7 @@ description: "Task list for feature 028: postpone a task from anywhere"
   `actEdit('اتأجلت المهمة لـ ' + dayName(to), s => {…x.due = to…}, s => {…x.due = <t.due before>…})`, finding the task
   by `t.id` in both. Update its one caller in `Review` (the day review's task button keeps `taskTo`), and pass
   `actEdit` from `TodayView` to `Review`.
-- [ ] T004 Build, run `check-postpone` (with `--self-test`), `check-code` and parity (0 differences). **Commit**.
+- [x] T004 Build, run `check-postpone` (with `--self-test`), `check-code` and parity (0 differences). **Commit**.
 
   Done on 2026-10-31: `check-postpone` 11 of 11 (2 new), self-test 13 of 13 (3 new mutations, each caught).
   `check-code` refused `taskNextDay` while nothing used it, so Today's existing overdue button uses it already: for an
@@ -58,14 +58,21 @@ description: "Task list for feature 028: postpone a task from anywhere"
 **Independent test**: a task due today, on Today: one tap sends it to tomorrow with «اتأجلت المهمة لـ …», and
 «رجّعها» brings it back.
 
-- [ ] T005 [US1] In `src/app/10-postpone-ui.js`, in `TodayView`'s «مهام النهارده» list:
+- [x] T005 [US1] In `src/app/10-postpone-ui.js`, in `TodayView`'s «مهام النهارده» list:
   - every row gets the `has-act` class and «أجّلها», not only `late` ones (the overdue label «متأخرة» stays);
   - the button calls `postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))`;
   - `aria-label=${'أجّلها: ' + t.text}` (plan decision 5).
   The `tomorrow` constant goes if nothing else uses it.
-- [ ] T006 [US1] Build, run `check-code` and parity. In the browser at 375 px, on the example data: a task due today
+- [x] T006 [US1] Build, run `check-code` and parity. In the browser at 375 px, on the example data: a task due today
   and an overdue one each go to tomorrow; on a future day picked in the strip, a task due that day goes to the day
   after it; «رجّعها» restores the date, and a block ticked between the postpone and the undo stays ticked. **Commit**.
+
+  Done on 2026-10-31: on Chromium and WebKit at 375 px, light and dark, with generated tasks: a task due today and an
+  overdue one each went to tomorrow (the toast «اتأجلت المهمة لـ الجمعة، 16 أكتوبر»), the first left today's list; on
+  Saturday 17 picked in the next week, a task due that day went to the 18th; the buttons are named «أجّلها: <text>»;
+  a long task wraps and the page has no horizontal scroll. `day.spec.js` asserted that a task due today had no
+  «أجّلها» (019's rule); it now asserts the button is there. Parity 0 on the example and a private settings file;
+  E2E 168 passed.
 
 ## Phase 3: Postpone a task from the Tasks tab (US2)
 
