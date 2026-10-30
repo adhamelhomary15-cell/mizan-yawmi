@@ -102,7 +102,7 @@ description: "Task list for feature 028: postpone a task from anywhere"
 
 ## Phase 4: Tests, docs
 
-- [ ] T010 In `tests/e2e/task-postpone.spec.js` (Chromium and WebKit, `openApp` on its fixed Thursday night, tasks seeded
+- [x] T010 In `tests/e2e/task-postpone.spec.js` (Chromium and WebKit, `openApp` on its fixed Thursday night, tasks seeded
   with `seed` from `helpers.js`, all generated):
   - **US1**:
     - a task due today and one overdue: «أجّلها» on Today sends each to tomorrow, the toast reads
@@ -117,10 +117,16 @@ description: "Task list for feature 028: postpone a task from anywhere"
   - **FR-006**: the day review's task button still sends a task to the day after the reviewed day;
   - **FR-007**: the buttons' accessible names are «أجّلها: <text>»;
   - **375 px**: the Tasks tab has no horizontal scroll with a long task text.
-- [ ] T011 [P] README.md, the tasks part: «أجّلها» is on every task that has a date, in Today and in the Tasks tab; it
+- [x] T011 [P] README.md, the tasks part: «أجّلها» is on every task that has a date, in Today and in the Tasks tab; it
   moves the task to the day after its date, never earlier than tomorrow, and «رجّعها» undoes it.
-- [ ] T012 Rebuild, then run every check with `--self-test`, parity on the example and on `.private/settings.json`, and
+- [x] T012 Rebuild, then run every check with `--self-test`, parity on the example and on `.private/settings.json`, and
   the whole E2E suite. Tick the tasks. **Commit**.
+
+  Done on 2026-10-31: `task-postpone.spec.js` has 8 tests, 16 runs on Chromium and WebKit, all passing. It was run
+  against four broken sources, rebuilt each time, and failed on each: the rule always giving tomorrow (3 failed), a
+  button on undated tasks (1), Today's button on overdue tasks only (2), and «رجّعها» not putting the date back (2).
+  Every check and self-test passes; parity 0 on the example and a private settings file; the whole suite 184 passed,
+  4 skipped.
 
 ## Phase 5: PR
 
