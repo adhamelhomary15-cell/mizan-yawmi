@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="10f4909389"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-FKYjxv5iGIj51pwjJbxZCcsJBUOM1msUqy05FPlUsSI=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="57af05d394"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-RVR3KYqvI9p4qhnXC8/WwY7EpiKKypVD8W96xOQflXM=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-DwZNDtAfOQl6Y8HsajdbzbgLTQt87NMa8ADDIjQnc3U=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -292,6 +292,8 @@ button{font:inherit;color:inherit}
 .edit svg{width:18px;height:18px;flex:none}
 .edit:hover{color:var(--fg)}
 .tact{display:flex;align-items:center}
+/* a Tasks tab row with «أجّلها» (feature 028): on a phone its buttons go under the text, so the text keeps the width */
+@media (max-width:520px){ .titem.wrap-act{grid-template-columns:44px minmax(0,1fr);row-gap:0} .titem.wrap-act .tact{grid-column:2;justify-content:flex-end} }
 .paste-open{margin-inline-start:var(--s2)}
 .paste{display:flex;flex-direction:column;gap:10px}
 .paste textarea{font-size:14px}
@@ -2043,8 +2045,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   };
   // The open tasks due on a day.
   const tasksDue = (store, iso) => store.tasks.filter(t => !t.done && t.due === iso);
-  // One task moved to another day, with its undo message.
-  const postponeTask = (act, iso, t, to) => act('اتأجلت المهمة لـ ' + dayName(to), applyPostpone(iso, [], [t.id], to));
+  // One task moved to another day. Its undo puts back that task's date only, so a block ticked in the meantime stays.
+  const postponeTask = (actEdit, t, to) => {
+    const setDue = due => s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.due = due; return s; };
+    actEdit('اتأجلت المهمة لـ ' + dayName(to), setDue(to), setDue(t.due));
+  };
   const finishTask = id => s => { const x = s.tasks.find(y => y.id === id); if (x) x.done = true; return s; };
   const PLACE_ERR = {none: 'اختار ميعاد.', late: 'الميعاد ده بيعدّي آخر اليوم.'};
 
@@ -2080,7 +2085,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
-  function Review({iso, now, store, update, skip, act, onClose}){
+  function Review({iso, now, store, update, skip, act, actEdit, onClose}){
     const isToday = iso === now.iso;
     const tracked = dayBlocks(iso, store).filter(b => CATS[b.cat].track);
     const open = tracked.filter(b => statusOf(store, iso, b.key) === null && (!isToday || b.s <= now.min));
@@ -2118,7 +2123,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           <div class="review-text"><span class="title">${t.text}</span><span class="meta"><b>مهمة</b> · ميعادها اليوم ده</span></div>
           <div class="review-actions">
             <button type="button" class="btn primary" onClick=${() => update(finishTask(t.id))}><${CheckSvg} />خلّصتها</button>
-            <button type="button" class="btn" onClick=${() => postponeTask(act, iso, t, taskTo)}>أجّلها</button>
+            <button type="button" class="btn" onClick=${() => postponeTask(actEdit, t, taskTo)}>أجّلها</button>
           </div>
         </li>`)}
       </ul>` : null}
@@ -2201,7 +2206,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </div>
 
       <div class="today-main">
-        <div class="o-now">${reviewing ? html`<${Review} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} act=${act} onClose=${() => setReviewing(false)} />`
+        <div class="o-now">${reviewing ? html`<${Review} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} act=${act} actEdit=${actEdit} onClose=${() => setReviewing(false)} />`
           : isToday ? html`<${AskPostpone} now=${now} store=${store} update=${update} actEdit=${actEdit} onReview=${d => { setIso(d); setReviewing(true); }} /><${NowCard} iso=${iso} now=${now} store=${store} update=${update} skip=${skip} onReview=${() => setReviewing(true)} />` : html`<${DayProgress} iso=${iso} store=${store} />`}</div>
 
         <div class="sec o-timeline">
@@ -2255,11 +2260,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         ${dayTasks.length ? html`<div class="sec o-tasks">
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">
-            ${dayTasks.map(t => { const late = t.due < iso, tomorrow = addDays(now.iso, 1); return html`<div class=${'titem c-' + t.tag + (late ? ' has-act' : '')}>
+            ${dayTasks.map(t => { const late = t.due < iso; return html`<div class=${'titem has-act c-' + t.tag}>
               <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(finishTask(t.id))} />
               <span class="ttext">${t.text}</span>
               <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
-              ${late ? html`<button type="button" class="btn" onClick=${() => postponeTask(act, iso, t, tomorrow)}>أجّلها</button>` : null}
+              <button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>
             </div>`; })}
           </div>
         </div>` : null}
@@ -2931,6 +2936,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     for (let d = askedUpTo < first ? first : addDays(askedUpTo, 1); d <= last; d = addDays(d, 1)) days.push(d);
     return days;
   }
+  // The day a postponed task goes to (feature 028): the day after its date, and never earlier than tomorrow. Dates are
+  // YYYY-MM-DD, so text order is date order.
+  function taskNextDay(due, today, addDays){ return addDays(due > today ? due : today, 1); }
   // end of postpone rules
 
   // start of guide rules
@@ -3410,11 +3418,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           <div class="tlist spaced">
             ${shown.length ? shown.map(t => editing && editing.kind === 'task' && editing.id === t.id
               ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`
-              : html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : '')} key=${t.id}>
+              : html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : !t.due ? '' : ' wrap-act')} key=${t.id}>
               <${Check} on=${!!t.done} cat=${t.tag} label=${(t.done ? 'رجّع: ' : 'خلّص: ') + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = !x.done; return s; })} />
               <div class="shrink"><p class="ttext">${t.text}</p>
                 <p class="small"><span class="ttag">${TASK_TAGS[t.tag]}</span>${t.due ? html` · <span class=${'tdue' + (!t.done && t.due < now.iso ? ' late' : '')}>${dateLabel(t.due)}</span>` : null}</p></div>
               <div class="tact">
+                ${!t.done && t.due ? html`<button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>` : null}
                 <button type="button" class="edit" id=${'edit-btn-' + t.id} aria-label=${'عدّل ' + t.text} title="عدّل" onClick=${() => openEdit('task', t.id)}><${Pencil} /></button>
                 <button type="button" class="del" aria-label=${'امسح ' + t.text} onClick=${() => remove('اتمسحت المهمة', s => { s.tasks = s.tasks.filter(x => x.id !== t.id); return s; })}>امسح</button>
               </div>

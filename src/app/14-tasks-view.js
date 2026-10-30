@@ -179,11 +179,12 @@
           <div class="tlist spaced">
             ${shown.length ? shown.map(t => editing && editing.kind === 'task' && editing.id === t.id
               ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`
-              : html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : '')} key=${t.id}>
+              : html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : !t.due ? '' : ' wrap-act')} key=${t.id}>
               <${Check} on=${!!t.done} cat=${t.tag} label=${(t.done ? 'رجّع: ' : 'خلّص: ') + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = !x.done; return s; })} />
               <div class="shrink"><p class="ttext">${t.text}</p>
                 <p class="small"><span class="ttag">${TASK_TAGS[t.tag]}</span>${t.due ? html` · <span class=${'tdue' + (!t.done && t.due < now.iso ? ' late' : '')}>${dateLabel(t.due)}</span>` : null}</p></div>
               <div class="tact">
+                ${!t.done && t.due ? html`<button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>` : null}
                 <button type="button" class="edit" id=${'edit-btn-' + t.id} aria-label=${'عدّل ' + t.text} title="عدّل" onClick=${() => openEdit('task', t.id)}><${Pencil} /></button>
                 <button type="button" class="del" aria-label=${'امسح ' + t.text} onClick=${() => remove('اتمسحت المهمة', s => { s.tasks = s.tasks.filter(x => x.id !== t.id); return s; })}>امسح</button>
               </div>

@@ -296,6 +296,8 @@ button{font:inherit;color:inherit}
 .edit svg{width:18px;height:18px;flex:none}
 .edit:hover{color:var(--fg)}
 .tact{display:flex;align-items:center}
+/* a Tasks tab row with «أجّلها» (feature 028): on a phone its buttons go under the text, so the text keeps the width */
+@media (max-width:520px){ .titem.wrap-act{grid-template-columns:44px minmax(0,1fr);row-gap:0} .titem.wrap-act .tact{grid-column:2;justify-content:flex-end} }
 .paste-open{margin-inline-start:var(--s2)}
 .paste{display:flex;flex-direction:column;gap:10px}
 .paste textarea{font-size:14px}

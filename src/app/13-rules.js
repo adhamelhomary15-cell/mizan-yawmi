@@ -404,6 +404,9 @@
     for (let d = askedUpTo < first ? first : addDays(askedUpTo, 1); d <= last; d = addDays(d, 1)) days.push(d);
     return days;
   }
+  // The day a postponed task goes to (feature 028): the day after its date, and never earlier than tomorrow. Dates are
+  // YYYY-MM-DD, so text order is date order.
+  function taskNextDay(due, today, addDays){ return addDays(due > today ? due : today, 1); }
   // end of postpone rules
 
   // start of guide rules
