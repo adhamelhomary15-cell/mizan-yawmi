@@ -25,7 +25,7 @@
     }, []);
     const update = fn => {
       if (locked.current) return;
-      const next = normalizeRoot(fn(JSON.parse(JSON.stringify(latest.current)))).root;
+      const next = normalizeRoot(fn(clone(latest.current))).root;
       latest.current = next; setData(next);
       setSaveFailed(!saveStore('workouts', next));
     };
@@ -91,14 +91,12 @@
     useEffect(() => {
       const opener = document.activeElement;
       const b = ref.current && ref.current.querySelector('[data-first]'); if (b) b.focus();
-      const key = e => { if (e.key === 'Escape') onClose(); };
-      document.addEventListener('keydown', key);
       return () => {
-        document.removeEventListener('keydown', key);
         // after the closing render, if focus was lost with the sheet
         setTimeout(() => { try { if (opener && opener.isConnected && (!document.activeElement || document.activeElement === document.body)) opener.focus(); } catch(e){} }, 0);
       };
     }, []);
+    useEscape(onClose);
     return html`<div class="wk-sheet" role="dialog" aria-label=${label} ref=${ref}>${children}</div>`;
   }
 

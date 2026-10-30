@@ -11,13 +11,9 @@
  *
  * Exit codes: 0 all checks pass, 1 a check failed, 2 usage or I/O error.
  */
-const html = require('./lib/source.js').readSource();
-const START_MARK = '// start of now line', END_MARK = '// end of now line';
-function block(source) {
-  const a = source.indexOf(START_MARK), b = source.indexOf(END_MARK);
-  if (a < 0 || b < a) throw new Error('now line block not found in the app source');
-  return source.slice(a, b);
-}
+const {readSource, ruleBlock} = require('./lib/source.js');
+const html = readSource();
+const block = source => ruleBlock(source, 'now line');
 const load = source => new Function(block(source) + '\nreturn {nowPlace};')();
 
 const START = 420, END = 1500;

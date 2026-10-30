@@ -11,15 +11,11 @@
  *
  * Exit codes: 0 all checks pass, 1 a check failed, 2 usage or I/O error.
  */
-const html = require('./lib/source.js').readSource();
+const {readSource, ruleBlock} = require('./lib/source.js');
+const html = readSource();
 
-function block(source, start, end) {
-  const a = source.indexOf(start), b = source.indexOf(end);
-  if (a < 0 || b < a) throw new Error('block "' + start + '" not found');
-  return source.slice(a, b);
-}
 const load = source => new Function(
-  block(source, '// start of data rules', '// end of data rules') +
+  ruleBlock(source, 'data rules') +
   '\nreturn {fnv1a, STORE_FORMAT, CURRENT_VERSION, sealStore, openEnvelope, checkProgress, migrate, pickCopy, keepSnapshots};')();
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -121,7 +117,7 @@ function runChecks(h, source) {
     return eq(del.sort(), ['2026-10-10', '2026-10-11', '2026-10-12', 'junk']) && h.keepSnapshots(days.slice(0, 7)).length === 0 && h.keepSnapshots(days, 3).length === 7;
   });
   check('the data rules block never mentions storage, the page or the network', () => {
-    const b = block(source, '// start of data rules', '// end of data rules').split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');
+    const b = ruleBlock(source, 'data rules').split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');
     return !/localStorage|indexedDB|document\.|window\.|fetch\(|XMLHttp|navigator\./.test(b);
   });
   return results;

@@ -49,10 +49,8 @@
       // closing the editor puts focus back on that set's «عدّل»
       if (!ed) { const b = lastKey.current && document.querySelector('[data-fix="' + lastKey.current + '"]'); if (b) b.focus(); lastKey.current = null; return; }
       lastKey.current = editKey;
-      const key = e => { if (e.key === 'Escape') setEd(null); };
-      document.addEventListener('keydown', key);
-      return () => document.removeEventListener('keydown', key);
     }, [editKey]);
+    useEscape(() => setEd(null), !!ed);
     const save = () => { const r = onCorrect(ed.ei, ed.si, {w: ed.w, r: ed.r}); if (r.ok) setEd(null); else setEd(Object.assign({}, ed, {err: r})); };
     return html`<div class="wkv">
       <div class="wk-head"><button type="button" class="btn" onClick=${onBack}>رجوع</button><div class="wk-title"><h1>${wkTitle(w)}</h1><p class="wk-meta">${wkWhen(w)}</p></div></div>

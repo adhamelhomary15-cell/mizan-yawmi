@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="f211947d7c"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-dGP9yHa+FPUjFotGTeAxPSI77aTyP2nDDKiP9fKSwJg=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="eb35fa6aac"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-Sfbcyj5OCYuPcwLJYstT5nOkvQ5H6oSZJRe1Co0rg3w=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -1082,8 +1082,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     Object.keys(obj).forEach(k => { if (KNOWN.indexOf(k) < 0) warnings.push({code:'unknown-field', path:k, detail:'ignored'}); });
 
     if (errors.length) return {ok:false, errors, warnings, settings:null};
-    const settings = JSON.parse(JSON.stringify(obj));
-    if (settings.history !== undefined) { if (keptOk.length) settings.history = JSON.parse(JSON.stringify(keptOk)); else delete settings.history; }
+    const settings = clone(obj);
+    if (settings.history !== undefined) { if (keptOk.length) settings.history = clone(keptOk); else delete settings.history; }
     if (settings.language === undefined) settings.language = 'ar';
     if (settings.prayerMethod === undefined) settings.prayerMethod = 'Egyptian';
     return {ok:true, errors, warnings, settings};
@@ -1099,6 +1099,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const CURRENT_VERSION = {progress: 2, workouts: 2, settings: 2};
   const isDayText = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
   const isPlainObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  // A deep copy of plain data, as the stores and the settings hold it. The whole app copies this way.
+  function clone(v){ return JSON.parse(JSON.stringify(v)); }
 
   // FNV-1a, 32 bits, over the UTF-16 code units: catches a damaged or hand-edited file; not a security measure.
   function fnv1a(text){
@@ -1128,7 +1130,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     && /^[0-6]$/.test(String(a.day)) && (a.time === undefined || a.time === '' || /^\d{2}:\d{2}$/.test(a.time));
   // Progress with every entry that would break a screen moved into setAside, unchanged; everything else as it was.
   function checkProgress(input){
-    const d = JSON.parse(JSON.stringify(isPlainObject(input) ? input : {}));
+    const d = clone(isPlainObject(input) ? input : {});
     const aside = Array.isArray(d.setAside) ? d.setAside : [], before = aside.length;
     const put = (where, key, value) => aside.push({where, key, value});
     if (isPlainObject(d.checks)) Object.keys(d.checks).forEach(day => {
@@ -1157,7 +1159,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const target = CURRENT_VERSION[store];
     if (!target || !Number.isInteger(version) || version < 1) return {ok: false, code: 'failed', at: version};
     if (version > target) return {ok: false, code: 'too-new'};
-    let d = JSON.parse(JSON.stringify(data === undefined ? null : data)), aside = 0;
+    let d = clone(data === undefined ? null : data), aside = 0;
     for (let v = version; v < target; v++) {
       const step = (MIGRATIONS[store] || {})[v];
       if (!step) return {ok: false, code: 'failed', at: v};
@@ -1695,7 +1697,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     function flush(){
       timer.current = null;
       const r = ref.current; if (!r) return;
-      const body = JSON.parse(JSON.stringify(latest.current));
+      const body = clone(latest.current);
       chain.current = chain.current.then(() => r.set(body)).catch(err => {
         if (err && err.code === 'unavailable'){
           setTimeout(() => { if (!timer.current) timer.current = setTimeout(flush, 0); }, 1200 + Math.random()*800);
@@ -1708,7 +1710,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     }
     function update(fn){
       if (locked.current) return;
-      const next = normalize(fn(JSON.parse(JSON.stringify(latest.current))));
+      const next = normalize(fn(clone(latest.current)));
       latest.current = next; setStore(next); noteSave(saveLocal(next));
       if (ref.current) queue();
     }
@@ -1720,7 +1722,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       if (timer.current) { clearTimeout(timer.current); timer.current = null; }
       const r = ref.current;
       if (!r) return Promise.resolve(true);
-      const body = JSON.parse(JSON.stringify(next));
+      const body = clone(next);
       const p = chain.current.then(() => r.set(body));
       chain.current = p.catch(() => {});
       return p.then(() => true, () => false);
@@ -1820,6 +1822,19 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     return t;
   }
   const plainTitle = (text, cat, mainName) => showTitle(text, cat, mainName).replace('|', ' · ');
+  // A block's title as plain text, for messages and labels.
+  const blockName = (b, store) => plainTitle(b.title, b.cat, mainCourseName(store));
+  // Calls onEscape when Escape is pressed anywhere, while `on` holds. The latest onEscape is called, so it may read
+  // state without the listener being set up again.
+  function useEscape(onEscape, on = true){
+    const fn = useRef(onEscape); fn.current = onEscape;
+    useEffect(() => {
+      if (!on) return;
+      const key = e => { if (e.key === 'Escape') fn.current(); };
+      document.addEventListener('keydown', key);
+      return () => document.removeEventListener('keydown', key);
+    }, [on]);
+  }
 
   // A number that counts up from 0 when it first appears, over the rosette's drawing time, easing out gently, as the
   // staggered petals arrive about evenly (feature 027). A later value, as after a tick, shows at once; so does every
@@ -2026,6 +2041,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     (taskIds || []).forEach(id => { const t = s.tasks.find(x => x.id === id); if (t) t.due = taskTo; });
     return s;
   };
+  // The open tasks due on a day.
+  const tasksDue = (store, iso) => store.tasks.filter(t => !t.done && t.due === iso);
+  // One task moved to another day, with its undo message.
+  const postponeTask = (act, iso, t, to) => act('اتأجلت المهمة لـ ' + dayName(to), applyPostpone(iso, [], [t.id], to));
+  const finishTask = id => s => { const x = s.tasks.find(y => y.id === id); if (x) x.done = true; return s; };
   const PLACE_ERR = {none: 'اختار ميعاد.', late: 'الميعاد ده بيعدّي آخر اليوم.'};
 
   // The inline proposal under one review row: «تمام» takes it, «غيّر» opens a day and time picker, «لأ» closes.
@@ -2038,20 +2058,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const [time, setTime] = useState(prop ? minToHM(prop.s % 1440) : '');
     const [err, setErr] = useState('');
     const ref = useRef(null);
-    useEffect(() => {
-      const f = ref.current && ref.current.querySelector('[data-first]'); if (f) f.focus();
-      const key = e => { if (e.key === 'Escape') onClose(); };
-      document.addEventListener('keydown', key);
-      return () => document.removeEventListener('keydown', key);
-    }, []);
-    const go = to => { act('اتأجلت "' + plainTitle(b.title, b.cat, mainCourseName(store)) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
+    useEffect(() => { const f = ref.current && ref.current.querySelector('[data-first]'); if (f) f.focus(); }, []);
+    useEscape(onClose);
+    const go = to => { act('اتأجلت "' + blockName(b, store) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
     const pick = () => {
       const bl = dayBlocks(day, store), s = time ? hmToMin(time) : NaN;
       const r = checkManualPlace(bl, bl.filter(x => x.extra), s, len, START, END, c => !!CATS[c].track);
       if (!r.ok) { setErr(r.code === 'clash' ? 'الميعاد ده بيتداخل مع ' + plainTitle(r.title) + '.' : PLACE_ERR[r.code]); return; }
       go({iso: day, s, e: r.e});
     };
-    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + plainTitle(b.title, b.cat, mainCourseName(store))}>
+    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + blockName(b, store)}>
       ${!manual ? html`<p class="small">هتتحط <bdi>${dayName(prop.iso)}</bdi> من <bdi>${fmtStr(prop.s)}</bdi> لحد <bdi>${fmtStr(prop.e)}</bdi></p>
         <span class="backup-act"><button type="button" class="btn primary" data-first="1" onClick=${() => go(prop)}>تمام</button><button type="button" class="btn" onClick=${() => setManual(true)}>غيّر</button><button type="button" class="btn ghost" onClick=${onClose}>لأ</button></span>`
       : html`${prop ? null : html`<p class="small">مفيش وقت فاضي يسعها في الأسبوع الجاي، اختار يوم وميعاد.</p>`}
@@ -2072,7 +2088,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const ab = balanceOf([iso], store);
     const [pp, setPp] = useState(null);        // the key of the row whose proposal is open
     const [batch, setBatch] = useState(null);  // the list of proposals for «أجّل اللي فاضل كله»
-    const dueTasks = store.tasks.filter(t => !t.done && t.due === iso);
+    const dueTasks = tasksDue(store, iso);
     const movable = open.filter(canPostpone);
     const taskTo = postponeStart(iso, now);
     const openBatch = () => {
@@ -2101,8 +2117,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         ${dueTasks.map(t => html`<li class=${'c-' + (t.tag === 'quran' ? 'quran' : t.tag === 'work' ? 'work' : 'study')}>
           <div class="review-text"><span class="title">${t.text}</span><span class="meta"><b>مهمة</b> · ميعادها اليوم ده</span></div>
           <div class="review-actions">
-            <button type="button" class="btn primary" onClick=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })}><${CheckSvg} />خلّصتها</button>
-            <button type="button" class="btn" onClick=${() => act('اتأجلت المهمة لـ ' + dayName(taskTo), applyPostpone(iso, [], [t.id], taskTo))}>أجّلها</button>
+            <button type="button" class="btn primary" onClick=${() => update(finishTask(t.id))}><${CheckSvg} />خلّصتها</button>
+            <button type="button" class="btn" onClick=${() => postponeTask(act, iso, t, taskTo)}>أجّلها</button>
           </div>
         </li>`)}
       </ul>` : null}
@@ -2149,7 +2165,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
 
   function TodayView({iso, setIso, now, store, update, goTab, remove, act, actEdit}){
-    const skip = b => act('اتلغى "' + plainTitle(b.title, b.cat, mainCourseName(store)) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
+    const skip = b => act('اتلغى "' + blockName(b, store) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
     const blocks = dayBlocks(iso, store);
     const p = prayers(iso);
     const appts = apptsFor(iso, store);
@@ -2207,7 +2223,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
                   : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${st === 'moved' ? html` · اتأجل لـ <bdi>${dayName(movedTo(store, iso, b.key))}</bdi>` : null}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
               return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
-                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title, b.cat, mainCourseName(store))} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
+                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + blockName(b, store)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
@@ -2240,10 +2256,10 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">
             ${dayTasks.map(t => { const late = t.due < iso, tomorrow = addDays(now.iso, 1); return html`<div class=${'titem c-' + t.tag + (late ? ' has-act' : '')}>
-              <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })} />
+              <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(finishTask(t.id))} />
               <span class="ttext">${t.text}</span>
               <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
-              ${late ? html`<button type="button" class="btn" onClick=${() => act('اتأجلت المهمة لـ ' + dayName(tomorrow), applyPostpone(iso, [], [t.id], tomorrow))}>أجّلها</button>` : null}
+              ${late ? html`<button type="button" class="btn" onClick=${() => postponeTask(act, iso, t, tomorrow)}>أجّلها</button>` : null}
             </div>`; })}
           </div>
         </div>` : null}
@@ -2261,7 +2277,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const days = asked.map(iso => ({
       iso,
       blocks: dayBlocks(iso, store).filter(b => CATS[b.cat].track && canPostpone(b) && statusOf(store, iso, b.key) === null),
-      tasks: store.tasks.filter(t => !t.done && t.due === iso)
+      tasks: tasksDue(store, iso)
     })).filter(d => d.blocks.length || d.tasks.length);
     if (!days.length) return null;
     const all = days.flatMap(d => d.blocks);
@@ -2272,7 +2288,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const answer = day => s => { s.askedUpTo = day; return s; };
     // The undo puts back the store as it was, but with the question still answered, so the notice stays away.
     const postponeAll = () => {
-      const before = answer(last)(JSON.parse(JSON.stringify(store)));
+      const before = answer(last)(clone(store));
       actEdit('اتأجل ' + n + ' حاجة', s => {
         days.forEach(d => applyPostpone(d.iso, d.blocks.filter(placeOf).map(b => ({b, to: placeOf(b)})), d.tasks.map(t => t.id), now.iso)(s));
         return answer(last)(s);
@@ -2774,7 +2790,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     if (!e || !e.sets[si]) return {ok: false, field: 'w', error: 'المجموعة دي مش موجودة'};
     const v = validateSet(fields);
     if (!v.ok) return v;
-    const copy = JSON.parse(JSON.stringify(workout));
+    const copy = clone(workout);
     copy.exercises[ei].sets[si] = v.value;
     return {ok: true, workout: copy};
   }
@@ -2961,7 +2977,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   // [start, kind, title, detail, subject, anchor]. Days with two versions ({A, B}) are never changed here.
   // No storage, page or network.
   const SCHEDULE_DAYS = ['0', '1', '2', '3', '4', '5', '6'];
-  const clone = v => JSON.parse(JSON.stringify(v));
   // Minutes of "HH:MM"; after midnight the day goes on as 24:00–24:59.
   const startMin = t => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
   const draftOf = settings => clone(settings);
@@ -3709,7 +3724,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       setCheck(r.skipped.length ? {note: 'ما اتنسخش على ' + r.skipped.map(d => DAY_NAMES[d]).join('، ') + ' عشان ليه نسختين من ملف الإعدادات.'} : null);
     };
     const trySave = () => {
-      const res = validateSettings(JSON.parse(JSON.stringify(draft)));
+      const res = validateSettings(clone(draft));
       if (!res.ok) { setCheck({errors: res.errors.map(e => explain(e, draft))}); return; }
       setCheck({changes: changesBetween(editorSession.original, draft), settings: res.settings});
     };
@@ -3867,13 +3882,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const inputRef = useRef(null), noRef = useRef(null), errRef = useRef(null);
     useEffect(() => { if (err && errRef.current) { try { errRef.current.focus(); } catch(e){} } }, [err]);
     const cancel = () => { setPending(null); if (inputRef.current) { inputRef.current.value = ''; try { inputRef.current.focus(); } catch(e){} } };
-    useEffect(() => {
-      if (!pending) return;
-      if (noRef.current) noRef.current.focus();
-      const key = e => { if (e.key === 'Escape' && !busy) cancel(); };
-      document.addEventListener('keydown', key);
-      return () => document.removeEventListener('keydown', key);
-    }, [pending, busy]);
+    useEffect(() => { if (pending && noRef.current) noRef.current.focus(); }, [pending, busy]);
+    useEscape(() => { if (!busy) cancel(); }, !!pending);
     const refuse = code => { setPending(null); setErr(BACKUP_REFUSALS[code] || BACKUP_REFUSALS['not-backup']); if (inputRef.current) inputRef.current.value = ''; };
     const consider = text => {
       const res = readBackup(text, {normalize, normalizeRoot, validateSettings});
@@ -3969,7 +3979,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   // Saves the schedule in use as a settings file that «استيراد ملف إعدادات» takes back.
   // The current week only (feature 021): the file imports anywhere as a normal settings file.
   function exportSettings(){
-    const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json', out = JSON.parse(JSON.stringify(CFG));
+    const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json', out = clone(CFG);
     delete out.history; delete out.fromExample;
     try { downloadText(name, JSON.stringify(out, null, 2) + '\n'); return {ok: true, name}; } catch(e){ return {ok: false}; }
   }
@@ -4167,7 +4177,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     }, []);
     const update = fn => {
       if (locked.current) return;
-      const next = normalizeRoot(fn(JSON.parse(JSON.stringify(latest.current)))).root;
+      const next = normalizeRoot(fn(clone(latest.current))).root;
       latest.current = next; setData(next);
       setSaveFailed(!saveStore('workouts', next));
     };
@@ -4233,14 +4243,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     useEffect(() => {
       const opener = document.activeElement;
       const b = ref.current && ref.current.querySelector('[data-first]'); if (b) b.focus();
-      const key = e => { if (e.key === 'Escape') onClose(); };
-      document.addEventListener('keydown', key);
       return () => {
-        document.removeEventListener('keydown', key);
         // after the closing render, if focus was lost with the sheet
         setTimeout(() => { try { if (opener && opener.isConnected && (!document.activeElement || document.activeElement === document.body)) opener.focus(); } catch(e){} }, 0);
       };
     }, []);
+    useEscape(onClose);
     return html`<div class="wk-sheet" role="dialog" aria-label=${label} ref=${ref}>${children}</div>`;
   }
 
@@ -4470,10 +4478,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       // closing the editor puts focus back on that set's «عدّل»
       if (!ed) { const b = lastKey.current && document.querySelector('[data-fix="' + lastKey.current + '"]'); if (b) b.focus(); lastKey.current = null; return; }
       lastKey.current = editKey;
-      const key = e => { if (e.key === 'Escape') setEd(null); };
-      document.addEventListener('keydown', key);
-      return () => document.removeEventListener('keydown', key);
     }, [editKey]);
+    useEscape(() => setEd(null), !!ed);
     const save = () => { const r = onCorrect(ed.ei, ed.si, {w: ed.w, r: ed.r}); if (r.ok) setEd(null); else setEd(Object.assign({}, ed, {err: r})); };
     return html`<div class="wkv">
       <div class="wk-head"><button type="button" class="btn" onClick=${onBack}>رجوع</button><div class="wk-title"><h1>${wkTitle(w)}</h1><p class="wk-meta">${wkWhen(w)}</p></div></div>

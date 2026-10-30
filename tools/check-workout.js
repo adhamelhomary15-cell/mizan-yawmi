@@ -15,16 +15,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = require('./lib/source.js').readSource();
-const START = '// start of workout rules', END = '// end of workout rules';
+const {readSource, ruleBlock, grabFunction} = require('./lib/source.js');
+const html = readSource();
 
-function block(source) {
-  const a = source.indexOf(START), b = source.indexOf(END);
-  if (a < 0 || b < a) throw new Error('workout rules block not found in src/planner.html');
-  return source.slice(a, b);
-}
+const block = source => ruleBlock(source, 'workout rules');
 function load(source) {
-  return new Function(block(source) + '\nreturn {STARTER_EXERCISES, EMPTY_WORKOUTS, parseNumber, validateSet, normName, isNameTaken, elapsedMs, restLeft, formatClock, restLabel, previousSets, computeRecords, bestSet, volumeOf, recordCount, finishWorkout, clampSets, validateRoutineName, routineLastUsed, startFromRoutine, canDeleteExercise, removeWorkout, putBackWorkout, correctSet, normalizeRoot};')();
+  return new Function(grabFunction(source, 'clone') + block(source) + '\nreturn {STARTER_EXERCISES, EMPTY_WORKOUTS, parseNumber, validateSet, normName, isNameTaken, elapsedMs, restLeft, formatClock, restLabel, previousSets, computeRecords, bestSet, volumeOf, recordCount, finishWorkout, clampSets, validateRoutineName, routineLastUsed, startFromRoutine, canDeleteExercise, removeWorkout, putBackWorkout, correctSet, normalizeRoot};')();
 }
 
 const clone = x => JSON.parse(JSON.stringify(x));

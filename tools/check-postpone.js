@@ -14,13 +14,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = require('./lib/source.js').readSource();
-const START_MARK = '// start of postpone rules', END_MARK = '// end of postpone rules';
-function block(source) {
-  const a = source.indexOf(START_MARK), b = source.indexOf(END_MARK);
-  if (a < 0 || b < a) throw new Error('postpone rules block not found in src/planner.html');
-  return source.slice(a, b);
-}
+const {readSource, ruleBlock} = require('./lib/source.js');
+const html = readSource();
+const block = source => ruleBlock(source, 'postpone rules');
 const load = source => new Function(block(source) + '\nreturn {freeStretches, proposePlaces, checkManualPlace, daysToAsk};')();
 
 const START = 420, END = 1500;

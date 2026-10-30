@@ -263,7 +263,7 @@
     if (!e || !e.sets[si]) return {ok: false, field: 'w', error: 'المجموعة دي مش موجودة'};
     const v = validateSet(fields);
     if (!v.ok) return v;
-    const copy = JSON.parse(JSON.stringify(workout));
+    const copy = clone(workout);
     copy.exercises[ei].sets[si] = v.value;
     return {ok: true, workout: copy};
   }

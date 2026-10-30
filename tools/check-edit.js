@@ -13,14 +13,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = require('./lib/source.js').readSource();
-const START = '// start of edit rules', END = '// end of edit rules';
+const {readSource, ruleBlock} = require('./lib/source.js');
+const html = readSource();
 
 function load(source) {
-  const a = source.indexOf(START), b = source.indexOf(END);
-  if (a < 0 || b < 0 || b < a) throw new Error('edit rules block not found in src/planner.html');
-  const code = source.slice(a, b);
-  return new Function(code + '\nreturn {validateTaskFields, validateApptFields, applyEdit, restoreFields, TASK_EDIT_KEYS, APPT_EDIT_KEYS};')();
+  return new Function(ruleBlock(source, 'edit rules') + '\nreturn {validateTaskFields, validateApptFields, applyEdit, restoreFields, TASK_EDIT_KEYS, APPT_EDIT_KEYS};')();
 }
 
 const TAGS = {uni: 'A', course: 'B', work: 'C', personal: 'D'};
@@ -140,8 +137,7 @@ function runChecks(h) {
 
   // Whole-block guarantee: the edit rules never name done-state storage (Principle II)
   check('the edit rules block never writes done, checks or modules', () => {
-    const a = html.indexOf(START), b = html.indexOf(END);
-    const block = html.slice(a, b);
+    const block = ruleBlock(html, 'edit rules');
     return !/\.done\s*=[^=]/.test(block) && !/\bchecks\b/.test(block) && !/\bmodules\b/.test(block);
   });
   return results;

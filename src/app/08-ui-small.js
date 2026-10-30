@@ -26,6 +26,19 @@
     return t;
   }
   const plainTitle = (text, cat, mainName) => showTitle(text, cat, mainName).replace('|', ' · ');
+  // A block's title as plain text, for messages and labels.
+  const blockName = (b, store) => plainTitle(b.title, b.cat, mainCourseName(store));
+  // Calls onEscape when Escape is pressed anywhere, while `on` holds. The latest onEscape is called, so it may read
+  // state without the listener being set up again.
+  function useEscape(onEscape, on = true){
+    const fn = useRef(onEscape); fn.current = onEscape;
+    useEffect(() => {
+      if (!on) return;
+      const key = e => { if (e.key === 'Escape') fn.current(); };
+      document.addEventListener('keydown', key);
+      return () => document.removeEventListener('keydown', key);
+    }, [on]);
+  }
 
   // A number that counts up from 0 when it first appears, over the rosette's drawing time, easing out gently, as the
   // staggered petals arrive about evenly (feature 027). A later value, as after a tick, shows at once; so does every

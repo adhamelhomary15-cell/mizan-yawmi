@@ -190,7 +190,7 @@
       setCheck(r.skipped.length ? {note: 'ما اتنسخش على ' + r.skipped.map(d => DAY_NAMES[d]).join('، ') + ' عشان ليه نسختين من ملف الإعدادات.'} : null);
     };
     const trySave = () => {
-      const res = validateSettings(JSON.parse(JSON.stringify(draft)));
+      const res = validateSettings(clone(draft));
       if (!res.ok) { setCheck({errors: res.errors.map(e => explain(e, draft))}); return; }
       setCheck({changes: changesBetween(editorSession.original, draft), settings: res.settings});
     };

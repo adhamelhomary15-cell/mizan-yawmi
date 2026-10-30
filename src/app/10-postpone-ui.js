@@ -21,6 +21,11 @@
     (taskIds || []).forEach(id => { const t = s.tasks.find(x => x.id === id); if (t) t.due = taskTo; });
     return s;
   };
+  // The open tasks due on a day.
+  const tasksDue = (store, iso) => store.tasks.filter(t => !t.done && t.due === iso);
+  // One task moved to another day, with its undo message.
+  const postponeTask = (act, iso, t, to) => act('اتأجلت المهمة لـ ' + dayName(to), applyPostpone(iso, [], [t.id], to));
+  const finishTask = id => s => { const x = s.tasks.find(y => y.id === id); if (x) x.done = true; return s; };
   const PLACE_ERR = {none: 'اختار ميعاد.', late: 'الميعاد ده بيعدّي آخر اليوم.'};
 
   // The inline proposal under one review row: «تمام» takes it, «غيّر» opens a day and time picker, «لأ» closes.
@@ -33,20 +38,16 @@
     const [time, setTime] = useState(prop ? minToHM(prop.s % 1440) : '');
     const [err, setErr] = useState('');
     const ref = useRef(null);
-    useEffect(() => {
-      const f = ref.current && ref.current.querySelector('[data-first]'); if (f) f.focus();
-      const key = e => { if (e.key === 'Escape') onClose(); };
-      document.addEventListener('keydown', key);
-      return () => document.removeEventListener('keydown', key);
-    }, []);
-    const go = to => { act('اتأجلت "' + plainTitle(b.title, b.cat, mainCourseName(store)) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
+    useEffect(() => { const f = ref.current && ref.current.querySelector('[data-first]'); if (f) f.focus(); }, []);
+    useEscape(onClose);
+    const go = to => { act('اتأجلت "' + blockName(b, store) + '" لـ ' + dayName(to.iso), applyPostpone(iso, [{b, to}])); onClose(); };
     const pick = () => {
       const bl = dayBlocks(day, store), s = time ? hmToMin(time) : NaN;
       const r = checkManualPlace(bl, bl.filter(x => x.extra), s, len, START, END, c => !!CATS[c].track);
       if (!r.ok) { setErr(r.code === 'clash' ? 'الميعاد ده بيتداخل مع ' + plainTitle(r.title) + '.' : PLACE_ERR[r.code]); return; }
       go({iso: day, s, e: r.e});
     };
-    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + plainTitle(b.title, b.cat, mainCourseName(store))}>
+    return html`<div class="postpone" ref=${ref} role="group" aria-label=${'تأجيل ' + blockName(b, store)}>
       ${!manual ? html`<p class="small">هتتحط <bdi>${dayName(prop.iso)}</bdi> من <bdi>${fmtStr(prop.s)}</bdi> لحد <bdi>${fmtStr(prop.e)}</bdi></p>
         <span class="backup-act"><button type="button" class="btn primary" data-first="1" onClick=${() => go(prop)}>تمام</button><button type="button" class="btn" onClick=${() => setManual(true)}>غيّر</button><button type="button" class="btn ghost" onClick=${onClose}>لأ</button></span>`
       : html`${prop ? null : html`<p class="small">مفيش وقت فاضي يسعها في الأسبوع الجاي، اختار يوم وميعاد.</p>`}
@@ -67,7 +68,7 @@
     const ab = balanceOf([iso], store);
     const [pp, setPp] = useState(null);        // the key of the row whose proposal is open
     const [batch, setBatch] = useState(null);  // the list of proposals for «أجّل اللي فاضل كله»
-    const dueTasks = store.tasks.filter(t => !t.done && t.due === iso);
+    const dueTasks = tasksDue(store, iso);
     const movable = open.filter(canPostpone);
     const taskTo = postponeStart(iso, now);
     const openBatch = () => {
@@ -96,8 +97,8 @@
         ${dueTasks.map(t => html`<li class=${'c-' + (t.tag === 'quran' ? 'quran' : t.tag === 'work' ? 'work' : 'study')}>
           <div class="review-text"><span class="title">${t.text}</span><span class="meta"><b>مهمة</b> · ميعادها اليوم ده</span></div>
           <div class="review-actions">
-            <button type="button" class="btn primary" onClick=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })}><${CheckSvg} />خلّصتها</button>
-            <button type="button" class="btn" onClick=${() => act('اتأجلت المهمة لـ ' + dayName(taskTo), applyPostpone(iso, [], [t.id], taskTo))}>أجّلها</button>
+            <button type="button" class="btn primary" onClick=${() => update(finishTask(t.id))}><${CheckSvg} />خلّصتها</button>
+            <button type="button" class="btn" onClick=${() => postponeTask(act, iso, t, taskTo)}>أجّلها</button>
           </div>
         </li>`)}
       </ul>` : null}
@@ -144,7 +145,7 @@
   }
 
   function TodayView({iso, setIso, now, store, update, goTab, remove, act, actEdit}){
-    const skip = b => act('اتلغى "' + plainTitle(b.title, b.cat, mainCourseName(store)) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
+    const skip = b => act('اتلغى "' + blockName(b, store) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
     const blocks = dayBlocks(iso, store);
     const p = prayers(iso);
     const appts = apptsFor(iso, store);
@@ -202,7 +203,7 @@
                   : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${st === 'moved' ? html` · اتأجل لـ <bdi>${dayName(movedTo(store, iso, b.key))}</bdi>` : null}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
               return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
-                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + plainTitle(b.title, b.cat, mainCourseName(store))} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
+                <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + blockName(b, store)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
@@ -235,10 +236,10 @@
           <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
           <div class="panel tlist">
             ${dayTasks.map(t => { const late = t.due < iso, tomorrow = addDays(now.iso, 1); return html`<div class=${'titem c-' + t.tag + (late ? ' has-act' : '')}>
-              <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = true; return s; })} />
+              <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(finishTask(t.id))} />
               <span class="ttext">${t.text}</span>
               <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
-              ${late ? html`<button type="button" class="btn" onClick=${() => act('اتأجلت المهمة لـ ' + dayName(tomorrow), applyPostpone(iso, [], [t.id], tomorrow))}>أجّلها</button>` : null}
+              ${late ? html`<button type="button" class="btn" onClick=${() => postponeTask(act, iso, t, tomorrow)}>أجّلها</button>` : null}
             </div>`; })}
           </div>
         </div>` : null}

@@ -15,18 +15,14 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const {ruleBlock} = require('./lib/source.js');
 
 const ROOT = path.join(__dirname, '..');
 const FRAMES = path.join(ROOT, 'tools', 'vendor', 'workout-guide', 'frames');
 const MAX_APP = 2 * 1024 * 1024;
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
-const START_MARK = '// start of guide rules', END_MARK = '// end of guide rules';
-function block(source) {
-  const a = source.indexOf(START_MARK), b = source.indexOf(END_MARK);
-  if (a < 0 || b < a) throw new Error('guide rules block not found in src/planner.html');
-  return source.slice(a, b);
-}
+const block = source => ruleBlock(source, 'guide rules');
 const load = source => new Function(block(source) + '\nreturn {GUIDE_PATH, guideUrl, checkGuideFrames};')();
 
 // The slugs named by a table such as WORKOUT_GUIDE_BUILTIN_SLUGS = {...} in the source.

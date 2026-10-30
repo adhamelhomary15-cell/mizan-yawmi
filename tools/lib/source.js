@@ -56,7 +56,26 @@ function dataSection(html, a, b) {
   return html.slice(a, b) + (r0 >= 0 && r1 > r0 && (r0 < a || r0 >= b) ? '\n' + html.slice(r0, r1) : '');
 }
 
-module.exports = {readSource, joinParts, partNames, dataSection, PLACEHOLDER};
+// A rules block of the app: the text from "// start of <name>" up to "// end of <name>". The checks run these
+// blocks on their own, outside the page.
+function ruleBlock(source, name) {
+  const a = source.indexOf('// start of ' + name), b = source.indexOf('// end of ' + name);
+  if (a < 0 || b < a) throw new Error(name + ' block not found in the app source');
+  return source.slice(a, b);
+}
+// One `function name(...) {...}` of the app, found by matching braces, for the checks that run it outside the page.
+function grabFunction(source, name) {
+  const start = source.indexOf('function ' + name + '(');
+  if (start < 0) throw new Error('function ' + name + ' not found in the app source');
+  let depth = 0;
+  for (let j = source.indexOf('{', start); j < source.length; j++) {
+    if (source[j] === '{') depth++;
+    else if (source[j] === '}' && --depth === 0) return source.slice(start, j + 1);
+  }
+  throw new Error('unbalanced braces in ' + name);
+}
+
+module.exports = {readSource, joinParts, partNames, dataSection, ruleBlock, grabFunction, PLACEHOLDER};
 
 if (require.main === module && process.argv.includes('--print-sha')) {
   try { console.log(require('crypto').createHash('sha1').update(readSource()).digest('hex')); }

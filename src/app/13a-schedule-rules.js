@@ -5,7 +5,6 @@
   // [start, kind, title, detail, subject, anchor]. Days with two versions ({A, B}) are never changed here.
   // No storage, page or network.
   const SCHEDULE_DAYS = ['0', '1', '2', '3', '4', '5', '6'];
-  const clone = v => JSON.parse(JSON.stringify(v));
   // Minutes of "HH:MM"; after midnight the day goes on as 24:00–24:59.
   const startMin = t => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
   const draftOf = settings => clone(settings);

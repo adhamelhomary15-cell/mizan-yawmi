@@ -108,13 +108,8 @@
     const inputRef = useRef(null), noRef = useRef(null), errRef = useRef(null);
     useEffect(() => { if (err && errRef.current) { try { errRef.current.focus(); } catch(e){} } }, [err]);
     const cancel = () => { setPending(null); if (inputRef.current) { inputRef.current.value = ''; try { inputRef.current.focus(); } catch(e){} } };
-    useEffect(() => {
-      if (!pending) return;
-      if (noRef.current) noRef.current.focus();
-      const key = e => { if (e.key === 'Escape' && !busy) cancel(); };
-      document.addEventListener('keydown', key);
-      return () => document.removeEventListener('keydown', key);
-    }, [pending, busy]);
+    useEffect(() => { if (pending && noRef.current) noRef.current.focus(); }, [pending, busy]);
+    useEscape(() => { if (!busy) cancel(); }, !!pending);
     const refuse = code => { setPending(null); setErr(BACKUP_REFUSALS[code] || BACKUP_REFUSALS['not-backup']); if (inputRef.current) inputRef.current.value = ''; };
     const consider = text => {
       const res = readBackup(text, {normalize, normalizeRoot, validateSettings});
@@ -210,7 +205,7 @@
   // Saves the schedule in use as a settings file that «استيراد ملف إعدادات» takes back.
   // The current week only (feature 021): the file imports anywhere as a normal settings file.
   function exportSettings(){
-    const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json', out = JSON.parse(JSON.stringify(CFG));
+    const name = 'mizan-settings-' + zoneParts(new Date()).iso + '.json', out = clone(CFG);
     delete out.history; delete out.fromExample;
     try { downloadText(name, JSON.stringify(out, null, 2) + '\n'); return {ok: true, name}; } catch(e){ return {ok: false}; }
   }

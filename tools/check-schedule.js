@@ -11,24 +11,12 @@
  *
  * Exit codes: 0 all checks pass, 1 a check failed, 2 usage or I/O error.
  */
-const html = require('./lib/source.js').readSource();
+const {readSource, ruleBlock, grabFunction} = require('./lib/source.js');
+const html = readSource();
 
-function block(source) {
-  const a = source.indexOf('// start of schedule rules'), b = source.indexOf('// end of schedule rules');
-  if (a < 0 || b < a) throw new Error('schedule rules block not found');
-  return source.slice(a, b);
-}
-function grabFunction(source, name) {
-  const start = source.indexOf('function ' + name + '(');
-  let depth = 0;
-  for (let j = source.indexOf('{', start); j < source.length; j++) {
-    if (source[j] === '{') depth++;
-    else if (source[j] === '}' && --depth === 0) return source.slice(start, j + 1);
-  }
-  throw new Error(name + ' not found');
-}
+const block = source => ruleBlock(source, 'schedule rules');
 const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt, setDayBounds, dayOn, withHistory, HISTORY_MAX_BYTES';
-const load = source => new Function(grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + block(source) + '\nreturn {dayBounds, validateSettings, ' + NAMES + '};')();
+const load = source => new Function(grabFunction(source, 'clone') + grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + block(source) + '\nreturn {dayBounds, validateSettings, ' + NAMES + '};')();
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const freeze = o => { if (o && typeof o === 'object') { Object.values(o).forEach(freeze); Object.freeze(o); } return o; };
