@@ -16,14 +16,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const {readSource, dataSection} = require('./lib/source.js');
+const {readSource, dataSection, ruleBlock} = require('./lib/source.js');
 const html = readSource();
-const START_MARK = '// start of anchor layout', END_MARK = '// end of anchor layout';
 
 function load(source) {
-  const a = source.indexOf(START_MARK), b = source.indexOf(END_MARK);
-  if (a < 0 || b < 0 || b < a) throw new Error('anchor layout block not found in src/planner.html');
-  return new Function(source.slice(a, b) + '\nreturn layoutDay;')();
+  return new Function(ruleBlock(source, 'anchor layout') + '\nreturn layoutDay;')();
 }
 
 const START = 420, END = 1500;
@@ -205,7 +202,7 @@ function runChecks(layoutDay) {
     return true;
   });
   check('the layout block never mentions done, checks or modules', () => {
-    const block = html.slice(html.indexOf(START_MARK), html.indexOf(END_MARK));
+    const block = ruleBlock(html, 'anchor layout');
     return !/\bchecks\b|\bmodules\b|\.done\b/.test(block);
   });
   return results;

@@ -6,7 +6,7 @@
     const days = asked.map(iso => ({
       iso,
       blocks: dayBlocks(iso, store).filter(b => CATS[b.cat].track && canPostpone(b) && statusOf(store, iso, b.key) === null),
-      tasks: store.tasks.filter(t => !t.done && t.due === iso)
+      tasks: tasksDue(store, iso)
     })).filter(d => d.blocks.length || d.tasks.length);
     if (!days.length) return null;
     const all = days.flatMap(d => d.blocks);
@@ -17,7 +17,7 @@
     const answer = day => s => { s.askedUpTo = day; return s; };
     // The undo puts back the store as it was, but with the question still answered, so the notice stays away.
     const postponeAll = () => {
-      const before = answer(last)(JSON.parse(JSON.stringify(store)));
+      const before = answer(last)(clone(store));
       actEdit('اتأجل ' + n + ' حاجة', s => {
         days.forEach(d => applyPostpone(d.iso, d.blocks.filter(placeOf).map(b => ({b, to: placeOf(b)})), d.tasks.map(t => t.id), now.iso)(s));
         return answer(last)(s);

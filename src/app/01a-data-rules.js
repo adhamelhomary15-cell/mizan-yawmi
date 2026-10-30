@@ -8,6 +8,8 @@
   const CURRENT_VERSION = {progress: 2, workouts: 2, settings: 2};
   const isDayText = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
   const isPlainObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  // A deep copy of plain data, as the stores and the settings hold it. The whole app copies this way.
+  function clone(v){ return JSON.parse(JSON.stringify(v)); }
 
   // FNV-1a, 32 bits, over the UTF-16 code units: catches a damaged or hand-edited file; not a security measure.
   function fnv1a(text){
@@ -37,7 +39,7 @@
     && /^[0-6]$/.test(String(a.day)) && (a.time === undefined || a.time === '' || /^\d{2}:\d{2}$/.test(a.time));
   // Progress with every entry that would break a screen moved into setAside, unchanged; everything else as it was.
   function checkProgress(input){
-    const d = JSON.parse(JSON.stringify(isPlainObject(input) ? input : {}));
+    const d = clone(isPlainObject(input) ? input : {});
     const aside = Array.isArray(d.setAside) ? d.setAside : [], before = aside.length;
     const put = (where, key, value) => aside.push({where, key, value});
     if (isPlainObject(d.checks)) Object.keys(d.checks).forEach(day => {
@@ -66,7 +68,7 @@
     const target = CURRENT_VERSION[store];
     if (!target || !Number.isInteger(version) || version < 1) return {ok: false, code: 'failed', at: version};
     if (version > target) return {ok: false, code: 'too-new'};
-    let d = JSON.parse(JSON.stringify(data === undefined ? null : data)), aside = 0;
+    let d = clone(data === undefined ? null : data), aside = 0;
     for (let v = version; v < target; v++) {
       const step = (MIGRATIONS[store] || {})[v];
       if (!step) return {ok: false, code: 'failed', at: v};

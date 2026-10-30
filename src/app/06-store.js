@@ -50,7 +50,7 @@
     function flush(){
       timer.current = null;
       const r = ref.current; if (!r) return;
-      const body = JSON.parse(JSON.stringify(latest.current));
+      const body = clone(latest.current);
       chain.current = chain.current.then(() => r.set(body)).catch(err => {
         if (err && err.code === 'unavailable'){
           setTimeout(() => { if (!timer.current) timer.current = setTimeout(flush, 0); }, 1200 + Math.random()*800);
@@ -63,7 +63,7 @@
     }
     function update(fn){
       if (locked.current) return;
-      const next = normalize(fn(JSON.parse(JSON.stringify(latest.current))));
+      const next = normalize(fn(clone(latest.current)));
       latest.current = next; setStore(next); noteSave(saveLocal(next));
       if (ref.current) queue();
     }
@@ -75,7 +75,7 @@
       if (timer.current) { clearTimeout(timer.current); timer.current = null; }
       const r = ref.current;
       if (!r) return Promise.resolve(true);
-      const body = JSON.parse(JSON.stringify(next));
+      const body = clone(next);
       const p = chain.current.then(() => r.set(body));
       chain.current = p.catch(() => {});
       return p.then(() => true, () => false);

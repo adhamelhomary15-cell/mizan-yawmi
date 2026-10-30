@@ -231,8 +231,8 @@
     Object.keys(obj).forEach(k => { if (KNOWN.indexOf(k) < 0) warnings.push({code:'unknown-field', path:k, detail:'ignored'}); });
 
     if (errors.length) return {ok:false, errors, warnings, settings:null};
-    const settings = JSON.parse(JSON.stringify(obj));
-    if (settings.history !== undefined) { if (keptOk.length) settings.history = JSON.parse(JSON.stringify(keptOk)); else delete settings.history; }
+    const settings = clone(obj);
+    if (settings.history !== undefined) { if (keptOk.length) settings.history = clone(keptOk); else delete settings.history; }
     if (settings.language === undefined) settings.language = 'ar';
     if (settings.prayerMethod === undefined) settings.prayerMethod = 'Egyptian';
     return {ok:true, errors, warnings, settings};

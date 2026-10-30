@@ -15,28 +15,19 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = require('./lib/source.js').readSource();
+const {readSource, grabFunction} = require('./lib/source.js');
+const html = readSource();
 
 function between(source, start, end) {
   const a = source.indexOf(start), b = source.indexOf(end);
   if (a < 0 || b < a) throw new Error('block "' + start + '" not found in src/planner.html');
   return source.slice(a, b);
 }
-function grabFunction(source, name) {
-  const start = source.indexOf('function ' + name + '(');
-  if (start < 0) throw new Error('function ' + name + ' not found in src/planner.html');
-  let depth = 0;
-  for (let j = source.indexOf('{', start); j < source.length; j++) {
-    if (source[j] === '{') depth++;
-    else if (source[j] === '}' && --depth === 0) return source.slice(start, j + 1);
-  }
-  throw new Error('unbalanced braces in ' + name);
-}
 const backupBlock = source => between(source, '// start of backup rules', '// end of backup rules');
 function load(source) {
   const rules = new Function(between(source, '// start of data rules', '// end of data rules') + backupBlock(source) +'\nreturn {BACKUP_FORMAT, BACKUP_VERSION, BACKUP_MAX_BYTES, fnv1a, makeBackup, readBackup};')();
   const wk = new Function(between(source, '// start of workout rules', '// end of workout rules') + '\nreturn {normalizeRoot, EMPTY_WORKOUTS};')();
-  const validateSettings = new Function(grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + '\nreturn validateSettings;')();
+  const validateSettings = new Function(grabFunction(source, 'clone') + grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + '\nreturn validateSettings;')();
   return Object.assign(rules, {normalizeRoot: wk.normalizeRoot, EMPTY_WORKOUTS: wk.EMPTY_WORKOUTS, validateSettings});
 }
 

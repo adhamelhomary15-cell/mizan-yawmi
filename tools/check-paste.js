@@ -14,20 +14,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = require('./lib/source.js').readSource();
-const BLOCKS = [['// start of edit rules', '// end of edit rules'], ['// start of task paste', '// end of task paste']];
-
-function pasteBlock(source) {
-  const [a, b] = BLOCKS[1].map(m => source.indexOf(m));
-  if (a < 0 || b < a) throw new Error('task paste block not found in src/planner.html');
-  return source.slice(a, b);
-}
+const {readSource, ruleBlock} = require('./lib/source.js');
+const html = readSource();
+const pasteBlock = source => ruleBlock(source, 'task paste');
 function load(source) {
-  const code = BLOCKS.map(([s, e]) => {
-    const a = source.indexOf(s), b = source.indexOf(e);
-    if (a < 0 || b < a) throw new Error('block "' + s + '" not found in src/planner.html');
-    return source.slice(a, b);
-  }).join('\n');
+  const code = ruleBlock(source, 'edit rules') + '\n' + pasteBlock(source);
   return new Function(code + '\nreturn {parseTaskLines, buildAiPrompt, undoBatch, PASTE_MAX_LINES};')();
 }
 

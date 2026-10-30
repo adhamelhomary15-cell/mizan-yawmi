@@ -16,19 +16,10 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const MAX_BYTES = 1024 * 1024;
-const html = require('./lib/source.js').readSource();
+const {readSource, grabFunction} = require('./lib/source.js');
+const html = readSource();
 
-function grabFunction(name) {
-  const start = html.indexOf('function ' + name + '(');
-  if (start < 0) throw new Error('function ' + name + ' not found in src/planner.html');
-  let depth = 0;
-  for (let j = html.indexOf('{', start); j < html.length; j++) {
-    if (html[j] === '{') depth++;
-    else if (html[j] === '}' && --depth === 0) return html.slice(start, j + 1);
-  }
-  throw new Error('unbalanced braces in ' + name);
-}
-const validateSettings = new Function(grabFunction('dayBounds') + grabFunction('validateSettings') + '\nreturn validateSettings;')();
+const validateSettings = new Function(grabFunction(html, 'clone') + grabFunction(html, 'dayBounds') + grabFunction(html, 'validateSettings') + '\nreturn validateSettings;')();
 
 const exMatch = html.match(/<script type="application\/json" id="example-settings">([\s\S]*?)<\/script>/);
 if (!exMatch) { console.error('embedded example not found in src/planner.html'); process.exit(2); }
