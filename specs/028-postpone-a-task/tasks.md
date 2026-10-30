@@ -81,15 +81,24 @@ description: "Task list for feature 028: postpone a task from anywhere"
 **Independent test**: a task due in three days: one tap moves it to the day after, the list stays in date order, and
 «رجّعها» puts it back.
 
-- [ ] T007 [US2] In `src/app/21-shell.js`, nothing to add: `TasksView` already receives `actEdit`. In
+- [x] T007 [US2] In `src/app/21-shell.js`, nothing to add: `TasksView` already receives `actEdit`. In
   `src/app/14-tasks-view.js`, in the open list's row, before the pencil in `.tact`, add for `!t.done && t.due`:
   `<button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>`.
   A row in its pencil form already shows only the form, so it has no button. Done and undated tasks have none.
-- [ ] T008 [P] [US2] In `src/planner.html`, only if the browser check in T009 shows the row too tight at 375 px:
+- [x] T008 [P] [US2] In `src/planner.html`, only if the browser check in T009 shows the row too tight at 375 px:
   keep the task text column shrinking (`minmax(0,1fr)`, `overflow-wrap:anywhere`) and the three controls on one line.
-- [ ] T009 [US2] Build, run `check-code` and parity. In the browser at 375 px, light and dark: a task due in three days
+- [x] T009 [US2] Build, run `check-code` and parity. In the browser at 375 px, light and dark: a task due in three days
   moves one day per tap; the list stays ordered by date; an undated and a done task have no button; a long task text
   wraps with no horizontal scroll. **Commit**.
+
+  Done on 2026-10-31. T008 was needed: with three controls on one line, the text column at 375 px was about 110 px,
+  so «مهمة بعد تلات أيام» took two lines and a long task six. Below 520 px a row with «أجّلها» (`.wrap-act`) puts its
+  buttons on a line under the text, at the row's end; rows without it stay on one line. No button went under 44 px.
+  On Chromium and WebKit at 375 px, light and dark, with generated tasks: the three dated open tasks have
+  «أجّلها: <text>», the undated one has none; a task due in three days went to the 19th («اتأجلت المهمة لـ الاتنين، 19
+  أكتوبر») and then the 20th, the list stayed in date order, and «رجّعها» undid the last move only; a task in its pencil
+  form and the done list have no button; no horizontal scroll. Every check passes, parity 0 on the example and a
+  private settings file, E2E 168 passed.
 
 ## Phase 4: Tests, docs
 
