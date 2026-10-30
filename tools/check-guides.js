@@ -77,9 +77,12 @@ function runChecks(src, app, sw) {
     const have = new Set(vendored.map(v => v.slug));
     return [...named].every(s => have.has(s)) && [...have].every(s => named.has(s));
   });
-  check('the only network request in the app is the drawing download, to a drawing path', () => {
-    const fetches = src.split('fetch(').length - 1, dl = fnBody(src, 'downloadGuide');
-    return fetches === 1 && /await fetch\(url, \{credentials: 'omit'/.test(dl) && /const url = guideUrl\(slug\);/.test(dl)
+  // Two requests only: the drawing download, and the sync part's calls to the sync server's address (feature 025,
+  // constitution 3.0.1), which the build takes from server/address.txt.
+  check('the only network requests are the drawing download, to a drawing path, and sync, to the sync server only', () => {
+    const fetches = src.split('fetch(').length - 1, dl = fnBody(src, 'downloadGuide'), api = fnBody(src, 'api');
+    return fetches === 2 && /await fetch\(url, \{credentials: 'omit'/.test(dl) && /const url = guideUrl\(slug\);/.test(dl)
+      && /await fetch\(SYNC_URL \+ path, \{method, headers, body:/.test(api) && (src.match(/const SYNC_URL = /g) || []).length === 1
       && !/XMLHttpRequest|sendBeacon|WebSocket|EventSource|\bimport\(|\.src\s*=\s*['"]https?:/.test(src);
   });
   check('kept drawings are only looked up, never requested, before a tap', () => {
@@ -124,7 +127,8 @@ try { src = require('./lib/source.js').readSource(); app = read('index.html'); s
 if (process.argv.includes('--self-test')) {
   // [name, which file, mutation]
   const mutations = [
-    ['a second network request', 'src', s => s.replace('  // end of guide rules', '  fetch(\'x\');\n  // end of guide rules')],
+    ['a third network request', 'src', s => s.replace('  // end of guide rules', '  fetch(\'x\');\n  // end of guide rules')],
+    ['sync calls another address', 'src', s => s.replace('await fetch(SYNC_URL + path, {method', 'await fetch(\'https://example.com\' + path, {method')],
     ['the slug check is dropped', 'src', s => s.replace("/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)", "slug.length > 0")],
     ['scripts are allowed', 'src', s => s.replace('/<script|<foreignObject', '/<foreignObject')],
     ['outside links are allowed', 'src', s => s.replace("if (!/^#[\\w.:-]+$/.test(m[2])) return {ok: false};", '')],

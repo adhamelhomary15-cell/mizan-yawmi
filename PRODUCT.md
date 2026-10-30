@@ -69,6 +69,12 @@ cities of the 57 OIC member states (GeoNames, CC BY 4.0), the device location on
   block that takes the shift, so the rest of the evening keeps its times and free time is not squeezed.
 - Progress (ticks, tasks, added courses) lives on the device (localStorage) under its own key, separate from the
   settings. Importing, replacing, or resetting settings never touches progress.
+- An optional, end-to-end encrypted synced copy (feature 025, constitution 3.0.1): off until the owner signs in with an
+  email and a password (never sent; a recovery code is shown once). Every store is encrypted on the device and merged
+  item by item between devices, the later change winning per item, with the device's stores kept aside first when one
+  of its items gives way. The server (Cloudflare Workers) holds only the email, a sign-in verifier, the devices'
+  sign-ins, the wrapped data key and the ciphertext with its size and times. Signing out of one device keeps its data;
+  turning sync off deletes the account and its copy.
 - Single self-contained HTML file; `tools/build.py` inlines libraries and fonts. Libraries: Preact + htm, adhan
   (prayer times).
 - A settings file is validated before use (format, version, sizes, ids); a bad file changes nothing.

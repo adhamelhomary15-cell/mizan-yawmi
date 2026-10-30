@@ -100,6 +100,17 @@ if 'const CITIES = [];' not in src:
     raise SystemExit('city list placeholder not found')
 src = src.replace('const CITIES = [];', 'const CITIES = ' + json.dumps(cities, ensure_ascii=False, separators=(',', ':')) + ';', 1)
 
+# The sync server's public address (feature 025), from server/address.txt, approved by the owner (Principle III). It
+# goes into the sync part and into connect-src, and nothing else does. Without the file, sync is not offered and the
+# policy allows the app's own site only.
+ADDRESS = ROOT / 'server' / 'address.txt'
+sync_url = ADDRESS.read_text(encoding='utf-8').strip() if ADDRESS.exists() else ''
+if sync_url and not re.fullmatch(r'https://mizan-sync\.[a-z0-9-]+\.workers\.dev', sync_url):
+    raise SystemExit('server/address.txt must be https://mizan-sync.<subdomain>.workers.dev')
+if "const SYNC_URL = '';" not in src:
+    raise SystemExit('sync address placeholder not found')
+src = src.replace("const SYNC_URL = '';", 'const SYNC_URL = ' + json.dumps(sync_url) + ';', 1)
+
 # 4. Wrap in a full document with the app manifest and service worker.
 title = re.search(r'<title>.*?</title>', src).group(0)
 src = src.replace(title, '', 1)
@@ -141,7 +152,7 @@ def csp_for(html):
         "default-src 'none'",
         'script-src ' + ' '.join(sha(t) for t in scripts),
         'style-src ' + ' '.join(sha(t) for t in styles),
-        "img-src 'self' data:", 'font-src data:', "connect-src 'self'", "worker-src 'self'", "manifest-src 'self'",
+        "img-src 'self' data:", 'font-src data:', "connect-src 'self'" + (' ' + sync_url if sync_url else ''), "worker-src 'self'", "manifest-src 'self'",
         "base-uri 'none'", "form-action 'none'", "object-src 'none'"])
 
 CHARSET = '<meta charset="utf-8">'

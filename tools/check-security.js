@@ -39,7 +39,10 @@ function inlineBlocks(html) {
 }
 const sha = text => "'sha256-" + crypto.createHash('sha256').update(text, 'utf8').digest('base64') + "'";
 // The exact policy, apart from the hash lists.
-const FIXED = {'default-src': "'none'", 'img-src': "'self' data:", 'font-src': 'data:', 'connect-src': "'self'",
+// connect-src: the app's own site, and the sync server's address from server/address.txt when there is one (feature 025).
+const ADDRESS = path.join(__dirname, '..', 'server', 'address.txt');
+const SYNC_URL = fs.existsSync(ADDRESS) ? fs.readFileSync(ADDRESS, 'utf8').trim() : '';
+const FIXED = {'default-src': "'none'", 'img-src': "'self' data:", 'font-src': 'data:', 'connect-src': "'self'" + (SYNC_URL ? ' ' + SYNC_URL : ''),
   'worker-src': "'self'", 'manifest-src': "'self'", 'base-uri': "'none'", 'form-action': "'none'", 'object-src': "'none'"};
 
 function runChecks({workflows, app}) {

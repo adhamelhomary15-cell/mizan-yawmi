@@ -188,3 +188,20 @@ The server is outside the app, so it can land first and be tested alone.
   lose when a device's clock runs far ahead. The losing version is in the `before-sync` snapshot.
 - **The size of this feature**: 025b is large. Its phases are committed one by one, each with its own checks, so the
   review can follow them in order. 025a changes nothing in the app.
+
+## As built (025b)
+
+- **The E2E tests** reach the Worker's own code through `page.route` on the address in `server/address.txt`, rather
+  than through `server/dev.js`. Nothing leaves the computer in Chromium: every request goes through the route, and
+  no preflight is sent. They are skipped in WebKit, where Playwright sends the CORS preflight past the route to the
+  real network. `server/dev.js` stays for trying the server by hand.
+- **Two bugs found by the tests:**
+  - a second `setStatus` (one already marks blocks) silently replaced the sync one, since all parts share one scope;
+    `check-code` now refuses a name declared twice;
+  - the email link was used again on every visit to Settings.
+- **A merge written back** is compared item by item (`sameStore`), not as JSON text, so a device that is in step
+  sends nothing until the next poll. The E2E tests check that it stays quiet.
+- **Constitution 3.0.1 compliance**: the server holds only what Principle III lists (checked in `server/test.js` and in
+  the E2E dump); the only new address is the sync server's, in `connect-src`, with the two requests of the app guarded
+  by `check-guides`.
+

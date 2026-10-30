@@ -11,7 +11,8 @@
   const Icon = ({paths}) => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
   function App(){
-    const [store, update, sync, replaceAll, saveFailed, health] = useStore();
+    const [store, update, replaceAll, saveFailed, health] = useStore();
+    const sync = useSyncView();
     const wk = useWorkouts();
     // Settings brought back from the mirror reopen the page once (see the settings load); say so after it.
     const [settingsBack, setSettingsBack] = useState(() => { try { const v = sessionStorage.getItem(RECOVERED_KEY); sessionStorage.removeItem(RECOVERED_KEY); return !!v; } catch(e){ return false; } });
@@ -26,11 +27,9 @@
     const saveNow = () => { const r = downloadBackup(store, wk); setSaveMsg(r.ok ? {ok: true, name: r.name} : {ok: false}); };
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
-    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','tasks','workout','settings'].includes(hsh) ? hsh : 'today'; });
+    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return syncLink || hsh === 'settings' ? 'settings' : ['today','week','course','tasks','workout'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
-    // Shown once after a restore whose write to the synced copy did not finish in time.
-    const [syncLate, setSyncLate] = useState(() => { try { const v = sessionStorage.getItem(RESTORE_SYNC_LATE_KEY); sessionStorage.removeItem(RESTORE_SYNC_LATE_KEY); return !!v; } catch(e){ return false; } });
     // One-time notice after the day version (A late / B early) switches. phaseSeen is the last version the owner saw:
     // first run records it silently, a later difference shows the notice, "تمام" records the new one.
     const phaseNow = phaseFor(now.iso);
@@ -100,6 +99,8 @@
       if (tabAfter) goTab(tabAfter);
       showToast(text);
     };
+    // A schedule saved on another device (feature 025). An open editor keeps its draft: its save notices the change.
+    useEffect(() => onSyncedIn('settings', () => { if (!editorSession) settingsChanged('اتحدّث جدولك من جهاز تاني'); }), []);
 
     let view;
     if (tab === 'today') view = html`<${TodayView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
@@ -121,7 +122,6 @@
         ${newVersion ? html`<${Notice} role="status" title="فيه نسخة جديدة من التطبيق" line="هتفتح لوحدها المرة الجاية، أو افتحها دلوقتي."><button type="button" class="btn primary" onClick=${() => location.reload()}>افتحها</button></${Notice}>` : null}
         ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات، أو اعمل جدولك من هنا.' : 'اعمل جدولك من هنا في دقايق، أو استورد ملف إعدادات من الإعدادات.'}><button type="button" class="btn primary" onClick=${startGuide}>اعمل جدولك</button></${Notice}>` : null}
         <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
-        ${syncLate ? html`<${Notice} role="status" text="النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة."><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></${Notice}>` : null}
         ${recovered ? html`<${Notice} role="status" text="رجّعنا بياناتك من النسخة المحفوظة على الجهاز."><button type="button" class="btn primary" onClick=${dismissRecovered}>تمام</button></${Notice}>` : null}
         ${health.problem === 'damaged' ? html`<${Notice} role="alert" title="نسخة بياناتك على الجهاز بايظة" line=${'حطيناها على جنب ومامسحناهاش. ' + (lastDay ? 'تقدر ترجّع نسخة يوم ' + dateLabel(lastDay) + ' أو نسخة احتياطية من الإعدادات.' : 'لو عندك نسخة احتياطية، رجّعها من الإعدادات.')}><button type="button" class="btn" onClick=${health.dismiss}>تمام</button></${Notice}>` : null}
         ${health.problem === 'too-new' ? html`<${Notice} role="alert" title="بياناتك اتحفظت بنسخة أحدث من التطبيق" line="مش هنعدّل عليها هنا عشان ما نبوّظهاش. حدّث التطبيق." />` : null}
@@ -132,7 +132,7 @@
           : 'المتصفح ده مش بيسمح بالحفظ، فالتقدم هيضيع لما تقفل التطبيق.'}
           text=${saveMsg ? html`<span class="small">${saveMsg.ok ? html`اتحفظت النسخة: <bdi dir="ltr">${saveMsg.name}</bdi>` : BACKUP_FAILED}</span>` : null}><button type="button" class="btn primary" onClick=${saveNow}>احفظ نسخة احتياطية</button></${Notice}>` : null}
         ${view}
-        <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
+        <p class=${'sync' + (sync.email ? ' cloud' : '')}><i></i>${syncLine(sync)}</p>
       </main>
       <div aria-live="polite">${toast ? html`<div class="toast" role="status"><p>${toast.text}</p>${toast.undo ? html`<button type="button" class="btn" onClick=${() => { toast.undo(); setToast(null); }}>رجّعها</button>` : null}</div>` : null}</div>
     </div></${MainCourseName.Provider}>`;

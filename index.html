@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="9b8d583728"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-/lMZ6VmXettK+EaHnbwTubJ/x5vw1+fzXzKaqbmUVAE=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="4b0baded3b"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-jt3onl9Ru90UDa2NkpX1bP/6fGcIvVEnsRd9e8zdBtI=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-OT11rOwwJHhhia9ECDHO/fZaAKkMVSKMh1TMLEzPhq8=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self' https://mizan-sync.mizan.workers.dev; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -1242,8 +1242,11 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     snapshotBeforeFirstSave();
     const ok = writeJSON(STORE_KEYS[store], sealStore(store, CURRENT_VERSION[store], data, Date.now()));
     reconcile(store).then(openMirror).then(db => db && copyToMirror(db, store));
+    if (ok && syncHook) syncHook(store, data);
     return ok;
   }
+  // Set by the sync part once it has started (feature 025), so every save is stamped there; null while sync is off.
+  let syncHook = null;
   // Removes a store everywhere, so an older copy cannot come back after a reset.
   async function removeStore(store){
     removeKey(STORE_KEYS[store]);
@@ -1346,6 +1349,167 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       await idb(db, 'snapshots', 'readwrite', s => { keepSnapshots(days.concat(day)).forEach(d => s.delete(d)); return s.put({day, stores}, day); });
     });
   }
+  // start of sync rules
+  /* ---------------- sync rules (feature 025; pure, tools/check-sync.js runs this block) ---------------- */
+  // Two devices merge a store item by item, never store by store. A store is seen as a map from a path to an item; a
+  // path is a JSON list such as ["c", day, key] for one mark. Each path has a stamp [time, device, gone]: the higher
+  // stamp wins (time, then device), and gone marks an item removed (a tombstone, kept 60 days). Nothing here makes or
+  // clears a mark on its own: a merged item is always one that a device had (Principle II). No storage, page or network.
+  const SYNC_LISTS = {progress: {tasks: 't', appts: 'a', courses: 'k'}, workouts: {workouts: 'w', custom: 'u', routines: 'r'}};
+  const SYNC_SINGLES = {progress: ['v', 'mainCourse', 'phaseSeen', 'askedUpTo', 'setAside'], workouts: ['v', 'current', 'prefs']};
+  const TOMBSTONE_DAYS = 60;
+  const pathOf = (...parts) => JSON.stringify(parts);
+  const sameValue = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+  // The items of a store. An added course's module marks are items of their own, so two devices ticking two modules
+  // of one course both keep their tick.
+  function itemsOf(store, data){
+    const items = new Map();
+    if (store === 'settings') { items.set(pathOf('s'), data); return items; }
+    data = data || {};   // a store never saved yet
+    Object.entries(SYNC_LISTS[store]).forEach(([field, kind]) => (data[field] || []).forEach(x => {
+      if (kind !== 'k') { items.set(pathOf(kind, x.id), x); return; }
+      const course = Object.assign({}, x);
+      delete course.done;
+      items.set(pathOf('k', x.id), course);
+      Object.entries(x.done || {}).forEach(([key, on]) => items.set(pathOf('kd', x.id, key), on));
+    }));
+    SYNC_SINGLES[store].forEach(f => { if (data[f] !== undefined) items.set(pathOf('s', f), data[f]); });
+    if (store === 'progress') {
+      Object.entries(data.checks || {}).forEach(([day, marks]) => Object.entries(marks).forEach(([key, mark]) => items.set(pathOf('c', day, key), mark)));
+      Object.entries(data.extras || {}).forEach(([day, list]) => list.forEach(x => items.set(pathOf('x', day, x.id), x)));
+      Object.entries(data.modules || {}).forEach(([key, on]) => items.set(pathOf('m', key), on));
+    }
+    return items;
+  }
+  // Whether two versions of a store hold the same items, whatever the order of their keys.
+  function sameStore(store, a, b){
+    const x = itemsOf(store, a), y = itemsOf(store, b);
+    return x.size === y.size && [...x].every(([p, v]) => y.has(p) && sameValue(v, y.get(p)));
+  }
+  // The store back from its items, in the items' order.
+  function fromItems(store, items){
+    if (store === 'settings') return items.get(pathOf('s'));
+    const data = {};
+    Object.keys(SYNC_LISTS[store]).forEach(f => { data[f] = []; });
+    if (store === 'progress') Object.assign(data, {checks: {}, extras: {}, modules: {}});
+    const fields = Object.fromEntries(Object.entries(SYNC_LISTS[store]).map(([f, k]) => [k, f]));
+    const courses = {};
+    items.forEach((value, path) => {
+      const [kind, a, b] = JSON.parse(path);
+      if (kind === 's') data[a] = value;
+      else if (kind === 'c') (data.checks[a] = data.checks[a] || {})[b] = value;
+      else if (kind === 'x') (data.extras[a] = data.extras[a] || []).push(value);
+      else if (kind === 'm') data.modules[a] = value;
+      else if (kind === 'kd') (courses[a] = courses[a] || {})[b] = value;
+      else data[fields[kind]].push(kind === 'k' ? Object.assign({}, value, {done: {}}) : value);
+    });
+    (data.courses || []).forEach(c => { c.done = courses[c.id] || {}; });
+    return data;
+  }
+
+  // The time for a new stamp: the clock, but never at or before a stamp already seen, so a device whose clock is
+  // behind still writes after what it has read.
+  const latestTime = stamps => Object.values(stamps).reduce((t, s) => Math.max(t, s[0]), 0);
+  const stampTime = (stamps, now) => Math.max(now, latestTime(stamps) + 1);
+  // Stamps for what changed between two versions of a store on this device.
+  function stampChanges(store, before, after, stamps, now, device){
+    const was = itemsOf(store, before), is = itemsOf(store, after), out = Object.assign({}, stamps), t = stampTime(stamps, now);
+    new Set([...was.keys(), ...is.keys()]).forEach(p => {
+      if (!sameValue(was.get(p), is.get(p))) out[p] = [t, device, is.has(p) ? 0 : 1];
+    });
+    return out;
+  }
+  // Which stamp wins: the later time, then the larger device id; an item with no stamp yet counts as time 0.
+  const beats = (x, y) => !y || (!!x && (x[0] !== y[0] ? x[0] > y[0] : x[1] > y[1]));
+
+  // Merges the remote copy into the local one: {data, stamps, lost}, where lost lists the paths whose local value gave
+  // way to the remote one, for the device to keep in a snapshot first.
+  function mergeStore(store, local, remote){
+    const li = itemsOf(store, local.data), ri = itemsOf(store, remote.data);
+    const stampOf = (side, items, p) => side.stamps[p] || (items.has(p) ? [0, '', 0] : null);
+    const merged = new Map(), stamps = {}, lost = [];
+    const paths = [...new Set([...li.keys(), ...Object.keys(local.stamps), ...ri.keys(), ...Object.keys(remote.stamps)])];
+    paths.forEach(p => {
+      const ls = stampOf(local, li, p), rs = stampOf(remote, ri, p), useRemote = beats(rs, ls) && !sameValue(rs, ls);
+      const s = useRemote ? rs : ls, items = useRemote ? ri : li;
+      stamps[p] = s;
+      if (!s[2] && items.has(p)) merged.set(p, items.get(p));
+      if (useRemote && li.has(p) && !sameValue(li.get(p), merged.get(p))) lost.push(p);
+    });
+    return {data: fromItems(store, merged), stamps, lost};
+  }
+  // Tombstones older than TOMBSTONE_DAYS go; every live item keeps its stamp.
+  function dropOldTombstones(stamps, now){
+    const out = {}, limit = now - TOMBSTONE_DAYS * 864e5;
+    Object.entries(stamps).forEach(([p, s]) => { if (!s[2] || s[0] >= limit) out[p] = s; });
+    return out;
+  }
+  // end of sync rules
+  // start of sync crypto
+  /* ---------------- sync crypto (feature 025; the browser's Web Crypto only, tools/check-crypto.js runs this block) ---------------- */
+  // The password never leaves the device (constitution 3.0.1, Principle III). From it come two keys that cannot be
+  // told from each other: a wrapping key that stays here and opens the data key, and a sign-in key that is sent. The
+  // data key is random and encrypts every store; the server keeps it only wrapped, by the password and by the
+  // recovery code. No storage, page or network.
+  const PBKDF2_ROUNDS = 600000;
+  const RECOVERY_LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // no 0/O, 1/I/L: easy to copy by hand
+  const utf8 = new TextEncoder();
+  const toB64u = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const fromB64u = text => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+  const randomBytes = n => crypto.getRandomValues(new Uint8Array(n));
+
+  async function pbkdf2Bits(password, salt, rounds){
+    const base = await crypto.subtle.importKey('raw', utf8.encode(password), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({name: 'PBKDF2', hash: 'SHA-256', salt, iterations: rounds}, base, 256));
+  }
+  async function hkdfBits(ikm, salt, info, bits){
+    const base = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({name: 'HKDF', hash: 'SHA-256', salt, info: utf8.encode(info)}, base, bits));
+  }
+  const aesKey = (raw, uses) => crypto.subtle.importKey('raw', raw, 'AES-GCM', false, uses);
+  // {wrapKey, signinKey} from a password and the account's salt (base64url); rounds is lower only in the dev check.
+  async function deriveKeys(password, salt, rounds = PBKDF2_ROUNDS){
+    const root = await pbkdf2Bits(password, fromB64u(salt), rounds), none = new Uint8Array(32);
+    return {wrapKey: await aesKey(await hkdfBits(root, none, 'mizan sync wrap', 256), ['wrapKey', 'unwrapKey']),
+      signinKey: toB64u(await hkdfBits(root, none, 'mizan sync sign-in', 256))};
+  }
+  const newSalt = () => toB64u(randomBytes(16));
+  const newDataKey = () => crypto.subtle.generateKey({name: 'AES-GCM', length: 256}, true, ['encrypt', 'decrypt']);
+  // A wrapped key is the IV and the wrapped bytes, as one base64url text.
+  async function wrapKey(dataKey, wrapper){
+    const iv = randomBytes(12), wrapped = new Uint8Array(await crypto.subtle.wrapKey('raw', dataKey, wrapper, {name: 'AES-GCM', iv}));
+    const out = new Uint8Array(12 + wrapped.length); out.set(iv); out.set(wrapped, 12);
+    return toB64u(out);
+  }
+  // extractable only to wrap it again (a new password); kept for daily use, it is not
+  async function unwrapKey(text, wrapper, extractable){
+    const all = fromB64u(text);
+    return crypto.subtle.unwrapKey('raw', all.slice(12), wrapper, {name: 'AES-GCM', iv: all.slice(0, 12)}, 'AES-GCM', !!extractable, ['encrypt', 'decrypt']);
+  }
+  // One store's payload, encrypted with a new IV every time; open throws if anything in it was changed.
+  async function seal(dataKey, payload){
+    const iv = randomBytes(12), ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, dataKey, utf8.encode(JSON.stringify(payload)));
+    return {iv: toB64u(iv), ciphertext: toB64u(ct)};
+  }
+  async function open(dataKey, sealed){
+    const plain = await crypto.subtle.decrypt({name: 'AES-GCM', iv: fromB64u(sealed.iv)}, dataKey, fromB64u(sealed.ciphertext));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+  // The recovery code: 8 groups of 4 of 31 letters (about 158 bits), shown once; spaces, dashes and case do not matter
+  // when typed.
+  function newRecoveryCode(){
+    const letters = Array.from(randomBytes(32), b => RECOVERY_LETTERS[b % RECOVERY_LETTERS.length]).join('');
+    return letters.match(/.{4}/g).join('-');
+  }
+  const cleanRecoveryCode = code => String(code).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const isRecoveryCode = code => cleanRecoveryCode(code).length === 32 && [...cleanRecoveryCode(code)].every(c => RECOVERY_LETTERS.includes(c));
+  // The code is long and random, so a key comes from it directly, with no slow derivation and no salt: the account's
+  // salt changes with every new password, and the code must keep opening the data key after that.
+  async function recoveryKey(code){
+    return aesKey(await hkdfBits(utf8.encode(cleanRecoveryCode(code)), new Uint8Array(32), 'mizan sync recovery', 256), ['wrapKey', 'unwrapKey']);
+  }
+  // end of sync crypto
   /* ---------------- settings: load (stored file, else the embedded example) ---------------- */
   // What a page load reads: the stored settings when they are valid, else the example (marked as a problem when stored
   // settings could not be used). The shell reads again after a save, an import or a reset (feature 020).
@@ -1643,7 +1807,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   const mainCourseName = store => (mainCourse(store) || {}).name || '';
 
-  /* ---------------- progress store: on the device through the storage path, plus the synced copy where there is one ---------------- */
+  /* ---------------- progress store: on the device through the storage path; the synced copy is in 06b (feature 025) ---------------- */
   const LOCAL_OK = (() => { try { localStorage.setItem('__probe', '1'); localStorage.removeItem('__probe'); return true; } catch(e){ return false; } })();
   const EMPTY = () => ({v:1, checks:{}, modules:{}, tasks:[], appts:[], courses:[], mainCourse:SETTINGS_COURSE_ID, extras:{}, phaseSeen:null, askedUpTo:null, setAside:[]});
   const isISO = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -1671,7 +1835,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     if (!first.current) first.current = loadStore('progress');
     const opened = first.current;
     const [store, setStore] = useState(() => opened.state === 'ok' ? normalize(opened.data) : EMPTY());
-    const [sync, setSync] = useState('local');
     // true after a write to this device failed, until the next one succeeds (the notice in App reads it)
     const [saveFailed, setSaveFailed] = useState(!LOCAL_OK);
     const noteSave = ok => setSaveFailed(f => f === !ok ? f : !ok);
@@ -1679,7 +1842,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     // entries a migration set aside. Data from a newer app, or that could not be brought forward, is never written over.
     const [health, setHealth] = useState({problem: opened.state === 'too-new' || opened.state === 'failed' ? opened.state : null, setAside: opened.setAside || 0});
     const locked = useRef(opened.state === 'too-new' || opened.state === 'failed');
-    const latest = useRef(store), ref = useRef(null), timer = useRef(null), chain = useRef(Promise.resolve());
+    const latest = useRef(store);
     const take = data => { const next = normalize(data); latest.current = next; setStore(next); };
     useEffect(() => {
       reconcile('progress', opened.state === 'empty' || opened.state === 'damaged', d => !!hasData(normalize(d))).then(r => {
@@ -1688,77 +1851,214 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         // a damaged copy is only news once the mirror could not bring the data back
         else if (opened.state === 'damaged') setHealth(h => ({...h, problem: 'damaged'}));
       });
-      return onOtherTab('progress', take);
+      const offTab = onOtherTab('progress', take), offSync = onSyncedIn('progress', take);
+      return () => { offTab(); offSync(); };
     }, []);
     const dismissHealth = () => setHealth({problem: null, setAside: 0});
 
-    function flush(){
-      timer.current = null;
-      const r = ref.current; if (!r) return;
-      const body = JSON.parse(JSON.stringify(latest.current));
-      chain.current = chain.current.then(() => r.set(body)).catch(err => {
-        if (err && err.code === 'unavailable'){
-          setTimeout(() => { if (!timer.current) timer.current = setTimeout(flush, 0); }, 1200 + Math.random()*800);
-        } else { ref.current = null; setSync('local'); }
-      });
-    }
-    function queue(delay){
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(flush, delay == null ? 600 : delay);
-    }
     function update(fn){
       if (locked.current) return;
       const next = normalize(fn(JSON.parse(JSON.stringify(latest.current))));
       latest.current = next; setStore(next); noteSave(saveLocal(next));
-      if (ref.current) queue();
     }
-    // A restore: the whole progress at once, and, when a synced copy is active, written there now rather than
-    // after the usual delay. Resolves true when that write finished (or there is no synced copy), false if it failed.
+    // A restore: the whole progress at once. The sync part sees it as any other save and sends it (feature 025).
     function replaceAll(nextRaw){
       const next = normalize(nextRaw);
       latest.current = next; setStore(next); noteSave(saveLocal(next));
-      if (timer.current) { clearTimeout(timer.current); timer.current = null; }
-      const r = ref.current;
-      if (!r) return Promise.resolve(true);
-      const body = JSON.parse(JSON.stringify(next));
-      const p = chain.current.then(() => r.set(body));
-      chain.current = p.catch(() => {});
-      return p.then(() => true, () => false);
+      return Promise.resolve(true);
     }
 
-    useEffect(() => {
-      let unsub = null, dead = false;
-      (async () => {
-        try {
-          if (!window.claude || typeof claude.use !== 'function') return;
-          const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
-          const id = user ? await user.id() : null;
-          if (!db || !id || dead) return;
-          const docRef = db.doc('data/users/' + id + '/tracker');
-          let first = true;
-          unsub = docRef.onSnapshot(snap => {
-            if (snap.metadata && snap.metadata.hasPendingWrites) return;
-            ref.current = docRef;
-            setSync('cloud');
-            if (timer.current) return;
-            if (first){
-              first = false;
-              if (!snap.exists){ if (hasData(latest.current)) queue(0); return; }
-            }
-            if (!snap.exists) return;
-            const next = normalize(snap.data());
-            if (JSON.stringify(next) !== JSON.stringify(latest.current)){
-              latest.current = next; setStore(next); noteSave(saveLocal(next));
-            }
-          }, () => { ref.current = null; setSync('local'); });
-        } catch(e){ setSync('local'); }
-      })();
-      return () => { dead = true; if (unsub) unsub(); };
-    }, []);
-
-    return [store, update, sync, replaceAll, saveFailed, {...health, dismiss: dismissHealth}];
+    return [store, update, replaceAll, saveFailed, {...health, dismiss: dismissHealth}];
   }
 
+  /* ---------------- sync (feature 025): the device side of the encrypted synced copy ---------------- */
+  // Off until the owner signs in (constitution 3.0.1, Principle III). Every save of a store goes through saveStore, which
+  // tells this part (onStoreSave): it stamps what changed, and 3 seconds later sends the merged, sealed store. A pull
+  // merges the server's copy item by item (the sync rules), keeps the device's stores aside first when one of its
+  // items gives way, and hands the result to the screens (onSyncedIn), as a save from another tab is.
+  const SYNC_URL = "https://mizan-sync.mizan.workers.dev";            // tools/build.py puts server/address.txt here; empty: sync is not offered yet
+  const SYNC_RECORD = 'mizan-sync';  // localStorage: {email, device, versions, dirty, lastSync, keyByPassword}
+  const PUSH_DELAY = 3000, POLL_EVERY = 30000;
+  const sync = {started: false, on: false, token: null, key: null, record: null, stamps: {}, known: {}, timer: null, running: null,
+    status: 'off', listeners: {progress: [], workouts: [], settings: []}, watchers: []};
+
+  // The token, the data key (not extractable), and per store the stamps and the data last seen, in their own database.
+  function syncDb(){
+    return new Promise(done => {
+      try {
+        const rq = indexedDB.open('mizan-sync', 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
+        rq.onsuccess = () => done(rq.result);
+        rq.onerror = () => done(null);
+      } catch(e){ done(null); }
+    });
+  }
+  async function kv(mode, fn){
+    const db = await syncDb();
+    if (!db) return undefined;
+    return new Promise(done => {
+      const tx = db.transaction('kv', mode), rq = fn(tx.objectStore('kv'));
+      tx.oncomplete = () => done(rq && 'result' in rq ? rq.result : true);
+      tx.onerror = tx.onabort = () => done(undefined);
+    });
+  }
+  const kvGet = key => kv('readonly', s => s.get(key));
+  const kvPut = (key, value) => kv('readwrite', s => s.put(value, key));
+  const saveRecord = () => writeJSON(SYNC_RECORD, sync.record);
+
+  function setSyncStatus(status){ sync.status = status; sync.watchers.forEach(w => w(status)); }
+  // The screens' view of sync: {status, email, lastSync, waiting}; status is off, unavailable, syncing, ok, offline,
+  // signin (sign in again), or too-new.
+  function syncView(){
+    const r = sync.record || {};
+    return {status: SYNC_URL ? sync.status : 'unavailable', email: r.email || '', lastSync: r.lastSync || null, waiting: STORE_NAMES.some(n => r.dirty && r.dirty[n])};
+  }
+  function watchSync(fn){ sync.watchers.push(fn); return () => { sync.watchers = sync.watchers.filter(w => w !== fn); }; }
+  // The sync view for a screen, kept fresh.
+  function useSyncView(){
+    const [view, setView] = useState(syncView);
+    useEffect(() => watchSync(() => setView(syncView())), []);
+    return view;
+  }
+  // The line at the foot of every screen.
+  function syncLine(v){
+    if (!LOCAL_OK) return 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة';
+    if (!v.email) return 'بياناتك محفوظة على الجهاز ده بس';
+    if (v.status === 'signin') return 'المزامنة واقفة: ادخل تاني من الإعدادات';
+    if (v.status === 'too-new') return 'المزامنة واقفة: حدّث التطبيق';
+    if (v.waiting || v.status === 'offline') return 'متزامن، وفيه تغييرات مستنية النت';
+    return 'متزامن' + (v.lastSync ? '، آخر مرة ' + fmtStr(zoneParts(new Date(v.lastSync)).min) : '');
+  }
+  function onSyncedIn(store, take){
+    sync.listeners[store].push(take);
+    return () => { sync.listeners[store] = sync.listeners[store].filter(t => t !== take); };
+  }
+
+  async function api(method, path, body){
+    const headers = {'Content-Type': 'application/json'};
+    if (sync.token) headers.Authorization = 'Bearer ' + sync.token;
+    const r = await fetch(SYNC_URL + path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)});
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error('sync ' + r.status), {status: r.status, body: out});
+    return out;
+  }
+
+  // Called by saveStore after every local save: stamps what changed since the data last seen.
+  function onStoreSave(store, data){
+    if (!sync.on) return;
+    const before = sync.known[store];
+    sync.known[store] = JSON.parse(JSON.stringify(data));
+    if (before !== undefined && sameStore(store, before, data)) return;       // a merge written back, or no change
+    if (before !== undefined) sync.stamps[store] = stampChanges(store, before, data, sync.stamps[store] || {}, Date.now(), sync.record.device);
+    sync.record.dirty[store] = true; saveRecord();
+    kvPut('stamps', sync.stamps); kvPut('known', sync.known);
+    clearTimeout(sync.timer);
+    sync.timer = setTimeout(syncAll, PUSH_DELAY);
+    setSyncStatus(sync.status === 'ok' ? 'ok' : sync.status);
+  }
+
+  // One store: pull, merge, keep the device's stores aside if something gives way, apply, and push with the next
+  // version, again from the top when another device was faster.
+  async function syncStore(name){
+    for (let tries = 0; tries < 3; tries++) {
+      const remote = await api('GET', '/store/' + name), r = sync.record;
+      if (remote.version === r.versions[name] && !r.dirty[name]) return;
+      const theirs = remote.version ? await open(sync.key, remote) : {version: CURRENT_VERSION[name], data: null, stamps: {}};
+      if (theirs.version > CURRENT_VERSION[name]) { setSyncStatus('too-new'); throw new Error('too-new'); }
+      const local = storedData(name);
+      const merged = theirs.data === null ? {data: local, stamps: sync.stamps[name] || {}, lost: []}
+        : local === null ? {data: theirs.data, stamps: theirs.stamps, lost: []}
+        : mergeStore(name, {data: local, stamps: sync.stamps[name] || {}}, theirs);
+      if (merged.lost.length) await kvPut('before-sync', {at: Date.now(), stores: Object.fromEntries(STORE_NAMES.map(n => [n, storedData(n)]))});
+      if (merged.data !== null && (local === null || !sameStore(name, merged.data, local))) {
+        sync.known[name] = JSON.parse(JSON.stringify(merged.data));      // so this save stamps nothing new
+        saveStore(name, merged.data);
+        sync.listeners[name].forEach(take => take(merged.data));
+      }
+      sync.stamps[name] = dropOldTombstones(merged.stamps, Date.now());
+      let version = remote.version;
+      if (merged.data !== null && (r.dirty[name] || theirs.data === null || !sameStore(name, merged.data, theirs.data))) {
+        const sealed = await seal(sync.key, {format: 'mizan-sync', store: name, version: CURRENT_VERSION[name], data: merged.data, stamps: sync.stamps[name]});
+        try { version = (await api('PUT', '/store/' + name, Object.assign({version: remote.version + 1}, sealed))).version; }
+        catch (e) { if (e.status === 409) continue; throw e; }
+      }
+      r.versions[name] = version; r.dirty[name] = false;
+      await kvPut('stamps', sync.stamps); await kvPut('known', sync.known);
+      return;
+    }
+  }
+  function syncAll(){
+    if (!sync.on || !SYNC_URL) return Promise.resolve();
+    if (sync.running) return sync.running;
+    setSyncStatus('syncing');
+    sync.running = (async () => {
+      try {
+        for (const name of STORE_NAMES) await syncStore(name);
+        sync.record.lastSync = Date.now(); setSyncStatus('ok');
+      } catch (e) {
+        if (e.status === 401) setSyncStatus('signin');
+        else if (sync.status !== 'too-new') setSyncStatus('offline');
+      } finally { saveRecord(); sync.running = null; }
+    })();
+    return sync.running;
+  }
+  // Asks the server every 30 seconds while the page shows, and on coming back or online again.
+  async function poll(){
+    if (!sync.on || document.visibilityState !== 'visible') return;
+    try {
+      const v = await api('GET', '/versions'), r = sync.record;
+      if (STORE_NAMES.some(n => v[n] !== r.versions[n] || r.dirty[n])) await syncAll();
+    } catch (e) { setSyncStatus(e.status === 401 ? 'signin' : 'offline'); }
+  }
+
+  // Starts sync on this device from what was kept: changes made while it was closed (a restore, say) are stamped now.
+  async function startSync(){
+    sync.record = readJSON(SYNC_RECORD);
+    if (!SYNC_URL || !sync.record || !sync.record.email) return;
+    const [token, key, stamps, known] = await Promise.all(['token', 'key', 'stamps', 'known'].map(kvGet));
+    if (!token || !key) return;
+    Object.assign(sync, {on: true, token, key, stamps: stamps || {}, known: known || {}});
+    STORE_NAMES.forEach(n => {
+      const now = storedData(n);
+      if (sync.known[n] !== undefined && !(sync.known[n] === null ? now === null : now !== null && sameStore(n, sync.known[n], now))) {
+        sync.stamps[n] = stampChanges(n, sync.known[n], now, sync.stamps[n] || {}, Date.now(), sync.record.device);
+        sync.record.dirty[n] = true;
+      }
+      sync.known[n] = now;
+    });
+    syncHook = onStoreSave;
+    setSyncStatus('ok');
+    if (!sync.started) {
+      sync.started = true;
+      setInterval(poll, POLL_EVERY);
+      addEventListener('online', syncAll);
+      addEventListener('visibilitychange', poll);
+    }
+    syncAll();
+  }
+  // After a sign-in: keep the token and the data key, and start. Items already on this device have no stamp yet, so
+  // where the account has the same item changed, the account's wins; everything else from both sides is kept.
+  // keepDeviceSettings: the owner chose this device's schedule over the account's (the first join), so it is stamped now
+  // and wins.
+  async function beginSync(email, token, key, keyByPassword, keepDeviceSettings){
+    const old = readJSON(SYNC_RECORD) || {};
+    sync.record = {email, device: old.device || crypto.randomUUID(), versions: {}, dirty: {progress: true, workouts: true, settings: true}, lastSync: null, keyByPassword};
+    saveRecord();
+    await kvPut('token', token); await kvPut('key', key);
+    const stamps = keepDeviceSettings ? {settings: stampChanges('settings', null, storedData('settings'), {}, Date.now(), sync.record.device)} : {};
+    await kvPut('stamps', stamps); await kvPut('known', Object.fromEntries(STORE_NAMES.map(n => [n, storedData(n)])));
+    await startSync();
+  }
+  // Signing out or turning sync off on this device: the token, the key and what sync kept go; the stores stay.
+  async function endSync(){
+    syncHook = null;
+    Object.assign(sync, {on: false, token: null, key: null, stamps: {}, known: {}});
+    clearTimeout(sync.timer);
+    removeKey(SYNC_RECORD); sync.record = null;
+    await kv('readwrite', s => s.clear());
+    setSyncStatus('off');
+  }
+  startSync();
   /* ---------------- day model: schedule + one-off blocks + status ---------------- */
   // The colour class of a kind: its own for a built-in, its ready colour's for an added one.
   const kc = cat => 'c-' + (CATS[cat] && CATS[cat].color ? 'k-' + CATS[cat].color : cat);
@@ -3846,7 +4146,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
-  const RESTORE_SYNC_LATE_KEY = 'mizan-restore-sync-late';
   const BACKUP_REFUSALS = {
     'too-large': 'الملف كبير أوي على إنه نسخة احتياطية.',
     'empty': 'ده مش ملف نسخة احتياطية من ميزان يومي.',
@@ -3918,9 +4217,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         setBusy(false); setPending(null); setErr('الاسترجاع فشل ومفيش حاجة اتغيّرت.');
         return;
       }
-      // The synced copy loads first on start, so it gets the restored progress before the reload (up to 5 seconds).
-      const synced = await Promise.race([replaceAll(progress.data), new Promise(res => setTimeout(() => res(false), 5000))]);
-      if (!synced) { try { sessionStorage.setItem(RESTORE_SYNC_LATE_KEY, '1'); } catch(e){} }
+      // through the save path, so sync (feature 025) sends it like any other change
+      await replaceAll(progress.data);
       location.reload();
     };
     const pv = pending && pending.preview;
@@ -3935,7 +4233,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
             <span class="small"><bdi>${pv.tasks}</bdi> مهمة · <bdi>${pv.appts}</bdi> ميعاد · <bdi>${pv.courses}</bdi> كورس · <bdi>${pv.tickDays}</bdi> يوم فيه علامات · <bdi>${pv.workouts}</bdi> تمرينة</span>
             ${pv.openWorkout ? html`<span class="small">فيه تمرينة مفتوحة</span>` : null}
             <span class="small">${pv.settings === 'valid' ? 'فيها إعدادات' : pv.settings === 'none' ? 'مفيهاش إعدادات، إعداداتك الحالية هتفضل' : 'الإعدادات اللي فيها مش صالحة، إعداداتك الحالية هتفضل'}</span>
-            <span class="small"><b>الاسترجاع هيستبدل كل بياناتك على الجهاز ده بالنسخة دي.</b>${sync === 'cloud' ? ' وهيتغيّر كمان في النسخة المتزامنة' : ''}</span>
+            <span class="small"><b>الاسترجاع هيستبدل كل بياناتك على الجهاز ده بالنسخة دي.</b>${sync.email ? ' وهيتبعت كمان للنسخة المتزامنة.' : ''}</span>
             ${busy ? html`<span class="small" role="status">بسترجع…</span>` : null}
           </p>
           <span class="backup-act"><button type="button" class="btn danger" disabled=${busy} onClick=${apply}>استرجع</button><button type="button" class="btn" ref=${noRef} disabled=${busy} onClick=${cancel}>لأ</button></span>
@@ -4132,6 +4430,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           <p class="small">قايمة المدن من <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a>، مرخصة بموجب <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. ميزان يومي خد منها مدن الدول الإسلامية بس، بالاسم والإحداثيات والمنطقة الزمنية.</p>
         </div>
       </div>
+      <${SyncSection} store=${store} wk=${wk} />
       <${BackupSection} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />
       ${LOADED.isExample ? null : html`<div class="sec">
         <div class="sec-head"><h2>رجوع للمثال</h2></div>
@@ -4144,6 +4443,148 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
+  /* ---------------- «المزامنة» in Settings (feature 025; the engine is 06b, the crypto 01d) ---------------- */
+  // An email link opens the app at #sync-confirm=<token> or #sync-reset=<token>; read once, then the address is cleaned.
+  // The first «المزامنة» to show takes it (takeSyncLink), so a later visit to Settings never uses it again.
+  let syncLink = (() => {
+    const m = /^#sync-(confirm|reset)=([A-Za-z0-9_-]+)$/.exec(location.hash || '');
+    if (m) history.replaceState(null, '', location.pathname + location.search);
+    return m ? {kind: m[1], token: m[2]} : null;
+  })();
+  const takeSyncLink = () => { const l = syncLink; syncLink = null; return l; };
+  const PASSWORD_MIN = 10;
+  const SYNC_ERRORS = {
+    short: 'الباسورد لازم يبقى ' + PASSWORD_MIN + ' حروف على الأقل.', differ: 'الباسورد والتأكيد مش زي بعض.',
+    email: 'اكتب إيميل صحيح.', signin: 'الإيميل أو الباسورد مش صح، أو الإيميل لسه ماتأكدش.', wait: 'محاولات غلط كتير. استنى ربع ساعة.',
+    code: 'كود الاسترجاع مش صح.', token: 'اللينك ده خلص أو اتستخدم قبل كده. اطلب لينك جديد.', net: 'مقدرتش أوصل للسيرفر. جرّب تاني بعد شوية.',
+    saved: 'لازم تأكد إنك حفظت كود الاسترجاع.'
+  };
+  const errorOf = e => (e && e.status === 401 ? 'signin' : e && e.status === 429 ? 'wait' : e && e.status === 400 && e.body && e.body.error === 'token' ? 'token' : e && e.message === 'code' ? 'code' : 'net');
+  const checkPassword = (p, again) => (p.length < PASSWORD_MIN ? 'short' : p !== again ? 'differ' : null);
+
+  // The flows. Each one asks the server only for what Principle III allows, and keeps the password on this device.
+  async function signUp(email, password, code){
+    const salt = newSalt(), keys = await deriveKeys(password, salt), data = await newDataKey();
+    await api('POST', '/signup', {email, salt, signinKey: keys.signinKey, keyByPassword: await wrapKey(data, keys.wrapKey), keyByRecovery: await wrapKey(data, await recoveryKey(code))});
+  }
+  // Signs in, and returns what the first join must decide: whether the account's schedule and this device's differ.
+  async function signIn(email, password){
+    const {salt} = await api('POST', '/prelogin', {email}), keys = await deriveKeys(password, salt);
+    const s = await api('POST', '/signin', {email, signinKey: keys.signinKey});
+    const key = await unwrapKey(s.keyByPassword, keys.wrapKey, false);
+    sync.token = s.token;
+    const remote = await api('GET', '/store/settings'), mine = storedData('settings');
+    const theirs = remote.version ? (await open(key, remote)).data : null;
+    return {email, token: s.token, key, keyByPassword: s.keyByPassword, choose: !!(theirs && mine && JSON.stringify(theirs) !== JSON.stringify(mine))};
+  }
+  async function changePassword(oldPassword, newPassword){
+    const email = sync.record.email, {salt} = await api('POST', '/prelogin', {email}), old = await deriveKeys(oldPassword, salt);
+    const data = await unwrapKey(sync.record.keyByPassword, old.wrapKey, true).catch(() => { throw Object.assign(new Error('signin'), {status: 401}); });
+    const nextSalt = newSalt(), next = await deriveKeys(newPassword, nextSalt), keyByPassword = await wrapKey(data, next.wrapKey);
+    await api('POST', '/password', {signinKey: old.signinKey, salt: nextSalt, newSigninKey: next.signinKey, keyByPassword});
+    sync.record.keyByPassword = keyByPassword; saveRecord();
+  }
+  // With the recovery code the account keeps its copy; without it, a new data key and code start, and this device's
+  // data fills the copy again. Either way every device signs in again.
+  async function finishReset(token, email, password, code){
+    const salt = newSalt(), keys = await deriveKeys(password, salt);
+    let data, keyByRecovery, nextCode = null;
+    if (code) {
+      ({keyByRecovery} = await api('POST', '/reset/key', {token}));
+      data = await unwrapKey(keyByRecovery, await recoveryKey(code), true).catch(() => { throw new Error('code'); });
+    } else {
+      data = await newDataKey(); nextCode = newRecoveryCode();
+      keyByRecovery = await wrapKey(data, await recoveryKey(nextCode));
+    }
+    const keyByPassword = await wrapKey(data, keys.wrapKey);
+    const s = await api('POST', '/reset/finish', {token, mode: code ? 'keep' : 'wipe', salt, signinKey: keys.signinKey, keyByPassword, keyByRecovery});
+    await beginSync(email, s.token, await unwrapKey(keyByPassword, keys.wrapKey, false), keyByPassword, false);
+    return nextCode;
+  }
+
+  // One small form: its fields, what it does, and its message.
+  function useForm(){
+    const [f, setF] = useState({}), [err, setErr] = useState(''), [busy, setBusy] = useState(false);
+    const set = (name, v) => setF(p => Object.assign({}, p, {[name]: v}));
+    const field = (name, label, type, extra) => html`<label class="field wide" for=${'sy-' + name}>${label}<input id=${'sy-' + name} type=${type || 'text'} dir="ltr" value=${f[name] || ''} autocomplete=${(extra || {}).auto || 'off'} onInput=${e => set(name, e.target.value)} /></label>`;
+    const run = async (fn) => { setBusy(true); setErr(''); try { await fn(f); } catch (e) { setErr(SYNC_ERRORS[e.code || errorOf(e)]); } setBusy(false); };
+    return {f, set, field, run, err, busy, setErr};
+  }
+  const fail = code => { throw Object.assign(new Error(code), {code}); };
+  const isMail = v => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test((v || '').trim());
+
+  function SyncSection({store, wk}){
+    const view = useSyncView();
+    const [link] = useState(takeSyncLink);
+    const [screen, setScreen] = useState(link ? link.kind : 'main');
+    const [note, setNote] = useState(''), [code, setCode] = useState(newRecoveryCode), [join, setJoin] = useState(null);
+    const [aside, setAside] = useState(null), [askOff, setAskOff] = useState(false);
+    const form = useForm();
+    useEffect(() => { kvGet('before-sync').then(v => setAside(v || null)); }, [view.lastSync]);
+    useEffect(() => {
+      if (!link || link.kind !== 'confirm') return;
+      api('POST', '/confirm', {token: link.token}).then(() => setNote('اتأكد إيميلك. ادخل بإيميلك وباسوردك.'), () => setNote(SYNC_ERRORS.token)).then(() => setScreen('signin'));
+    }, []);
+    const go = s => { setScreen(s); setNote(''); form.setErr(''); };
+    const start = async j => { await beginSync(j.email, j.token, j.key, j.keyByPassword, j.keep); setJoin(null); go('main'); };
+
+    let body;
+    if (view.status === 'unavailable') body = html`<p class="small muted">المزامنة لسه مش متاحة في النسخة دي من التطبيق.</p>`;
+    else if (screen === 'signup') body = html`<div class="form">
+        ${form.field('email', 'الإيميل', 'email', {auto: 'email'})}${form.field('pass', 'الباسورد (' + PASSWORD_MIN + ' حروف على الأقل)', 'password', {auto: 'new-password'})}${form.field('again', 'الباسورد تاني', 'password', {auto: 'new-password'})}
+        <p class="small"><b>كود الاسترجاع:</b> <bdi dir="ltr" class="num">${code}</bdi></p>
+        <p class="small muted">اكتبه أو احفظه في مكان أمين. لو نسيت الباسورد، هو الطريقة الوحيدة اللي ترجّع بيها النسخة المتزامنة. مش هيظهر تاني.</p>
+        <label class="check-line"><input type="checkbox" checked=${!!form.f.saved} onChange=${e => form.set('saved', e.target.checked)} /> حفظت الكود</label>
+        <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
+          if (!isMail(f.email)) fail('email'); const bad = checkPassword(f.pass || '', f.again || ''); if (bad) fail(bad); if (!f.saved) fail('saved');
+          await signUp(f.email.trim().toLowerCase(), f.pass, code); setCode(newRecoveryCode()); go('main'); setNote('بعتنالك إيميل. افتح اللينك اللي فيه على الجهاز ده عشان تأكد الحساب.'); })}>اعمل الحساب</button>
+          <button type="button" class="btn ghost" onClick=${() => go('main')}>لأ</button></span></div>`;
+    else if (screen === 'signin' || (screen === 'main' && view.status === 'signin')) body = html`<div class="form">
+        ${form.field('email', 'الإيميل', 'email', {auto: 'email'})}${form.field('pass', 'الباسورد', 'password', {auto: 'current-password'})}
+        <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
+          if (!isMail(f.email)) fail('email');
+          const j = await signIn(f.email.trim().toLowerCase(), f.pass || '');
+          if (j.choose) setJoin(j); else await start(Object.assign(j, {keep: false})); })}>ادخل</button>
+          <button type="button" class="btn ghost" onClick=${() => go('forgot')}>نسيت الباسورد</button></span></div>`;
+    else if (screen === 'forgot') body = html`<div class="form">${form.field('email', 'الإيميل', 'email', {auto: 'email'})}
+        <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
+          if (!isMail(f.email)) fail('email'); await api('POST', '/reset/start', {email: f.email.trim().toLowerCase()});
+          go('main'); setNote('لو فيه حساب بالإيميل ده، هيوصلك لينك تحط بيه باسورد جديد.'); })}>ابعتلي لينك</button><button type="button" class="btn ghost" onClick=${() => go('main')}>لأ</button></span></div>`;
+    else if (screen === 'reset') body = html`<div class="form">
+        ${form.field('email', 'الإيميل', 'email', {auto: 'email'})}${form.field('pass', 'باسورد جديد', 'password', {auto: 'new-password'})}${form.field('again', 'الباسورد الجديد تاني', 'password', {auto: 'new-password'})}
+        ${form.field('code', 'كود الاسترجاع (لو معاك)')}
+        ${form.f.code ? null : html`<p class="small"><b>من غير الكود، النسخة اللي على السيرفر هتتمسح</b>، وبيانات الجهاز ده هي اللي هتتبعت من الأول. بيانات أي جهاز مش هتتمسح.</p>`}
+        <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
+          if (!isMail(f.email)) fail('email'); const bad = checkPassword(f.pass || '', f.again || ''); if (bad) fail(bad);
+          if (f.code && !isRecoveryCode(f.code)) fail('code');
+          const nextCode = await finishReset(link.token, f.email.trim().toLowerCase(), f.pass, f.code || '');
+          go('main'); setNote(nextCode ? 'كود الاسترجاع الجديد: ' + nextCode + ' اكتبه في مكان أمين، مش هيظهر تاني.' : 'اتغيّر الباسورد، والنسخة المتزامنة زي ما هي.'); })}>غيّر الباسورد</button></span></div>`;
+    else if (screen === 'password') body = html`<div class="form">
+        ${form.field('old', 'الباسورد الحالي', 'password', {auto: 'current-password'})}${form.field('pass', 'باسورد جديد', 'password', {auto: 'new-password'})}${form.field('again', 'الباسورد الجديد تاني', 'password', {auto: 'new-password'})}
+        <span class="backup-act"><button type="button" class="btn primary" disabled=${form.busy} onClick=${() => form.run(async f => {
+          const bad = checkPassword(f.pass || '', f.again || ''); if (bad) fail(bad);
+          await changePassword(f.old || '', f.pass); go('main'); setNote('اتغيّر الباسورد. الأجهزة التانية هتطلب الجديد.'); })}>غيّر</button><button type="button" class="btn ghost" onClick=${() => go('main')}>لأ</button></span></div>`;
+    else if (!view.email) body = html`<p class="small muted">نسخة متشفّرة من بياناتك على سيرفر، عشان ماتضيعش لو الموبايل ضاع، وتبقى على أكتر من جهاز. بتتشفّر على جهازك، والسيرفر بيشوف إيميلك وحجم النسخة ومواعيدها بس. اختيارية.</p>
+        <span class="backup-act"><button type="button" class="btn primary" onClick=${() => go('signup')}>اعمل حساب</button><button type="button" class="btn" onClick=${() => go('signin')}>ادخل</button></span>`;
+    else body = html`<p><b><bdi dir="ltr">${view.email}</bdi></b></p><p class="small">${syncLine(view)}</p>
+        ${aside ? html`<p class="small muted">قبل آخر مرة المزامنة غيّرت حاجة على الجهاز ده، اتحفظت نسخة منه. <button type="button" class="btn ghost" onClick=${() => { const b = makeBackup(aside.stores, aside.at, zoneParts(new Date(aside.at)).iso); downloadText(b.name, b.text); }}>احفظها كملف</button></p>` : null}
+        <span class="backup-act"><button type="button" class="btn" onClick=${() => go('password')}>غيّر الباسورد</button>
+          <button type="button" class="btn" onClick=${async () => { await api('POST', '/signout').catch(() => {}); await endSync(); setNote('خرجت من الجهاز ده. بياناته زي ما هي.'); }}>اخرج من الجهاز ده</button></span>
+        ${askOff ? html`<${Notice} role="alert" title="تقفل المزامنة وتمسح نسختها؟" line="الحساب والنسخة اللي على السيرفر هيتمسحوا، وكل الأجهزة هتخرج. بيانات كل جهاز هتفضل عليه.">
+            <span class="backup-act"><button type="button" class="btn danger" onClick=${() => form.run(async () => { await api('DELETE', '/account'); await endSync(); setAskOff(false); setNote('اتقفلت المزامنة واتمسحت نسختها.'); })}>أيوه، امسحها</button><button type="button" class="btn ghost" onClick=${() => setAskOff(false)}>لأ</button></span></${Notice}>`
+          : html`<button type="button" class="btn ghost" onClick=${() => setAskOff(true)}>اقفل المزامنة وامسح نسختها</button>`}`;
+
+    return html`<div class="sec">
+      <div class="sec-head"><h2>المزامنة</h2></div>
+      <div class="panel form">
+        ${join ? html`<${Notice} title="الجدول على الحساب غير الجدول على الجهاز ده" line="هنحفظ نسخة احتياطية من الجهاز ده الأول، وبعدين تختار أنهي جدول يفضل. العلامات والمهام والتمارين من الاتنين بتفضل.">
+            <span class="backup-act"><button type="button" class="btn primary" onClick=${() => form.run(async () => { downloadBackup(store, wk); await start(Object.assign(join, {keep: false})); })}>جدول الحساب</button>
+              <button type="button" class="btn" onClick=${() => form.run(async () => { downloadBackup(store, wk); await start(Object.assign(join, {keep: true})); })}>جدول الجهاز ده</button></span></${Notice}>` : body}
+        ${form.err ? html`<p class="form-err" role="alert">${form.err}</p>` : null}
+        <div aria-live="polite">${note ? html`<p class="small">${note}</p>` : null}</div>
+      </div>
+    </div>`;
+  }
   /* ---------------- Workouts (own storage key and hook; knows nothing of the progress store) ---------------- */
   // The log as stored: {root, tooNew}. Data written by a newer app, or that could not be brought forward, is never
   // written over (tooNew), and the screen says so.
@@ -4167,7 +4608,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         if (r && r.tooNew) { locked.current = true; setTooNew(true); }
         else if (r && r.recovered) { take(r.recovered); setRecovered(true); }
       });
-      return onOtherTab('workouts', take);
+      const offTab = onOtherTab('workouts', take), offSync = onSyncedIn('workouts', take);
+      return () => { offTab(); offSync(); };
     }, []);
     const update = fn => {
       if (locked.current) return;
@@ -4820,7 +5262,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const Icon = ({paths}) => html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
   function App(){
-    const [store, update, sync, replaceAll, saveFailed, health] = useStore();
+    const [store, update, replaceAll, saveFailed, health] = useStore();
+    const sync = useSyncView();
     const wk = useWorkouts();
     // Settings brought back from the mirror reopen the page once (see the settings load); say so after it.
     const [settingsBack, setSettingsBack] = useState(() => { try { const v = sessionStorage.getItem(RECOVERED_KEY); sessionStorage.removeItem(RECOVERED_KEY); return !!v; } catch(e){ return false; } });
@@ -4835,11 +5278,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const saveNow = () => { const r = downloadBackup(store, wk); setSaveMsg(r.ok ? {ok: true, name: r.name} : {ok: false}); };
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
-    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','tasks','workout','settings'].includes(hsh) ? hsh : 'today'; });
+    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return syncLink || hsh === 'settings' ? 'settings' : ['today','week','course','tasks','workout'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
-    // Shown once after a restore whose write to the synced copy did not finish in time.
-    const [syncLate, setSyncLate] = useState(() => { try { const v = sessionStorage.getItem(RESTORE_SYNC_LATE_KEY); sessionStorage.removeItem(RESTORE_SYNC_LATE_KEY); return !!v; } catch(e){ return false; } });
     // One-time notice after the day version (A late / B early) switches. phaseSeen is the last version the owner saw:
     // first run records it silently, a later difference shows the notice, "تمام" records the new one.
     const phaseNow = phaseFor(now.iso);
@@ -4909,6 +5350,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       if (tabAfter) goTab(tabAfter);
       showToast(text);
     };
+    // A schedule saved on another device (feature 025). An open editor keeps its draft: its save notices the change.
+    useEffect(() => onSyncedIn('settings', () => { if (!editorSession) settingsChanged('اتحدّث جدولك من جهاز تاني'); }), []);
 
     let view;
     if (tab === 'today') view = html`<${TodayView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
@@ -4930,7 +5373,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         ${newVersion ? html`<${Notice} role="status" title="فيه نسخة جديدة من التطبيق" line="هتفتح لوحدها المرة الجاية، أو افتحها دلوقتي."><button type="button" class="btn primary" onClick=${() => location.reload()}>افتحها</button></${Notice}>` : null}
         ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات، أو اعمل جدولك من هنا.' : 'اعمل جدولك من هنا في دقايق، أو استورد ملف إعدادات من الإعدادات.'}><button type="button" class="btn primary" onClick=${startGuide}>اعمل جدولك</button></${Notice}>` : null}
         <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
-        ${syncLate ? html`<${Notice} role="status" text="النسخة المتزامنة ممكن لسه تبيّن البيانات القديمة."><button type="button" class="btn primary" onClick=${() => setSyncLate(false)}>تمام</button></${Notice}>` : null}
         ${recovered ? html`<${Notice} role="status" text="رجّعنا بياناتك من النسخة المحفوظة على الجهاز."><button type="button" class="btn primary" onClick=${dismissRecovered}>تمام</button></${Notice}>` : null}
         ${health.problem === 'damaged' ? html`<${Notice} role="alert" title="نسخة بياناتك على الجهاز بايظة" line=${'حطيناها على جنب ومامسحناهاش. ' + (lastDay ? 'تقدر ترجّع نسخة يوم ' + dateLabel(lastDay) + ' أو نسخة احتياطية من الإعدادات.' : 'لو عندك نسخة احتياطية، رجّعها من الإعدادات.')}><button type="button" class="btn" onClick=${health.dismiss}>تمام</button></${Notice}>` : null}
         ${health.problem === 'too-new' ? html`<${Notice} role="alert" title="بياناتك اتحفظت بنسخة أحدث من التطبيق" line="مش هنعدّل عليها هنا عشان ما نبوّظهاش. حدّث التطبيق." />` : null}
@@ -4941,7 +5383,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
           : 'المتصفح ده مش بيسمح بالحفظ، فالتقدم هيضيع لما تقفل التطبيق.'}
           text=${saveMsg ? html`<span class="small">${saveMsg.ok ? html`اتحفظت النسخة: <bdi dir="ltr">${saveMsg.name}</bdi>` : BACKUP_FAILED}</span>` : null}><button type="button" class="btn primary" onClick=${saveNow}>احفظ نسخة احتياطية</button></${Notice}>` : null}
         ${view}
-        <p class=${'sync' + (sync === 'cloud' ? ' cloud' : '')}><i></i>${sync === 'cloud' ? 'التقدم محفوظ على حسابك وبيظهر على أي جهاز' : LOCAL_OK ? 'التقدم محفوظ على الجهاز ده بس' : 'المتصفح ده مش بيسمح بالحفظ، فالعلامات هتتمسح لما تقفل الصفحة'}</p>
+        <p class=${'sync' + (sync.email ? ' cloud' : '')}><i></i>${syncLine(sync)}</p>
       </main>
       <div aria-live="polite">${toast ? html`<div class="toast" role="status"><p>${toast.text}</p>${toast.undo ? html`<button type="button" class="btn" onClick=${() => { toast.undo(); setToast(null); }}>رجّعها</button>` : null}</div>` : null}</div>
     </div></${MainCourseName.Provider}>`;

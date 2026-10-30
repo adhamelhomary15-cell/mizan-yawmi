@@ -74,12 +74,12 @@ description: "Task list for feature 025: encrypted sync across devices"
 
 ### Phase 2: sync rules (pure)
 
-- [ ] T009 `src/app/01c-sync-rules.js`, listed in `ORDER` after `01b-storage.js`:
+- [x] T009 `src/app/01c-sync-rules.js`, listed in `ORDER` after `01b-storage.js`:
   - `itemsOf(store, data)` and `fromItems(store, items)`, which round-trip every store;
   - `stampNow(last, now, device)` (hybrid time);
   - `mergeStore(store, local, remote)`, which returns `{data, stamps, lost}`;
   - the 60-day tombstone cleanup.
-- [ ] T010 [P] `tools/check-sync.js`:
+- [x] T010 [P] `tools/check-sync.js`:
   - an oracle over 2 to 4 devices with random offline edits and random sync orders;
   - every pair of edits to the same item;
   - clock skew;
@@ -88,12 +88,12 @@ description: "Task list for feature 025: encrypted sync across devices"
 
 ### Phase 3: crypto
 
-- [ ] T011 `src/app/01d-crypto.js`:
+- [x] T011 `src/app/01d-crypto.js`:
   - `deriveKeys(password, salt)`: PBKDF2 with 600,000 iterations, then HKDF into the wrapping key and the sign-in key;
   - `newDataKey`, `wrapKey` and `unwrapKey`;
   - `seal` and `open` (AES-GCM, with a new IV every time);
   - `newRecoveryCode` and `recoveryKey`.
-- [ ] T012 [P] `tools/check-crypto.js` in Node's Web Crypto:
+- [x] T012 [P] `tools/check-crypto.js` in Node's Web Crypto:
   - known answers for PBKDF2, HKDF and AES-GCM;
   - wrap and unwrap round trips;
   - a wrong password, and one changed bit, both refused;
@@ -102,27 +102,27 @@ description: "Task list for feature 025: encrypted sync across devices"
 
 ### Phase 4: the sync loop and «المزامنة»
 
-- [ ] T013 `src/app/06b-sync.js`: pull, merge, push, and retry on 409; changes wait while offline; a push 3 seconds after
+- [x] T013 `src/app/06b-sync.js`: pull, merge, push, and retry on 409; changes wait while offline; a push 3 seconds after
   the last edit; a poll every 30 seconds while the page is visible, and on focus or when online again; the
   `before-sync` snapshot when something local loses; a newer app version refused.
-- [ ] T014 Remove the `window.claude` path from `src/app/06-store.js`. The sync line tells the truth: «على الجهاز ده
+- [x] T014 Remove the `window.claude` path from `src/app/06-store.js`. The sync line tells the truth: «على الجهاز ده
   بس», or «متزامن، آخر مرة …» with any changes still waiting.
-- [ ] T015 `src/app/15b-sync-view.js`: sign up, confirm, the recovery code shown once, and sign in.
-- [ ] T016 The first join, choosing between «جدول الحساب» and «جدول الجهاز ده» after a backup is saved.
-- [ ] T017 Change the password, and «نسيت الباسورد» with and without the recovery code, warning first.
-- [ ] T018 «اخرج من الجهاز ده» and «اقفل المزامنة وامسح نسختها», which asks first.
-- [ ] T019 **[gate: CSP]** `tools/build.py` reads the Worker's address from `server/address.txt`, a public URL only, into
+- [x] T015 `src/app/15b-sync-view.js`: sign up, confirm, the recovery code shown once, and sign in.
+- [x] T016 The first join, choosing between «جدول الحساب» and «جدول الجهاز ده» after a backup is saved.
+- [x] T017 Change the password, and «نسيت الباسورد» with and without the recovery code, warning first.
+- [x] T018 «اخرج من الجهاز ده» and «اقفل المزامنة وامسح نسختها», which asks first.
+- [x] T019 **[gate: CSP]** `tools/build.py` reads the Worker's address from `server/address.txt`, a public URL only, into
   `connect-src`. `check-security.js` allows exactly that address, and nothing else.
 
 ### Phase 5: tests, docs, PR
 
-- [ ] T020 `tests/e2e/sync.spec.js`, with two contexts against `server/dev.js`:
+- [x] T020 `tests/e2e/sync.spec.js`, with two contexts against `server/dev.js`:
   - US1 to US5;
   - offline on one device;
   - no request to the server with sync off.
-- [ ] T021 [P] Docs: the README «المزامنة» part (what is sent, what the server sees, the recovery code, signing out
+- [x] T021 [P] Docs: the README «المزامنة» part (what is sent, what the server sees, the recovery code, signing out
   versus turning sync off); PRODUCT; and constitution compliance noted in the plan.
-- [ ] T022 Every check, parity 0 with sync off, the E2E suite twice, and a look at 375 px. **Commit, push, open PR 025b.**
+- [x] T022 Every check, parity 0 with sync off, the E2E suite twice, and a look at 375 px. **Commit, push, open PR 025b.**
 
 ## The owner's deploy (after both PRs)
 

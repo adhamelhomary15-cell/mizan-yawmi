@@ -83,7 +83,6 @@
     </div>`;
   }
 
-  const RESTORE_SYNC_LATE_KEY = 'mizan-restore-sync-late';
   const BACKUP_REFUSALS = {
     'too-large': 'الملف كبير أوي على إنه نسخة احتياطية.',
     'empty': 'ده مش ملف نسخة احتياطية من ميزان يومي.',
@@ -155,9 +154,8 @@
         setBusy(false); setPending(null); setErr('الاسترجاع فشل ومفيش حاجة اتغيّرت.');
         return;
       }
-      // The synced copy loads first on start, so it gets the restored progress before the reload (up to 5 seconds).
-      const synced = await Promise.race([replaceAll(progress.data), new Promise(res => setTimeout(() => res(false), 5000))]);
-      if (!synced) { try { sessionStorage.setItem(RESTORE_SYNC_LATE_KEY, '1'); } catch(e){} }
+      // through the save path, so sync (feature 025) sends it like any other change
+      await replaceAll(progress.data);
       location.reload();
     };
     const pv = pending && pending.preview;
@@ -172,7 +170,7 @@
             <span class="small"><bdi>${pv.tasks}</bdi> مهمة · <bdi>${pv.appts}</bdi> ميعاد · <bdi>${pv.courses}</bdi> كورس · <bdi>${pv.tickDays}</bdi> يوم فيه علامات · <bdi>${pv.workouts}</bdi> تمرينة</span>
             ${pv.openWorkout ? html`<span class="small">فيه تمرينة مفتوحة</span>` : null}
             <span class="small">${pv.settings === 'valid' ? 'فيها إعدادات' : pv.settings === 'none' ? 'مفيهاش إعدادات، إعداداتك الحالية هتفضل' : 'الإعدادات اللي فيها مش صالحة، إعداداتك الحالية هتفضل'}</span>
-            <span class="small"><b>الاسترجاع هيستبدل كل بياناتك على الجهاز ده بالنسخة دي.</b>${sync === 'cloud' ? ' وهيتغيّر كمان في النسخة المتزامنة' : ''}</span>
+            <span class="small"><b>الاسترجاع هيستبدل كل بياناتك على الجهاز ده بالنسخة دي.</b>${sync.email ? ' وهيتبعت كمان للنسخة المتزامنة.' : ''}</span>
             ${busy ? html`<span class="small" role="status">بسترجع…</span>` : null}
           </p>
           <span class="backup-act"><button type="button" class="btn danger" disabled=${busy} onClick=${apply}>استرجع</button><button type="button" class="btn" ref=${noRef} disabled=${busy} onClick=${cancel}>لأ</button></span>
@@ -369,6 +367,7 @@
           <p class="small">قايمة المدن من <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a>، مرخصة بموجب <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. ميزان يومي خد منها مدن الدول الإسلامية بس، بالاسم والإحداثيات والمنطقة الزمنية.</p>
         </div>
       </div>
+      <${SyncSection} store=${store} wk=${wk} />
       <${BackupSection} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} />
       ${LOADED.isExample ? null : html`<div class="sec">
         <div class="sec-head"><h2>رجوع للمثال</h2></div>

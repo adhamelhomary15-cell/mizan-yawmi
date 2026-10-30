@@ -9,6 +9,7 @@
  *   - src/app/ORDER and the files in src/app agree;
  *   - no part is longer than 600 lines;
  *   - every top-level function, const and let in src/app is used somewhere;
+ *   - no top-level name is declared twice (all parts share one scope, where a second function silently wins);
  *   - nothing writes raw HTML into the page (dangerouslySetInnerHTML);
  *   - no string search for Arabic text decides behaviour (indexOf, includes, startsWith, endsWith);
  *   - no value is worked out from the settings (CFG) at the top level outside applySettings in 02-settings-load.js.
@@ -61,6 +62,15 @@ function runChecks({order, parts, shell}) {
     });
     return found;
   });
+  // All parts share one script scope: a second function of the same name silently replaces the first (feature 025
+  // found setStatus twice), and a second const or let stops the page from loading.
+  check('no top-level name is declared twice', () => {
+    const seen = {}, found = [];
+    order.filter(n => n in parts).forEach(f => {
+      for (const m of parts[f].matchAll(DECL)) { const n = m[1] || m[2]; if (seen[n]) found.push(n + ' in ' + seen[n] + ' and ' + f); else seen[n] = f; }
+    });
+    return found;
+  });
   check('nothing writes raw HTML into the page', () =>
     Object.keys(parts).filter(f => /dangerouslySetInnerHTML/.test(parts[f])).map(f => f));
   // A rule for one person hides as a search for their words (feature 017): behaviour must come from data, not text.
@@ -102,6 +112,7 @@ if (process.argv.includes('--self-test')) {
   const mutations = [
     ['an unused function', d => { d.parts[last] = d.parts[last].replace('})();', '  function neverCalled(){ return 1; }\n})();'); }],
     ['an unused const', d => { d.parts[first] += '  const NEVER_READ = 42;\n'; }],
+    ['a function declared twice', d => { d.parts[last] = d.parts[last].replace('})();', '  function fmtStr(){ return 1; }\n})();'); }],
     ['a part over the line limit', d => { d.parts[first] += '  //\n'.repeat(MAX_LINES); }],
     ['a part missing from ORDER', d => { d.order = d.order.slice(1); }],
     ['a part listed twice', d => { d.order.push(first); }],
