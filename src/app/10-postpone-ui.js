@@ -195,6 +195,8 @@
               const cur = isToday && now.min >= b.s && now.min < b.e;
               const st = statusOf(store, iso, b.key);
               const isOpen = open === b.key;
+              // The proposal shows only while the block has no mark: one ticked or cancelled meanwhile keeps it (Principle II)
+              const proposing = postponing === b.key && st === null;
               // «أجّلها» on the row itself once the block's time has come (feature 029); an opened row has it among its actions
               const onRow = tracked && st === null && canPostpone(b) && timeHasCome(iso, b.s, now.iso, now.min) && !isOpen;
               const marks = [];
@@ -223,7 +225,7 @@
                   ${tracked && st === null && canPostpone(b) ? html`<button type="button" class="btn" aria-expanded=${postponing === b.key ? 'true' : 'false'} onClick=${() => setPostponing(postponing === b.key ? null : b.key)}>أجّلها</button>` : null}
                   ${b.extra ? html`<button type="button" class="btn ghost" onClick=${() => { setOpen(null); remove('اتمسحت "' + b.title + '"', s => { s.extras[iso] = (s.extras[iso] || []).filter(x => x.id !== b.extra); return s; }); }}>امسحها</button>` : null}
                 </div>` : null}
-                ${postponing === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
+                ${proposing ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
                 ${place && place.row === i ? html`<span class=${'nowline at-' + place.at + nowSide} style=${{top: onRow && place.at === 'in' ? 'calc(' + place.share.toFixed(4) + ' * (100% - var(--pp)))' : nowTop}} aria-hidden="true"><span class="nowline-t">الآن <${Time} min=${now.min} /></span></span>` : null}
               </li>`;
             })}
