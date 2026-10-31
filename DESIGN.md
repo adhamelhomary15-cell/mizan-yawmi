@@ -167,6 +167,11 @@ Phone first, one column, 16px side gutter, bottom bar of 52px targets. From 960p
 
 Flat. Depth comes from the paper/surface step and one-pixel lines. The only shadow is the undo toast (`0 8px 24px rgba(10,16,22,.22)`).
 
+The paper has a faint grain (feature 030): a fixed grey noise tile behind the content, at `--grain` (4.5% light, 6%
+dark, the same in every palette). Cards, rows and the band are solid, so it shows on the ground only. It never moves,
+and it is gone under more contrast, forced colours and print. `tools/check-schedule.js` checks every ink and the text
+at AA on the ground at the grain's darkest and lightest.
+
 ## Shapes
 
 Radii of 10px (buttons, chips), 14px (cards, rows) and 18px (now card, review). Check circles are full circles of 28px inside a 44px target.
@@ -215,9 +220,11 @@ colours show at once.
 - Do keep every category ink at AA on paper and on its own 9% tint.
 - Do show amounts of time as denominations, not as progress rings.
 - Do keep line work at one pixel.
+- Do keep the paper grain on the ground only, faint enough that every ink holds AA.
 
 ### Don't:
 - Don't add Islamic ornament, mosque or Mushaf motifs.
 - Don't use neon, glow or gradients.
 - Don't reuse the retired palette (blue, violet, amber, green on blue-grey).
 - Don't use a category ink for decoration.
+- Don't put the grain on cards, or turn it into a pattern or a motif.

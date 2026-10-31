@@ -51,6 +51,7 @@
   /* the ready colours for kinds the user adds (feature 016) */
   --k-teal:#0E5E58; --k-blue:#244F8C; --k-green:#2F5E22; --k-slate:#46515F; --k-copper:#8A3A14; --k-olive:#535C14;
   --tint:9%;
+  --grain:.045;
   --font-display:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
   --font-body:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
   --font-mono:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
@@ -63,7 +64,7 @@
   --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
   --uni:#EE8E9C; --study:#F2A7B8; --course:#CFA0DD; --work:#D8B898; --gym:#E4C55C; --quran:#E8C96A; --personal:#EFD98F;
   --k-teal:#7FD3C9; --k-blue:#A3C2F2; --k-green:#A9D68F; --k-slate:#B9C4D1; --k-copper:#F0A57D; --k-olive:#CBD48A;
-  --tint:15%; color-scheme:dark;
+  --tint:15%; --grain:.06; color-scheme:dark;
 }
 /* Palettes (feature 022): the frame and the ground only. The kinds' inks and --fg never change (the Denomination
    Rule); tools/check-schedule.js checks every ink on every palette, light and dark. Oxblood is :root above. */
@@ -105,6 +106,10 @@
 }
 html{scrollbar-color:var(--quiet) var(--bg);scroll-padding-bottom:calc(128px + env(safe-area-inset-bottom, 0px))}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.6;caret-color:var(--course);accent-color:var(--course)}
+/* Paper grain on the ground (feature 030): fixed behind everything, so the solid cards, rows and band cover it.
+   Faint enough that every ink keeps AA (tools/check-schedule.js); gone where it could cost readability. */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px;opacity:var(--grain)}
+@media (prefers-contrast: more), (forced-colors: active), print{ body::before{display:none} }
 ::selection{background:color-mix(in srgb,var(--course) 28%,var(--surface));color:var(--fg)}
 #app{min-height:60vh}
 .wrap{max-width:720px;margin:0 auto;padding-inline:var(--s4);padding-block:18px 128px;display:flex;flex-direction:column;gap:var(--s5)}
