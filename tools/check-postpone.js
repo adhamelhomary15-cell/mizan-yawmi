@@ -17,7 +17,7 @@ const path = require('path');
 const {readSource, ruleBlock} = require('./lib/source.js');
 const html = readSource();
 const block = source => ruleBlock(source, 'postpone rules');
-const load = source => new Function(block(source) + '\nreturn {freeStretches, proposePlaces, checkManualPlace, daysToAsk, taskNextDay};')();
+const load = source => new Function(block(source) + '\nreturn {freeStretches, proposePlaces, checkManualPlace, daysToAsk, taskNextDay, timeHasCome};')();
 
 const START = 420, END = 1500;
 const isFree = c => c === 'personal';
@@ -166,6 +166,12 @@ function runChecks(h, source) {
     }
     return true;
   });
+  check('the time of a block has come: a past day always, today once started, a future day never, after midnight too', () => {
+    const t = '2026-10-15', past = '2026-10-14', future = '2026-10-16';
+    return [420, 900, 1500].every(s => h.timeHasCome(past, s, t, 960) === true && h.timeHasCome(future, s, t, 960) === false)
+      && h.timeHasCome(t, 900, t, 960) === true && h.timeHasCome(t, 960, t, 960) === true && h.timeHasCome(t, 961, t, 960) === false
+      && h.timeHasCome(t, 1470, t, 1485) === true && h.timeHasCome(t, 1470, t, 1455) === false;
+  });
   check('the rules block never mentions checks, done marks, storage or the network', () => {
     const b = block(source).split('\n').map(l => l.replace(/\/\/[^\r\n]*/, '')).join('\n');
     return !/\bchecks\b|\.done\b|=\s*true\b|localStorage|fetch\(|XMLHttp|sendBeacon|WebSocket|navigator\./.test(b);
@@ -193,6 +199,10 @@ if (process.argv.includes('--self-test')) {
     ['a postponed task always goes to tomorrow', s => s.replace('return addDays(due > today ? due : today, 1);', 'return addDays(today, 1);')],
     ['a postponed task always goes to its date + 1', s => s.replace('return addDays(due > today ? due : today, 1);', 'return addDays(due, 1);')],
     ['a postponed task goes after the earlier of the two', s => s.replace('return addDays(due > today ? due : today, 1);', 'return addDays(due < today ? due : today, 1);')],
+    ['the time of a block comes only today', s => s.replace('return iso < today || (iso === today && start <= nowMin);', 'return iso === today && start <= nowMin;')],
+    ['the time of a block comes only strictly after its start', s => s.replace('return iso < today || (iso === today && start <= nowMin);', 'return iso < today || (iso === today && start < nowMin);')],
+    ['the time of a block comes on future days too', s => s.replace('return iso < today || (iso === today && start <= nowMin);', 'return iso !== today || start <= nowMin;')],
+    ['the time of a block is compared the other way', s => s.replace('return iso < today || (iso === today && start <= nowMin);', 'return iso < today || (iso === today && start >= nowMin);')],
     ['the first run asks about more than yesterday', s => s.replace('if (askedUpTo === null || askedUpTo === undefined) return [last];', 'if (askedUpTo === null || askedUpTo === undefined) return [first, last];')]
   ];
   let missed = 0;

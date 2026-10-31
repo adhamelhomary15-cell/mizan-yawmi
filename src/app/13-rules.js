@@ -407,6 +407,9 @@
   // The day a postponed task goes to (feature 028): the day after its date, and never earlier than tomorrow. Dates are
   // YYYY-MM-DD, so text order is date order.
   function taskNextDay(due, today, addDays){ return addDays(due > today ? due : today, 1); }
+  // Whether a block's time has come (feature 029): a past day always, today once it has started, a future day never.
+  // start and nowMin are the app's day minutes (after midnight 24:00 and on, feature 018).
+  function timeHasCome(iso, start, today, nowMin){ return iso < today || (iso === today && start <= nowMin); }
   // end of postpone rules
 
   // start of guide rules

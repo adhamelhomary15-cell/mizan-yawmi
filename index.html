@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="57af05d394"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-RVR3KYqvI9p4qhnXC8/WwY7EpiKKypVD8W96xOQflXM=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-DwZNDtAfOQl6Y8HsajdbzbgLTQt87NMa8ADDIjQnc3U=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="f1d0c733e8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-MUdAHKMGPii7mMalMdpfop+wBTffUiiaEyRG/K0YMpY=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-021YIbbQr4qp+rFBIO4CDdakH8YXsBD8VXwiUhibrss=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -254,6 +254,11 @@ button{font:inherit;color:inherit}
 .denom small{font-family:var(--font-body);font-weight:500;font-size:11px;margin-inline-start:2px}
 .row.done .denom,.row.skipped .denom{opacity:.45}
 .row-actions{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:var(--s2);padding:0 0 var(--s2)}
+/* «أجّلها» on the row of an open block whose time has come (feature 029), under its title */
+.row-pp{grid-column:2 / -1;display:flex;padding:0 0 var(--s2)}
+.row-pp .btn{min-height:44px}
+/* the «الآن» line on such a row is placed over its block part only, not over the button's line (44px, padding and gap) */
+.row.has-pp{--pp:calc(44px + 2 * var(--s2))}
 .add-block{align-self:flex-start}
 .head-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px;min-width:0}
 .o-head .top{flex-wrap:wrap}
@@ -2217,6 +2222,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
               const cur = isToday && now.min >= b.s && now.min < b.e;
               const st = statusOf(store, iso, b.key);
               const isOpen = open === b.key;
+              // «أجّلها» on the row itself once the block's time has come (feature 029); an opened row has it among its actions
+              const onRow = tracked && st === null && canPostpone(b) && timeHasCome(iso, b.s, now.iso, now.min) && !isOpen;
               const marks = [];
               if (p) PRAYERS.forEach(([k, name]) => { if (k !== 'fajr' && p[k] >= b.s && p[k] < b.e) marks.push({kind:'pr', text:(wd === 5 && k === 'dhuhr' ? 'الجمعة' : name) + ' ' + fmtStr(p[k]), at:p[k]}); });
               appts.forEach(a => { if (a.min >= b.s && a.min < b.e) marks.push({kind:'appt', text:a.label + ' ' + fmtStr(a.min), at:a.min}); });
@@ -2227,13 +2234,14 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
                 ${quiet ? (b.detail ? html`<span class="meta">${b.detail}</span>` : null)
                   : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${st === 'moved' ? html` · اتأجل لـ <bdi>${dayName(movedTo(store, iso, b.key))}</bdi>` : null}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
-              return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
+              return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '') + (onRow ? ' has-pp' : '')}>
                 <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + blockName(b, store)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
                   : html`<button type="button" class="row-body" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${() => { setOpen(isOpen ? null : b.key); setPostponing(null); }}>${body}</button>`}
                 ${quiet ? null : html`<span class="denom" aria-hidden="true">${(b.e - b.s) < 60 ? (b.e - b.s) : hoursText(b.e - b.s)}<small>${(b.e - b.s) < 60 ? 'د' : 'س'}</small></span>`}
+                ${onRow ? html`<div class="row-pp"><button type="button" class="btn" aria-label=${'أجّلها: ' + blockName(b, store)} aria-expanded=${postponing === b.key ? 'true' : 'false'} onClick=${() => { setOpen(null); setPostponing(postponing === b.key ? null : b.key); }}>أجّلها</button></div>` : null}
                 ${isOpen ? html`<div class="row-actions">
                   ${tracked && st === 'moved' ? html`<button type="button" class="btn" onClick=${() => { setOpen(null); setIso(movedTo(store, iso, b.key)); }}>روح لليوم ده</button>`
                     : tracked ? (st === 'skip'
@@ -2242,8 +2250,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
                   ${tracked && st === null && canPostpone(b) ? html`<button type="button" class="btn" aria-expanded=${postponing === b.key ? 'true' : 'false'} onClick=${() => setPostponing(postponing === b.key ? null : b.key)}>أجّلها</button>` : null}
                   ${b.extra ? html`<button type="button" class="btn ghost" onClick=${() => { setOpen(null); remove('اتمسحت "' + b.title + '"', s => { s.extras[iso] = (s.extras[iso] || []).filter(x => x.id !== b.extra); return s; }); }}>امسحها</button>` : null}
                 </div>` : null}
-                ${isOpen && postponing === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
-                ${place && place.row === i ? html`<span class=${'nowline at-' + place.at + nowSide} style=${{top: nowTop}} aria-hidden="true"><span class="nowline-t">الآن <${Time} min=${now.min} /></span></span>` : null}
+                ${postponing === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
+                ${place && place.row === i ? html`<span class=${'nowline at-' + place.at + nowSide} style=${{top: onRow && place.at === 'in' ? 'calc(' + place.share.toFixed(4) + ' * (100% - var(--pp)))' : nowTop}} aria-hidden="true"><span class="nowline-t">الآن <${Time} min=${now.min} /></span></span>` : null}
               </li>`;
             })}
           </ol>
@@ -2939,6 +2947,9 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   // The day a postponed task goes to (feature 028): the day after its date, and never earlier than tomorrow. Dates are
   // YYYY-MM-DD, so text order is date order.
   function taskNextDay(due, today, addDays){ return addDays(due > today ? due : today, 1); }
+  // Whether a block's time has come (feature 029): a past day always, today once it has started, a future day never.
+  // start and nowMin are the app's day minutes (after midnight 24:00 and on, feature 018).
+  function timeHasCome(iso, start, today, nowMin){ return iso < today || (iso === today && start <= nowMin); }
   // end of postpone rules
 
   // start of guide rules

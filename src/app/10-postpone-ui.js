@@ -195,6 +195,8 @@
               const cur = isToday && now.min >= b.s && now.min < b.e;
               const st = statusOf(store, iso, b.key);
               const isOpen = open === b.key;
+              // «أجّلها» on the row itself once the block's time has come (feature 029); an opened row has it among its actions
+              const onRow = tracked && st === null && canPostpone(b) && timeHasCome(iso, b.s, now.iso, now.min) && !isOpen;
               const marks = [];
               if (p) PRAYERS.forEach(([k, name]) => { if (k !== 'fajr' && p[k] >= b.s && p[k] < b.e) marks.push({kind:'pr', text:(wd === 5 && k === 'dhuhr' ? 'الجمعة' : name) + ' ' + fmtStr(p[k]), at:p[k]}); });
               appts.forEach(a => { if (a.min >= b.s && a.min < b.e) marks.push({kind:'appt', text:a.label + ' ' + fmtStr(a.min), at:a.min}); });
@@ -205,13 +207,14 @@
                 ${quiet ? (b.detail ? html`<span class="meta">${b.detail}</span>` : null)
                   : html`<span class="meta"><b>${CATS[b.cat].label}</b>${st === 'skip' ? ' · اتلغى' : ''}${st === 'moved' ? html` · اتأجل لـ <bdi>${dayName(movedTo(store, iso, b.key))}</bdi>` : null}${b.detail ? ' · ' + b.detail : ''}</span>`}
                 ${markEls}`;
-              return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '')}>
+              return html`<li class=${'row ' + (quiet ? 'quiet' : 'main') + ' ' + kc(b.cat) + (cur ? ' is-now' : '') + (st === 'done' ? ' done' : '') + (st === 'skip' ? ' skipped' : '') + (st === 'moved' ? ' skipped moved' : '') + (onRow ? ' has-pp' : '')}>
                 <div>${tracked && st !== 'moved' ? html`<${Check} on=${st === 'done'} cat=${b.cat} label=${'خلّصت: ' + blockName(b, store)} onToggle=${() => setStatus(update, iso, b.key, st === 'done' ? null : 'done')} />` : null}</div>
                 <div class="time"><span><${Time} min=${b.s} /></span>${quiet ? null : html`<span class="end">لحد <${Time} min=${b.e} /></span>`}</div>
                 ${quiet && !b.extra
                   ? html`<div class="row-body">${body}</div>`
                   : html`<button type="button" class="row-body" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${() => { setOpen(isOpen ? null : b.key); setPostponing(null); }}>${body}</button>`}
                 ${quiet ? null : html`<span class="denom" aria-hidden="true">${(b.e - b.s) < 60 ? (b.e - b.s) : hoursText(b.e - b.s)}<small>${(b.e - b.s) < 60 ? 'د' : 'س'}</small></span>`}
+                ${onRow ? html`<div class="row-pp"><button type="button" class="btn" aria-label=${'أجّلها: ' + blockName(b, store)} aria-expanded=${postponing === b.key ? 'true' : 'false'} onClick=${() => { setOpen(null); setPostponing(postponing === b.key ? null : b.key); }}>أجّلها</button></div>` : null}
                 ${isOpen ? html`<div class="row-actions">
                   ${tracked && st === 'moved' ? html`<button type="button" class="btn" onClick=${() => { setOpen(null); setIso(movedTo(store, iso, b.key)); }}>روح لليوم ده</button>`
                     : tracked ? (st === 'skip'
@@ -220,8 +223,8 @@
                   ${tracked && st === null && canPostpone(b) ? html`<button type="button" class="btn" aria-expanded=${postponing === b.key ? 'true' : 'false'} onClick=${() => setPostponing(postponing === b.key ? null : b.key)}>أجّلها</button>` : null}
                   ${b.extra ? html`<button type="button" class="btn ghost" onClick=${() => { setOpen(null); remove('اتمسحت "' + b.title + '"', s => { s.extras[iso] = (s.extras[iso] || []).filter(x => x.id !== b.extra); return s; }); }}>امسحها</button>` : null}
                 </div>` : null}
-                ${isOpen && postponing === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
-                ${place && place.row === i ? html`<span class=${'nowline at-' + place.at + nowSide} style=${{top: nowTop}} aria-hidden="true"><span class="nowline-t">الآن <${Time} min=${now.min} /></span></span>` : null}
+                ${postponing === b.key ? html`<${PostponePanel} key=${b.key} b=${b} iso=${iso} now=${now} store=${store} act=${act} onClose=${() => { setPostponing(null); setOpen(null); }} />` : null}
+                ${place && place.row === i ? html`<span class=${'nowline at-' + place.at + nowSide} style=${{top: onRow && place.at === 'in' ? 'calc(' + place.share.toFixed(4) + ' * (100% - var(--pp)))' : nowTop}} aria-hidden="true"><span class="nowline-t">الآن <${Time} min=${now.min} /></span></span>` : null}
               </li>`;
             })}
           </ol>

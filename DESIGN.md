@@ -183,7 +183,7 @@ Oxblood band. Active item: `shell-fg` text on a 16% `shell-fg` wash.
 Seven equal chips; the selected one fills with oxblood, today carries a line border.
 
 ### Block rows
-Check, start and end time, title with its meta line (category label in ink), denomination numeral. Done and skipped rows strike the title and fade the numeral; skipped rows lose their tint and get a dashed border.
+Check, start and end time, title with its meta line (category label in ink), denomination numeral. Done and skipped rows strike the title and fade the numeral; skipped rows lose their tint and get a dashed border. An open block of a postponable kind whose time has come (today from the one in progress back, a past day all of them) carries «أجّلها» on a line under its title, a 44px button; the «الآن» line on that row is placed over the block part, never across the button (feature 029).
 
 ### The «الآن» line
 On today's timeline, a one-pixel `--fg` line crosses the block in progress at the share of its time that has passed,
