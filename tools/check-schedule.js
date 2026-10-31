@@ -294,6 +294,18 @@ function runChecks(h, source) {
         && contrast(rgb(t.muted), surface) >= 4.5 && contrast(rgb(t['shell-fg']), shell) >= 4.5 && contrast(rgb(t['shell-dim']), shell) >= 4.5;
     }));
   });
+  // Feature 030: the paper grain darkens or lightens the ground by up to --grain, so every ink and the text must hold
+  // AA on the ground at both of the grain's extremes, black over it and white over it.
+  check('every ink and the text hold AA on the ground with the paper grain, in every palette, light and dark', () => {
+    const base = tokens(source, ':root'), dark = tokens(source, ':root[data-theme="dark"]');
+    return ['oxblood'].concat(PALETTES).every(p => [false, true].every(isDark => {
+      const t = Object.assign({}, base, isDark ? dark : {}, tokens(source, ':root[data-palette="' + p + '"]'),
+        isDark ? tokens(source, ':root[data-palette="' + p + '"][data-theme="dark"]') : {});
+      const bg = rgb(t.bg), grain = parseFloat(t.grain), grounds = [over([0, 0, 0], bg, grain), over([255, 255, 255], bg, grain)];
+      const inks = INKS.concat(KIND_COLORS.map(c => 'k-' + c), ['fg', 'muted']).map(k => rgb(t[k]));
+      return grain > 0 && inks.every(ink => grounds.every(g => contrast(ink, g) >= 4.5));
+    }));
+  });
   // Feature 022: a colour left unregistered would jump while the others fade, and one left out of the transition too.
   check('every colour in :root is registered with its light value, fades, and stops fading under reduced motion', () => {
     const base = tokens(source, ':root'), colours = Object.keys(base).filter(k => base[k][0] === '#').concat('tint');
@@ -418,6 +430,7 @@ if (process.argv.includes('--self-test')) {
     ['a colour is not registered', s => s.replace("@property --k-copper{syntax:'<color>';inherits:true;initial-value:#8A3A14}\n", '')],
     ['a colour does not fade', s => s.replace('--shell-dim,--uni,', '--uni,')],
     ['the fade runs under reduced motion', s => s.replace('{ :root,.fill,', '{ .fill,')],
+    ['the paper grain is too strong for AA', s => s.replace('--grain:.045;', '--grain:.3;')],
     ['a palette ground fails contrast', s => s.replace(':root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#1D1E20;', ':root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#6A6B70;')]
   ];
   let missed = 0;

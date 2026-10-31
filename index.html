@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="972d6b9cfe"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-mcejanBvWPMRJYQ6nOV3q8/f4QOJGwc8g967HM7ZKG8=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-021YIbbQr4qp+rFBIO4CDdakH8YXsBD8VXwiUhibrss=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="127934f0fa"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-mcejanBvWPMRJYQ6nOV3q8/f4QOJGwc8g967HM7ZKG8=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-D4NRe9Y59BJibEHWcIt1vyVByhVzslHZ9G6BBdJpZU4=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -47,6 +47,7 @@
   /* the ready colours for kinds the user adds (feature 016) */
   --k-teal:#0E5E58; --k-blue:#244F8C; --k-green:#2F5E22; --k-slate:#46515F; --k-copper:#8A3A14; --k-olive:#535C14;
   --tint:9%;
+  --grain:.045;
   --font-display:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
   --font-body:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
   --font-mono:"Readex Pro","Segoe UI",Tahoma,system-ui,sans-serif;
@@ -59,7 +60,7 @@
   --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
   --uni:#EE8E9C; --study:#F2A7B8; --course:#CFA0DD; --work:#D8B898; --gym:#E4C55C; --quran:#E8C96A; --personal:#EFD98F;
   --k-teal:#7FD3C9; --k-blue:#A3C2F2; --k-green:#A9D68F; --k-slate:#B9C4D1; --k-copper:#F0A57D; --k-olive:#CBD48A;
-  --tint:15%; color-scheme:dark;
+  --tint:15%; --grain:.06; color-scheme:dark;
 }
 /* Palettes (feature 022): the frame and the ground only. The kinds' inks and --fg never change (the Denomination
    Rule); tools/check-schedule.js checks every ink on every palette, light and dark. Oxblood is :root above. */
@@ -101,6 +102,10 @@
 }
 html{scrollbar-color:var(--quiet) var(--bg);scroll-padding-bottom:calc(128px + env(safe-area-inset-bottom, 0px))}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.6;caret-color:var(--course);accent-color:var(--course)}
+/* Paper grain on the ground (feature 030): fixed behind everything, so the solid cards, rows and band cover it.
+   Faint enough that every ink keeps AA (tools/check-schedule.js); gone where it could cost readability. */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px;opacity:var(--grain)}
+@media (prefers-contrast: more), (forced-colors: active), print{ body::before{display:none} }
 ::selection{background:color-mix(in srgb,var(--course) 28%,var(--surface));color:var(--fg)}
 #app{min-height:60vh}
 .wrap{max-width:720px;margin:0 auto;padding-inline:var(--s4);padding-block:18px 128px;display:flex;flex-direction:column;gap:var(--s5)}
