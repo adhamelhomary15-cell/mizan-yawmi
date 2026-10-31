@@ -35,6 +35,15 @@ test.describe('US1: today', () => {
     await expect(page.getByRole('button', {name: STUDY_1})).toHaveCount(1);
   });
 
+  test('a block ticked while its proposal is open closes the proposal and keeps its mark', async ({page}) => {
+    await openApp(page, {at: AT});
+    await page.getByRole('button', {name: STUDY_1}).click();
+    await expect(page.locator('.postpone')).toBeVisible();
+    await page.getByRole('checkbox', {name: 'خلّصت: مثال: مذاكرة مادة 1'}).click();
+    await expect(page.locator('.postpone')).toHaveCount(0);
+    await expect(page.getByRole('checkbox', {name: 'خلّصت: مثال: مذاكرة مادة 1'})).toHaveAttribute('aria-checked', 'true');
+  });
+
   test('an opened row shows one «أجّلها», among its actions', async ({page}) => {
     await openApp(page, {at: AT});
     await page.locator('.timeline button.row-body', {hasText: 'مثال: مذاكرة مادة 1'}).click();
