@@ -91,14 +91,14 @@ when its start passes.
 
 **Independent test**: pick yesterday: the open study block shows «أجّلها». Pick tomorrow: no row does.
 
-- [ ] T007 [US2] In the browser: a past day picked in the strip and a future day, as in the goal; on today, with the
+- [x] T007 [US2] In the browser: a past day picked in the strip and a future day, as in the goal; on today, with the
   app open, moving past the next block's start gives that row the button within one clock tick. No code is expected
   here: `timeHasCome` already covers both. If the check finds a gap, fix it in `src/app/10-postpone-ui.js`. **Commit**
   only if something changed.
 
 ## Phase 4: Tests, docs
 
-- [ ] T008 In `tests/e2e/block-postpone-row.spec.js` (Chromium and WebKit, `openApp` with `at` set to 16:00 Thursday
+- [x] T008 In `tests/e2e/block-postpone-row.spec.js` (Chromium and WebKit, `openApp` with `at` set to 16:00 Thursday
   15 October 2026 in Cairo, `new Date('2026-10-15T13:00:00Z')`, on the example week; progress seeded as
   `task-postpone.spec.js` does where marks are needed):
   - **US1**: the open postponable blocks up to the one in progress have «أجّلها» on their rows, later ones none; a
@@ -111,13 +111,20 @@ when its start passes.
   - **US2**: a past day picked in the strip shows the button on every open postponable block; a future day shows none;
   - **FR-005**: at 375 px, no horizontal scroll, and the button's height is at least 44 px;
   - **FR-006**: the button's accessible name is «أجّلها: <block>».
-- [ ] T009 [P] README.md, postponing: «أجّلها» shows on the row of an open block once its time has come (today from the
+- [x] T009 [P] README.md, postponing: «أجّلها» shows on the row of an open block once its time has come (today from the
   one in progress back, a past day all of them); a later block keeps it behind a tap.
-- [ ] T010 [P] DESIGN.md, «Block rows»: the «أجّلها» line under the title, only on open postponable blocks whose time
+- [x] T010 [P] DESIGN.md, «Block rows»: the «أجّلها» line under the title, only on open postponable blocks whose time
   has come.
-- [ ] T011 Rebuild, then run every check with `--self-test`, parity on the example and on `.private/settings.json`, and
+- [x] T011 Rebuild, then run every check with `--self-test`, parity on the example and on `.private/settings.json`, and
   the whole E2E suite. Run the new spec against broken sources (the rule always true, the button without
   `canPostpone`, the proposal still needing `isOpen`), rebuilt each time, and see it fail. Tick the tasks. **Commit**.
+
+  Done on 2026-10-31. T007 needed no code: the new spec checks a past day (Wednesday 14: both study blocks and the
+  course), a future day (Friday 16: none) and the clock passing 19:00 (the course gains the button), and all pass.
+  `block-postpone-row.spec.js` has 8 tests, 16 runs on Chromium and WebKit. It failed on four broken sources, rebuilt
+  each time: the rule always true (4 failed), the button without `canPostpone` (3), the proposal still needing
+  `isOpen` (1), and the «الآن» line placed across the button (1). Every check and self-test passes; parity 0 on the
+  example and a private settings file; the whole suite 200 passed, 4 skipped.
 
 ## Phase 5: PR
 
