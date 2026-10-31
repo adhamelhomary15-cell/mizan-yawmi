@@ -258,6 +258,11 @@ button{font:inherit;color:inherit}
 .denom small{font-family:var(--font-body);font-weight:500;font-size:11px;margin-inline-start:2px}
 .row.done .denom,.row.skipped .denom{opacity:.45}
 .row-actions{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:var(--s2);padding:0 0 var(--s2)}
+/* «أجّلها» on the row of an open block whose time has come (feature 029), under its title */
+.row-pp{grid-column:2 / -1;display:flex;padding:0 0 var(--s2)}
+.row-pp .btn{min-height:44px}
+/* the «الآن» line on such a row is placed over its block part only, not over the button's line (44px, padding and gap) */
+.row.has-pp{--pp:calc(44px + 2 * var(--s2))}
 .add-block{align-self:flex-start}
 .head-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px;min-width:0}
 .o-head .top{flex-wrap:wrap}

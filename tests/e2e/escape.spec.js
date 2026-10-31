@@ -10,7 +10,7 @@ const escape = async page => { await page.clock.runFor(100); await page.keyboard
 test('Escape closes the postpone panel', async ({page}) => {
   await openApp(page);
   await page.locator('.timeline button.row-body', {hasText: 'مذاكرة'}).first().click();
-  await button(page, 'أجّلها').click();
+  await page.locator('.row-actions button', {hasText: 'أجّلها'}).click();
   await expect(page.locator('.postpone')).toBeVisible();
   await escape(page);
   await expect(page.locator('.postpone')).toHaveCount(0);
