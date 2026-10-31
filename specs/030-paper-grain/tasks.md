@@ -33,10 +33,10 @@ description: "Task list for feature 030: paper grain on the page ground"
 
 ## Phase 2: Tests, docs, PR
 
-- [ ] T006 `tests/e2e/paper-grain.spec.js`: the layer and its opacity in light and dark; a card and the band are on
+- [x] T006 `tests/e2e/paper-grain.spec.js`: the layer and its opacity in light and dark; a card and the band are on
   top, and a tap on a checkbox ticks it; hidden under more contrast, forced colours and print; nothing scrolls
   sideways at 375 px.
-- [ ] T007 [P] A one-off performance script (scratchpad, not committed): scroll Today and the Week with the CPU slowed
+- [x] T007 [P] A one-off performance script (scratchpad, not committed): scroll Today and the Week with the CPU slowed
   4×, with and without the grain; the frame counts go in the PR.
-- [ ] T008 [P] `DESIGN.md`: the grain in Elevation & Depth, and in Do's and Don'ts (ground only, never a motif).
-- [ ] T009 Every check, parity, the full E2E with `--workers=2`, `check-private`. Tick the tasks.
+- [x] T008 [P] `DESIGN.md`: the grain in Elevation & Depth, and in Do's and Don'ts (ground only, never a motif).
+- [x] T009 Every check, parity, the full E2E with `--workers=2`, `check-private`. Tick the tasks.
