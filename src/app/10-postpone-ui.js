@@ -147,7 +147,7 @@
     </form>`;
   }
 
-  function TodayView({iso, setIso, now, store, update, goTab, remove, act, actEdit}){
+  function TodayView({iso, setIso, now, store, update, remove, act, actEdit}){
     const skip = b => act('اتلغى "' + blockName(b, store) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
     const blocks = dayBlocks(iso, store);
     const p = prayers(iso);
@@ -239,7 +239,7 @@
       </div>
 
       <aside class="today-side">
-        ${mainCourse(store) ? html`<div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>` : null}
+        ${mainCourse(store) ? html`<div class="o-target"><${TargetCard} iso=${iso} now=${now} store=${store} update=${update} /></div>` : null}
         <div class="sec o-prayers"><h2>مواعيد الصلاة</h2><${PrayerCard} iso=${iso} now=${now} /></div>
         <div class="sec o-balance"><h2>ميزان اليوم</h2><div class="panel"><${Balance} key=${iso} a=${ab.a} b=${ab.b} label="النهارده" /></div></div>
       </aside>

@@ -343,6 +343,7 @@
         </div>
       </div>
       <${WeeklyAppts} now=${now} store=${store} update=${update} remove=${remove} actEdit=${actEdit} goDay=${goDay} />
+      <${CoursesSection} now=${now} store=${store} update=${update} remove=${remove} />
       <div class="sec">
         <div class="sec-head"><h2>استيراد ملف إعدادات</h2></div>
         <div class="panel form">

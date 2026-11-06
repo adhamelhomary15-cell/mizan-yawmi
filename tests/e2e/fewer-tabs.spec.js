@@ -158,3 +158,115 @@ test.describe('appointments in Settings', () => {
     await expect(page.locator('.o-timeline')).not.toContainText('Generated call');
   });
 });
+
+test.describe('the course', () => {
+  // Weeks of 2 modules from Monday 12 October, with a gap after the first; the shown day is Thursday 15 October.
+  const week = (from, to, first) => ({from, to, label: from, items: [first, first + 1].map(n => [String(n), 'Module ' + n])});
+  const settings = plan => { const s = JSON.parse(JSON.stringify(EXAMPLE)); s.course = {name: 'Course A', plan}; return s; };
+  const PLAN = [week('2026-10-12', '2026-10-18', 1), week('2026-11-02', '2026-11-08', 3)];
+  const ADDED = {id: 'cb', name: 'Course B', from: '2026-10-01', to: '2026-11-30', modules: [{id: 'm1', title: 'Module B1'}, {id: 'm2', title: 'Module B2'}], done: {}};
+  const openCourse = (page, plan, progressPart = {}) => openApp(page, {before: seed(settings(plan), Object.assign({tasks: []}, progressPart))});
+  const module = (page, n) => page.getByRole('checkbox', {name: 'خلّصت: Module ' + n});
+  const card = page => page.locator('.target');
+  const mods = page => page.locator('.target .target-mods');
+  const row = (page, name) => page.locator('.course-row', {hasText: name});
+
+  test('a module is ticked and unticked on the card, with the count and bar following, even the week\'s last', async ({page}) => {
+    await openCourse(page, PLAN);
+    await expect(card(page)).toContainText('خلّصت 0 من 4 موديول');
+    await mods(page).locator(module(page, 1)).click();
+    await expect(card(page)).toContainText('خلّصت 1 من 4 موديول');
+    await expect(card(page).locator('.fill')).toHaveAttribute('style', /width: 25(\.0)?%/);
+    await mods(page).locator(module(page, 2)).click();
+    await expect(mods(page)).toContainText('Module 2');
+    await mods(page).locator(module(page, 2)).click();
+    await expect(card(page)).toContainText('خلّصت 1 من 4 موديول');
+  });
+
+  test('«الخطة كلها» shows the card\'s tick, and its own tick shows on the card', async ({page}) => {
+    await openCourse(page, PLAN);
+    const whole = page.locator('.target details');
+    await mods(page).locator(module(page, 1)).click();
+    await whole.locator('summary').click();
+    await expect(whole.locator('.week')).toHaveCount(2);
+    await expect(whole.locator('.week.is-current')).toContainText('Module 1');
+    await expect(whole.locator(module(page, 1))).toHaveAttribute('aria-checked', 'true');
+    await whole.locator(module(page, 2)).click();
+    await expect(mods(page).locator(module(page, 2))).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('in a gap or past the end with modules open, the card shows the next modules and does not say it is done', async ({page}) => {
+    await openCourse(page, [week('2026-09-01', '2026-09-07', 1), week('2026-09-08', '2026-09-14', 3)], {modules: {1: true, 2: true}});
+    await expect(mods(page)).toContainText('Module 3');
+    await expect(card(page)).not.toContainText('خلّصت الكورس كله');
+    await expect(card(page)).toContainText('الجاي');
+  });
+
+  test('with every module ticked, the card says it is done', async ({page}) => {
+    await openCourse(page, [week('2026-09-01', '2026-09-07', 1)], {modules: {1: true, 2: true}});
+    await expect(card(page)).toContainText('خلّصت الكورس كله');
+  });
+
+  test('a course that is not main is ticked in Settings, and the main course does not change', async ({page}) => {
+    await openCourse(page, PLAN, {courses: [ADDED]});
+    await tab(page, 'الإعدادات');
+    await expect(row(page, 'Course A')).toContainText('الكورس الأساسي');
+    await row(page, 'Course B').locator('summary').click();
+    await module(page, 'B1').click();
+    await expect(row(page, 'Course B')).toContainText('خلّصت 1 من 2 موديول');
+    await tab(page, 'اليوم');
+    await expect(page.locator('.target-name')).toHaveText('Course A');
+  });
+
+  test('add a course, make it main, see it on the card, and delete it; a settings course has no delete', async ({page}) => {
+    await openCourse(page, PLAN);
+    await tab(page, 'الإعدادات');
+    await expect(row(page, 'Course A').locator('button', {hasText: 'امسح الكورس'})).toHaveCount(0);
+    await button(page, 'كورس جديد').click();
+    await page.locator('#cf-name').fill('Course C');
+    await page.locator('#cf-mods').fill('One\nTwo');
+    await page.locator('.course-form button[type=submit]').click();
+    await row(page, 'Course C').locator('button', {hasText: 'خليه الكورس الأساسي'}).click();
+    await tab(page, 'اليوم');
+    await expect(page.locator('.target-name')).toHaveText('Course C');
+    await tab(page, 'الإعدادات');
+    await row(page, 'Course C').locator('button', {hasText: 'امسح الكورس'}).click();
+    await expect(page.locator('.toast p')).toContainText('اتمسح كورس');
+    await tab(page, 'اليوم');
+    await expect(page.locator('.target-name')).toHaveText('Course A');
+  });
+});
+
+test.describe('done state', () => {
+  const week = (from, to, first) => ({from, to, label: from, items: [first, first + 1].map(n => [String(n), 'Module ' + n])});
+  const settings = () => { const s = JSON.parse(JSON.stringify(EXAMPLE)); s.course = {name: 'Course A', plan: [week('2026-10-12', '2026-10-18', 1)]}; return s; };
+  const tasks = [task('today', '2026-10-15'), task('later', '2026-10-20'), task('finished', '2026-10-14', true)];
+  const openIt = page => openApp(page, {before: seed(settings(), {tasks})});
+
+  test('at phone size and offline, a tick on a task and a module stays after a reload', async ({page, context, browserName}) => {
+    // Playwright's WebKit blocks every navigation while offline (see offline.spec.js).
+    test.skip(browserName === 'webkit', 'Playwright WebKit blocks offline navigation before the service worker');
+    await openIt(page);
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+    await context.setOffline(true);
+    await page.getByRole('checkbox', {name: 'خلّص: Generated today'}).click();
+    await page.getByRole('checkbox', {name: 'خلّصت: Module 1'}).first().click();
+    await page.reload();
+    await expect(page.getByRole('checkbox', {name: 'خلّصت: Module 1'}).first()).toHaveAttribute('aria-checked', 'true');
+    await summary(page, 'finished').click();
+    await expect(section(page).locator('.finished')).toContainText('Generated today');
+    await context.setOffline(false);
+  });
+
+  test('opening the lists and the plan writes nothing', async ({page}) => {
+    await openIt(page);
+    const before = JSON.stringify(await progress(page));
+    await summary(page, 'others').click();
+    await summary(page, 'finished').click();
+    await page.locator('.target details summary').click();
+    await expect(page.locator('.target details .week')).toHaveCount(1);
+    expect(JSON.stringify(await progress(page))).toBe(before);
+  });
+});

@@ -91,9 +91,9 @@ Today; add, edit and delete an appointment from Settings, and see it inside its 
 **Independent test**: with a course, tick and untick a module from Today; add a course in Settings, make it main, see the card
 follow, and delete it; tick a module of a course that is not main.
 
-- [ ] T014 [US3] `src/app/12-course-view.js`: `ModuleRow`, from lines 105-110 (`Check`, `toggleModule`), and
+- [x] T014 [US3] `src/app/12-course-view.js`: `ModuleRow`, from lines 105-110 (`Check`, `toggleModule`), and
   `CoursePlan({now, store, update, course})`, from lines 96-113, marking the real current week (`now.iso`).
-- [ ] T015 [US3] `src/app/12-course-view.js`: `CoursesSection({now, store, update, remove})`, one row per course, with no
+- [x] T015 [US3] `src/app/12-course-view.js`: `CoursesSection({now, store, update, remove})`, one row per course, with no
   selection state:
   - the name, with the star and «الكورس الأساسي» on the main one;
   - `c.sub`, the dates and «حوالي N في الأسبوع»;
@@ -104,35 +104,35 @@ follow, and delete it; tick a module of a course that is not main.
   - «كورس جديد» opening `CourseForm`; with no course, «لسه مفيش كورس» and «كورس جديد».
 
   Delete `CourseView`.
-- [ ] T016 [US3] `src/app/09-today.js`: `TargetCard({iso, now, store, update})` becomes a panel, not a button:
+- [x] T016 [US3] `src/app/09-today.js`: `TargetCard({iso, now, store, update})` becomes a panel, not a button:
   - the name, count, bar and «الجاي» as now; «فاضل N» goes;
   - the week's modules with `ModuleRow`. The week contains `iso`, whole. In a gap or past the end, it is the week of the next
     open module. Before the plan starts, it is `plan[0]`;
   - «خلّصت الكورس كله» only when no module is open;
   - a `<details>` «الخطة كلها» with `CoursePlan`.
-- [ ] T017 [US3] `src/app/10-postpone-ui.js`, `src/app/21-shell.js`: pass `now` and `update` to `TargetCard`; `TodayView` stops
+- [x] T017 [US3] `src/app/10-postpone-ui.js`, `src/app/21-shell.js`: pass `now` and `update` to `TargetCard`; `TodayView` stops
   taking `goTab`, and the shell stops passing it.
-- [ ] T018 [US3] `src/app/15-settings-view.js`: render `<CoursesSection>` after `<WeeklyAppts>`.
-- [ ] T019 [US3] `src/app/21-shell.js`: remove the `course` entry from `TABS`, the hash list, and its branch (line 107).
-- [ ] T020 [US3] `src/planner.html`:
+- [x] T018 [US3] `src/app/15-settings-view.js`: render `<CoursesSection>` after `<WeeklyAppts>`.
+- [x] T019 [US3] `src/app/21-shell.js`: remove the `course` entry from `TABS`, the hash list, and its branch (line 107).
+- [x] T020 [US3] `src/planner.html`:
   - remove `.coursev` from every rule, keeping the other selectors (451; `.course-form` at 616 keeps its max-width);
-  - move `.coursev .week` (442) to `.weeks .week`, and `.coursev .prog` (438, 616) to `.prog`;
+  - move `.coursev .week` (442) to `.weeks .week`, and drop `.coursev .prog`, since `DayProgress` also uses `.prog`;
   - remove `.chips` (370-373), and move `.chips .star` to the course row;
   - `.target` loses `cursor:pointer` and its hover border (288-289);
   - `.weeks` stays one column inside `.o-target` (615).
-- [ ] T021 [P] [US3] `tests/e2e/fewer-tabs.spec.js`, the course: tick and untick on the card, with the count and bar following;
+- [x] T021 [P] [US3] `tests/e2e/fewer-tabs.spec.js`, the course: tick and untick on the card, with the count and bar following;
   tick the week's last open module, and it can still be unticked there; open «الخطة كلها», see the card's tick, tick there, and
   see it on the card; past the plan's end with modules open, the card shows the next modules and does not say it is done; tick
   a module of a course that is not main in Settings, and the main course does not change; add a course, make it main, see its
   name on the card, and delete it; a course from the settings file has no «امسح الكورس».
-- [ ] T022 [US3] `tests/e2e/fewer-tabs.spec.js`, done state (FR-008, FR-011): at 375 px and offline, ticking a task and a
+- [x] T022 [US3] `tests/e2e/fewer-tabs.spec.js`, done state (FR-008, FR-011): at 375 px and offline, ticking a task and a
   module keeps the marks after a reload (Chromium only, as in `offline.spec.js`); opening «باقي المهام», «خلصت» and «الخطة كلها»
   leaves `mizan-progress` unchanged.
-- [ ] T023 [P] [US3] `tests/e2e/course.spec.js`: update the header comment. Go through `CoursesSection`: the first test taps
+- [x] T023 [P] [US3] `tests/e2e/course.spec.js`: update the header comment. Go through `CoursesSection`: the first test taps
   «خليه الكورس الأساسي» on the Course A row; the second adds a course and sees «الكورس الأساسي» on its row; the third reads
   «حوالي 3 في الأسبوع» on the row. The no-writes check stays.
-- [ ] T024 [P] [US3] `tests/e2e/day.spec.js`: remove «الكورس» from the tab list.
-- [ ] T025 The gate; a search confirms every call to `toggleModule` and to the task toggle sits in a tap handler; a 375 px look
+- [x] T024 [P] [US3] `tests/e2e/day.spec.js`: remove «الكورس» from the tab list.
+- [x] T025 The gate; a search confirms every call to `toggleModule` and to the task toggle sits in a tap handler; a 375 px look
   at the card with a module list and an open plan.
 
 **Checkpoint**: all three stories work.

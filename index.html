@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="aa25ef9175"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-tyysvrWhadi7G9Ov6Kqpqhpi8AFPK1fTWhDyYKHtNgQ=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-NsPepWuiYQ2aHk795LpdFCra2XvjFo5sDRL6+4OZ9/I=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="09c1082cc2"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-rFtqkwjqg2gJ0g2bhNbbsI07p7O4Qa6Us7BFH8l4t/g=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-QOCyx633N8Pp/H08dL9T0Dv6PAkERmsnNJGhhTiDhuE=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-HRozn1qjg5Wcf4N/CtoDRw5MXs7sXDqCR7y6eBKXI54=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
    It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
    under its own key, outside the settings, the progress and the backup. */
@@ -279,8 +279,7 @@ button{font:inherit;color:inherit}
 .review-empty{font-family:var(--font-display);font-weight:500;font-size:17px}
 
 /* main target */
-.target{display:flex;flex-direction:column;gap:6px;width:100%;text-align:start;cursor:pointer;background:color-mix(in srgb,var(--course) var(--tint),var(--surface));border:1px solid color-mix(in srgb,var(--course) 30%,var(--line));border-radius:14px;padding:12px 14px}
-.target:hover{border-color:var(--course)}
+.target{display:flex;flex-direction:column;gap:6px;text-align:start;background:color-mix(in srgb,var(--course) var(--tint),var(--surface));border:1px solid color-mix(in srgb,var(--course) 30%,var(--line));border-radius:14px;padding:12px 14px}
 .target-name{font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.3}
 .target .track{display:block;height:6px}
 
@@ -362,10 +361,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .mod .mextra{color:var(--muted);font-size:13px}
 .mod.done .mtitle bdi{text-decoration:line-through;color:var(--muted)}
 .mod .chk{--c:var(--course)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.chips .star{width:14px;height:14px;color:var(--work)}
-.chips button[aria-pressed="true"] .star{color:inherit}
+.target-mods{margin-top:var(--s1)}
+.course-row{display:flex;flex-direction:column;gap:6px;padding-block:var(--s3);border-top:1px solid var(--line)}
+.course-row:first-child{border-top:0;padding-top:0}
+.course-row:last-child{padding-bottom:0}
+.course-name{display:flex;flex-wrap:wrap;align-items:center;gap:4px var(--s2)}
+.course-name .star{width:14px;height:14px;color:var(--work)}
+.plan-part .weeks{margin-top:var(--s2)}
 
 /* forms */
 .form{display:flex;flex-direction:column;gap:10px}
@@ -386,7 +388,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .ed-row{display:flex;align-items:baseline;gap:var(--s3);min-height:44px}
 .ed-row .num{min-width:3.2em;font-variant-numeric:tabular-nums}
 .ed-form,.ed-part{margin-top:var(--s2)}
-.task-part summary{cursor:pointer;font-weight:600;padding-block:11px;line-height:22px;list-style-position:inside}
+.plan-part summary,.task-part summary{cursor:pointer;font-weight:600;padding-block:11px;line-height:22px;list-style-position:inside}
 .ed-part summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
 .ed-kind{padding-block:var(--s2);border-top:1px solid var(--line)}
 .ed-flags{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4)}
@@ -429,12 +431,10 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .o-head .days{gap:5px}
 .o-head .dp{min-height:58px;border-radius:11px}
 .o-head .dp[aria-pressed="true"]{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--shell-fg) 28%,transparent)}
-.coursev > h2{padding-top:var(--s2);border-top:1px solid var(--line)}
-.coursev .prog{padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
 .o-tasks .sec-head,.settingsv .sec-head,.wk-routines .sec-head{align-items:center}
 .o-tasks .panel,.settingsv .panel{border-radius:16px}
 .empty{padding:14px 16px;border:1px dashed var(--line);border-radius:12px;background:color-mix(in srgb,var(--fg) 2.5%,var(--surface));line-height:1.7}
-.coursev .week{border-radius:16px;padding:14px 16px 6px}
+.weeks .week{border-radius:16px;padding:14px 16px 6px}
 .settingsv input[type="file"]{padding:7px;background:var(--surface);cursor:pointer}
 .settingsv input[type="file"]::file-selector-button{min-height:32px;margin-inline-end:10px;padding:5px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit;cursor:pointer}
 .settingsv input[type="file"]::file-selector-button:hover{border-color:var(--muted)}
@@ -443,7 +443,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .btn:active{transform:translateY(1px)}
 
 /* layout blocks */
-.today-view,.weekv,.coursev,.settingsv{display:flex;flex-direction:column;gap:var(--s5)}
+.today-view,.weekv,.settingsv{display:flex;flex-direction:column;gap:var(--s5)}
 .today-main,.today-side{display:contents}
 .o-head{order:0} .o-now{order:1} .o-target{order:2} .o-timeline{order:3} .o-tasks{order:4} .o-prayers{order:5} .o-balance{order:6}
 .brand{display:none}
@@ -608,7 +608,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   .weekv{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);grid-template-areas:"head head" "strips balance" "strips stats" "subjects rules";gap:var(--s5) 36px;align-items:start}
   .a-head{grid-area:head} .a-balance{grid-area:balance} .a-strips{grid-area:strips} .a-stats{grid-area:stats} .a-subjects{grid-area:subjects} .a-rules{grid-area:rules}
   .weeks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
-  .coursev .prog,.course-form{max-width:760px}
+  .o-target .weeks{grid-template-columns:minmax(0,1fr)}
+  .course-form{max-width:760px}
 }
 @media (prefers-reduced-motion: reduce){ :root,.fill,.balance .petal,.chk i,.btn,.nowline{transition:none} .balance .petal{animation:none} }
 </style></head><body>
@@ -1962,23 +1963,24 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
-  function TargetCard({iso, store, goTab}){
+  function TargetCard({iso, now, store, update}){
     const c = mainCourse(store);
     if (!c) return null;
     const plan = planOf(c), dm = doneMap(store, c);
     const all = plan.reduce((a, w) => a.concat(w.items), []);
     const n = all.filter(it => dm[it[3]]).length;
-    const wk = plan.find(w => iso >= w.from && iso <= w.to) || (plan.length && iso < plan[0].from ? plan[0] : null);
     const next = all.find(it => !dm[it[3]]);
-    const behind = wk ? wk.items.filter(it => !dm[it[3]]).length : 0;
-    return html`<button type="button" class="target c-course" onClick=${() => goTab('course')}>
+    // The week of the day shown, whole, so a module just ticked can be unticked here. In a gap or past the end, the week of
+    // the next open module; before the plan starts, the first week.
+    const wk = plan.find(w => iso >= w.from && iso <= w.to) || (plan.length && iso < plan[0].from ? plan[0] : null) || (next ? plan.find(w => w.items.indexOf(next) >= 0) : null);
+    return html`<div class="target c-course">
       <span class="target-name"><bdi>${c.name}</bdi></span>
       <span class="small muted">التارجت الأساسي · خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span>
       <span class="track"><span class="fill" style=${{display:'block', width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></span></span>
-      ${next ? html`<span class="small">الجاي: <bdi dir="ltr">${next[0]} · ${next[1]}</bdi></span>
-        ${wk && behind ? html`<span class="small muted">فاضل <bdi class="num">${behind}</bdi> في خطة الأسبوع ده</span>` : null}`
-        : html`<span class="small">خلّصت الكورس كله.</span>`}
-    </button>`;
+      ${next ? html`<span class="small">الجاي: <bdi dir="ltr">${next[0]} · ${next[1]}</bdi></span>` : html`<span class="small">خلّصت الكورس كله.</span>`}
+      ${wk ? html`<div class="target-mods">${wk.items.map(it => html`<${ModuleRow} key=${it[3]} it=${it} on=${!!dm[it[3]]} course=${c} update=${update} />`)}</div>` : null}
+      ${plan.length ? html`<details class="plan-part"><summary>الخطة كلها</summary><${CoursePlan} now=${now} store=${store} update=${update} course=${c} /></details>` : null}
+    </div>`;
   }
 
   function DayProgress({iso, store}){
@@ -2176,7 +2178,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </form>`;
   }
 
-  function TodayView({iso, setIso, now, store, update, goTab, remove, act, actEdit}){
+  function TodayView({iso, setIso, now, store, update, remove, act, actEdit}){
     const skip = b => act('اتلغى "' + blockName(b, store) + '" النهارده', s => { const c = s.checks[iso] || {}; c[b.key] = 'skip'; s.checks[iso] = c; return s; });
     const blocks = dayBlocks(iso, store);
     const p = prayers(iso);
@@ -2268,7 +2270,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </div>
 
       <aside class="today-side">
-        ${mainCourse(store) ? html`<div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>` : null}
+        ${mainCourse(store) ? html`<div class="o-target"><${TargetCard} iso=${iso} now=${now} store=${store} update=${update} /></div>` : null}
         <div class="sec o-prayers"><h2>مواعيد الصلاة</h2><${PrayerCard} iso=${iso} now=${now} /></div>
         <div class="sec o-balance"><h2>ميزان اليوم</h2><div class="panel"><${Balance} key=${iso} a=${ab.a} b=${ab.b} label="النهارده" /></div></div>
       </aside>
@@ -2460,73 +2462,65 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </form>`;
   }
 
-  function CourseView({now, store, update, remove}){
-    const [sel, setSel] = useState(store.mainCourse);
-    const [adding, setAdding] = useState(false);
-    const courses = allCourses(store), main = mainCourse(store);
-    const c = courses.find(x => x.id === sel) || main;
-    const save = course => { update(s => { s.courses.push(course); return s; }); setAdding(false); setSel(course.id); };
-    const newCourse = html`<button type="button" class="btn primary" aria-expanded=${adding ? 'true' : 'false'} onClick=${() => setAdding(!adding)}><${Plus} /><span>كورس جديد</span></button>`;
-    const form = adding ? html`<${CourseForm} now=${now} onSave=${save} onCancel=${() => setAdding(false)} />` : null;
-    if (!c) return html`<div class="coursev">
-      <div class="top"><div class="top-meta"><h1>الكورسات</h1><p class="sub">لسه مفيش كورس</p></div>${newCourse}</div>
-      ${form}
+  function ModuleRow({it, on, course, update}){
+    return html`<div class=${'mod' + (on ? ' done' : '')}>
+      <${Check} on=${on} cat="course" label=${'خلّصت: ' + it[1]} onToggle=${() => toggleModule(update, course, it[3])} />
+      <span class="mnum" dir="ltr">${it[0]}</span>
+      <span class="mtitle"><bdi>${it[1]}</bdi>${it[2] ? html` <span class="mextra">· ${it[2]}</span>` : null}</span>
     </div>`;
-    const isMain = c.id === main.id;
+  }
+
+  // Every week of a course; «الأسبوع ده» is the real current week, whatever day is shown.
+  function CoursePlan({now, store, update, course}){
+    const dm = doneMap(store, course);
+    return html`<div class="weeks">
+      ${planOf(course).map((w, wi) => {
+        const cur = now.iso >= w.from && now.iso <= w.to;
+        return html`<div class=${'week' + (cur ? ' is-current' : '')}>
+          <div class="week-head"><h3>الأسبوع ${wi + 1}</h3><span class="week-dates">${w.label}${cur ? html` · <span class="cur-pill">الأسبوع ده</span>` : null}</span></div>
+          ${w.note ? html`<p class="week-note">${w.note}</p>` : null}
+          ${w.items.map(it => html`<${ModuleRow} key=${it[3]} it=${it} on=${!!dm[it[3]]} course=${course} update=${update} />`)}
+        </div>`;
+      })}
+    </div>`;
+  }
+
+  function CourseRow({c, isMain, now, store, update, remove}){
     const plan = planOf(c), dm = doneMap(store, c);
     const all = plan.reduce((a, w) => a.concat(w.items), []);
     const n = all.filter(it => dm[it[3]]).length;
-    const today = now.iso;
     const perWeek = Math.max(1, Math.round(all.length / Math.max(1, plan.length)));
-
     const makeMain = () => update(s => { s.mainCourse = c.id; return s; });
-    const del = () => { setSel(null); remove('اتمسح كورس "' + c.name + '"', s => { s.courses = s.courses.filter(x => x.id !== c.id); if (s.mainCourse === c.id) s.mainCourse = SETTINGS_COURSE_ID; return s; }); };
-
-    return html`<div class="coursev">
-      <div class="top">
-        <div class="top-meta">
-          <h1><bdi>${c.name}</bdi></h1>
-          <p class="sub">${isMain ? 'الكورس الأساسي، التارجت الأول للفترة دي' : 'كورس إضافي'}</p>
-          <p class="small muted">${c.sub ? html`<bdi dir="rtl">${c.sub}</bdi> · ` : null}من ${dateLabel(c.from)} لحد ${dateLabel(c.to)}</p>
-        </div>
-        ${newCourse}
-      </div>
-
-      ${form}
-
-      ${courses.length > 1 ? html`<div class="chips" aria-label="الكورسات">
-        ${courses.map(x => html`<button type="button" class="btn small" aria-pressed=${x.id === c.id ? 'true' : 'false'} onClick=${() => setSel(x.id)}>
-          ${x.id === main.id ? html`<${Star} />` : null}<bdi>${x.name}</bdi></button>`)}
-      </div>` : null}
-
-      <div class="prog c-course">
-        <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
-        <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
-      </div>
-
+    const del = () => remove('اتمسح كورس "' + c.name + '"', s => { s.courses = s.courses.filter(x => x.id !== c.id); if (s.mainCourse === c.id) s.mainCourse = SETTINGS_COURSE_ID; return s; });
+    return html`<div class="course-row">
+      <p class="course-name">${isMain ? html`<${Star} />` : null}<b><bdi>${c.name}</bdi></b>${isMain ? html`<span class="small muted">الكورس الأساسي</span>` : null}</p>
+      <p class="small muted">${c.sub ? html`<bdi dir="rtl">${c.sub}</bdi> · ` : null}من ${dateLabel(c.from)} لحد ${dateLabel(c.to)} · ${'حوالي ' + perWeek + ' في الأسبوع'}</p>
       ${!c.fromSettings || !isMain ? html`<div class="form-row">
         ${!isMain ? html`<button type="button" class="btn" onClick=${makeMain}>خليه الكورس الأساسي</button>` : null}
         ${!c.fromSettings ? html`<button type="button" class="btn ghost" onClick=${del}>امسح الكورس</button>` : null}
       </div>` : null}
       ${isMain && !c.fromSettings && COURSE ? html`<p class="small muted">وقت الكورس في الجدول اليومي بقى لـ <bdi>${c.name}</bdi>.</p>` : null}
+      ${!isMain ? html`<details class="plan-part"><summary>الخطة</summary>
+        <div class="prog c-course">
+          <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span></div>
+          <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
+        </div>
+        <${CoursePlan} now=${now} store=${store} update=${update} course=${c} />
+      </details>` : null}
+    </div>`;
+  }
 
-      <h2>الخطة أسبوع بأسبوع</h2>
-      <div class="weeks">
-        ${plan.map((w, wi) => {
-          const cur = today >= w.from && today <= w.to;
-          return html`<div class=${'week' + (cur ? ' is-current' : '')}>
-            <div class="week-head"><h3>الأسبوع ${wi + 1}</h3><span class="week-dates">${w.label}${cur ? html` · <span class="cur-pill">الأسبوع ده</span>` : null}</span></div>
-            ${w.note ? html`<p class="week-note">${w.note}</p>` : null}
-            ${w.items.map(it => {
-              const on = !!dm[it[3]];
-              return html`<div class=${'mod' + (on ? ' done' : '')}>
-                <${Check} on=${on} cat="course" label=${'خلّصت: ' + it[1]} onToggle=${() => toggleModule(update, c, it[3])} />
-                <span class="mnum" dir="ltr">${it[0]}</span>
-                <span class="mtitle"><bdi>${it[1]}</bdi>${it[2] ? html` <span class="mextra">· ${it[2]}</span>` : null}</span>
-              </div>`;
-            })}
-          </div>`;
-        })}
+  // Settings' courses: one row per course, with no selection.
+  function CoursesSection({now, store, update, remove}){
+    const [adding, setAdding] = useState(false);
+    const courses = allCourses(store), main = mainCourse(store);
+    const save = course => { update(s => { s.courses.push(course); return s; }); setAdding(false); };
+    return html`<div class="sec">
+      <div class="sec-head"><h2>الكورسات</h2><button type="button" class="btn small" aria-expanded=${adding ? 'true' : 'false'} onClick=${() => setAdding(!adding)}><${Plus} /><span>كورس جديد</span></button></div>
+      ${adding ? html`<${CourseForm} now=${now} onSave=${save} onCancel=${() => setAdding(false)} />` : null}
+      <div class="panel">
+        ${courses.length ? courses.map(c => html`<${CourseRow} key=${c.id} c=${c} isMain=${c.id === main.id} now=${now} store=${store} update=${update} remove=${remove} />`)
+          : html`<p class="empty">لسه مفيش كورس</p>`}
       </div>
     </div>`;
   }
@@ -4151,6 +4145,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
         </div>
       </div>
       <${WeeklyAppts} now=${now} store=${store} update=${update} remove=${remove} actEdit=${actEdit} goDay=${goDay} />
+      <${CoursesSection} now=${now} store=${store} update=${update} remove=${remove} />
       <div class="sec">
         <div class="sec-head"><h2>استيراد ملف إعدادات</h2></div>
         <div class="panel form">
@@ -4848,7 +4843,6 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   const TABS = [
     ['today','اليوم',html`<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.8"/>`],
     ['week','الأسبوع',html`<path d="M4 6.5h16M4 12h10M4 17.5h13"/>`],
-    ['course','الكورس',html`<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>`],
     ['workout','تمارين',html`<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>`],
     ['settings','الإعدادات',html`<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>`]
   ];
@@ -4871,7 +4865,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const saveNow = () => { const r = downloadBackup(store, wk); setSaveMsg(r.ok ? {ok: true, name: r.name} : {ok: false}); };
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
-    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','workout','settings'].includes(hsh) ? hsh : 'today'; });
+    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','workout','settings'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
     // Shown once after a restore whose write to the synced copy did not finish in time.
@@ -4947,9 +4941,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     };
 
     let view;
-    if (tab === 'today') view = html`<${TodayView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
+    if (tab === 'today') view = html`<${TodayView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} remove=${remove} act=${act} actEdit=${actEdit} />`;
     else if (tab === 'week') view = html`<${WeekView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
-    else if (tab === 'course') view = html`<${CourseView} key=${settingsEpoch} now=${now} store=${store} update=${update} remove=${remove} />`;
     else if (tab === 'workout') view = html`<${WorkoutView} key=${settingsEpoch} wk=${wk} showToast=${showToast} />`;
     else view = html`<${SettingsView} key=${settingsOpened + '-' + settingsEpoch} now=${now} store=${store} update=${update} remove=${remove} actEdit=${actEdit} goDay=${goDay} wk=${wk} sync=${sync} replaceAll=${replaceAll} settingsChanged=${settingsChanged} />`;
 
