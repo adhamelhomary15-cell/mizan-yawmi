@@ -37,12 +37,12 @@ the full E2E with `--workers=2` on Chromium and WebKit.
 **Independent test**: with no Tasks tab, add a task with a date and one without, paste tasks, edit, tick and delete from
 Today; add, edit and delete an appointment from Settings, and see it inside its day.
 
-- [ ] T001 [US1] `src/app/14-tasks-view.js`: `TaskRow`, from the Tasks screen's row (lines 182-190): tick with the existing
+- [x] T001 [US1] `src/app/14-tasks-view.js`: `TaskRow`, from the Tasks screen's row (lines 182-190): tick with the existing
   toggle, type and date, edit, delete, with «أجّلها» only on an open dated task (line 187). A late task says «متأخرة» beside
   its type. Keep `id="edit-btn-…"`.
-- [ ] T002 [US1] `src/app/14-tasks-view.js`: `useEditSlot`, a small local hook from `editing`, `lastEdited`, the focus effect,
+- [x] T002 [US1] `src/app/14-tasks-view.js`: `useEditSlot`, a small local hook from `editing`, `lastEdited`, the focus effect,
   `openEdit` and `closeEdit` (lines 127-136): the one open edit form and its focus return, keeping the `if (el)` guard.
-- [ ] T003 [US1] `src/app/14-tasks-view.js`: `DayTasks({iso, now, store, update, remove, actEdit})`, wrapper `.sec o-tasks`:
+- [x] T003 [US1] `src/app/14-tasks-view.js`: `DayTasks({iso, now, store, update, remove, actEdit})`, wrapper `.sec o-tasks`:
   - the head «مهام النهارده» on today, «مهام اليوم ده» on another day, with «+ مهمة» and «الصق مهام من AI»;
   - the day's open tasks (`t.due === iso`, or `t.due < iso` when the day shown is today), or «مفيش مهام لليوم ده.»;
   - «من غير ميعاد»: open tasks with no date, when there are any;
@@ -50,34 +50,35 @@ Today; add, edit and delete an appointment from Settings, and see it inside its 
   - «خلصت»: a closed `<details>` with the last 20 finished (line 164), when there are any.
 
   The new task form's date is `iso`, or empty when `iso < now.iso`. Only one form is open at a time, including paste.
-- [ ] T004 [US2] `src/app/14-tasks-view.js`: `WeeklyAppts({now, store, update, remove, actEdit, goDay})`, from the
+- [x] T004 [US2] `src/app/14-tasks-view.js`: `WeeklyAppts({now, store, update, remove, actEdit, goDay})`, from the
   appointments section (`.a-appts`), with `useEditSlot`, «افتح اليوم» calling `goDay`. Delete `TasksView`, and `filter` and `shown`
   with it.
-- [ ] T005 [US1] `src/app/10-postpone-ui.js`: remove the inline section (lines 243-253) and `dayTasks`. Render
+- [x] T005 [US1] `src/app/10-postpone-ui.js`: remove the inline section (lines 243-253) and `dayTasks`. Render
   `<DayTasks key=${iso} …>` in `.today-main`, after `.o-timeline`. `finishTask` stays for the day review (line 103).
-- [ ] T006 [US2] `src/app/15-settings-view.js`: `SettingsView` takes `now`, `update`, `remove`, `actEdit` and `goDay`, and
+- [x] T006 [US2] `src/app/15-settings-view.js`: `SettingsView` takes `now`, `update`, `remove`, `actEdit` and `goDay`, and
   renders `<WeeklyAppts>` right after «جدولك».
-- [ ] T007 [US1] `src/app/21-shell.js`: remove the `tasks` entry from `TABS` and from the hash list (line 29). The final `else`
+- [x] T007 [US1] `src/app/21-shell.js`: remove the `tasks` entry from `TABS` and from the hash list (line 29). The final `else`
   (line 110) renders `SettingsView` in place of the `settings` branch (line 109), with the new props.
-- [ ] T008 [US1] `src/planner.html`:
+- [x] T008 [US1] `src/planner.html`:
   - remove `.tasksv` from shared lists (lines 439, 440, 451), keeping the other selectors, and its grid (line 617);
-  - remove `.filters` (421-422), `.titem.has-act` (296) and `.a-tasks`, `.a-appts` (618);
-  - add `.o-tasks .panel` with the radius `.tasksv .panel` gave, and `<summary>` at 44 px, following `.ed-part summary` (395);
+  - remove `.titem.has-act` (296) and `.a-tasks`, `.a-appts` (618); `.filters` stays, since the workouts switch uses it
+    (`18-workout-history.js:12`);
+  - add `.o-tasks .panel` with the radius `.tasksv .panel` gave, and `<summary>` at 44 px, with its open and closed marker;
   - set phone order `.o-timeline{order:3} .o-tasks{order:4}` (453).
-- [ ] T009 [P] [US1] `tests/e2e/fewer-tabs.spec.js`, tasks: with no task, the section shows with both buttons and the empty
+- [x] T009 [P] [US1] `tests/e2e/fewer-tabs.spec.js`, tasks: with no task, the section shows with both buttons and the empty
   line; «+ مهمة» takes the day shown, and no date on a past day; changing day closes the form; a task with the date cleared is
   under «من غير ميعاد» on every day; a task due another day is in «باقي المهام» with its count, and not in the day's list; paste;
   tick a task from the day's list, then edit and delete one, with «رجّعها» after the edit and the delete; edit, delete and
   untick a finished task; edit and delete an undated one.
-- [ ] T010 [US2] `tests/e2e/fewer-tabs.spec.js`, appointments in Settings: add, edit, delete; the appointment shows inside
+- [x] T010 [US2] `tests/e2e/fewer-tabs.spec.js`, appointments in Settings: add, edit, delete; the appointment shows inside
   its day; «افتح اليوم» lands on it in Today.
-- [ ] T011 [P] [US1] `tests/e2e/task-postpone.spec.js`: keep the US1 tests and FR-006; update the header comment. Run from Today:
+- [x] T011 [P] [US1] `tests/e2e/task-postpone.spec.js`: keep the US1 tests and FR-006; update the header comment. Run from Today:
   - moving one day per tap: open «باقي المهام», and read date order there (`.o-tasks details`);
   - no «أجّلها»: 4 buttons with «باقي المهام» open, none on the undated or edited task, none inside «خلصت»;
   - FR-005 opens «باقي المهام» in place of the tab;
   - the phone test reads Today, not the Tasks tab.
-- [ ] T012 [P] [US1] `tests/e2e/day.spec.js`: remove «المهام» from the tab list (line 8).
-- [ ] T013 The gate; a 375 px look at Today and Settings. The band has five tabs in six columns until T026.
+- [x] T012 [P] [US1] `tests/e2e/day.spec.js`: remove «المهام» from the tab list (line 8).
+- [x] T013 The gate; a 375 px look at Today and Settings. The band has five tabs in six columns until T026.
 
 **Checkpoint**: US1 and US2 work on their own.
 

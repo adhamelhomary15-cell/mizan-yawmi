@@ -116,14 +116,9 @@
   }
 
   /* ---------------- Tasks & appointments ---------------- */
-  function TasksView({now, store, update, goDay, remove, actEdit}){
-    const [filter, setFilter] = useState('open');
-    const [taskForm, setTaskForm] = useState(false);
-    const [apptForm, setApptForm] = useState(false);
-    const [pasteOpen, setPasteOpen] = useState(false);
-    const openPaste = () => { setEditing(null); setTaskForm(false); setPasteOpen(true); };
-    const closePaste = () => { setPasteOpen(false); setTimeout(() => { const b = document.getElementById('paste-open-btn'); if (b) b.focus(); }, 0); };
-    // The one open edit form: null, or {kind: 'task' | 'appt', id}. Only one at a time; opening another drops the first unsaved.
+  // The one open edit form: an id, or null. Only one at a time; opening another drops the first unsaved. Closing returns
+  // focus to the form's edit button, when it is still on the screen.
+  function useEditSlot(){
     const [editing, setEditing] = useState(null);
     const lastEdited = useRef(null);
     useEffect(() => {
@@ -132,8 +127,32 @@
       lastEdited.current = null;
       if (el) el.focus();
     }, [editing]);
-    const openEdit = (kind, id) => { setTaskForm(false); setApptForm(false); setPasteOpen(false); lastEdited.current = null; setEditing({kind, id}); };
+    const openEdit = id => { lastEdited.current = null; setEditing(id); };
     const closeEdit = id => { lastEdited.current = id; setEditing(null); };
+    return {editing, setEditing, openEdit, closeEdit};
+  }
+
+  function TaskRow({t, now, update, remove, actEdit, onEdit}){
+    const late = !t.done && t.due && t.due < now.iso;
+    return html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : !t.due ? '' : ' wrap-act')}>
+      <${Check} on=${!!t.done} cat=${t.tag} label=${(t.done ? 'رجّع: ' : 'خلّص: ') + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = !x.done; return s; })} />
+      <div class="shrink"><p class="ttext">${t.text}</p>
+        <p class="small"><span class="ttag">${TASK_TAGS[t.tag]}</span>${t.due ? html` · <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة · ' : ''}${dateLabel(t.due)}</span>` : null}</p></div>
+      <div class="tact">
+        ${!t.done && t.due ? html`<button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>` : null}
+        <button type="button" class="edit" id=${'edit-btn-' + t.id} aria-label=${'عدّل ' + t.text} title="عدّل" onClick=${onEdit}><${Pencil} /></button>
+        <button type="button" class="del" aria-label=${'امسح ' + t.text} onClick=${() => remove('اتمسحت المهمة', s => { s.tasks = s.tasks.filter(x => x.id !== t.id); return s; })}>امسح</button>
+      </div>
+    </div>`;
+  }
+
+  // Today's tasks section. Every open task is in exactly one list, on every day (FR-010).
+  function DayTasks({iso, now, store, update, remove, actEdit}){
+    const [taskForm, setTaskForm] = useState(false);
+    const [pasteOpen, setPasteOpen] = useState(false);
+    const {editing, setEditing, openEdit, closeEdit} = useEditSlot();
+    const openPaste = () => { setEditing(null); setTaskForm(false); setPasteOpen(true); };
+    const closePaste = () => { setPasteOpen(false); setTimeout(() => { const b = document.getElementById('paste-open-btn'); if (b) b.focus(); }, 0); };
     const saveTask = (t, value) => {
       const before = {text: t.text, tag: t.tag, due: t.due || ''};
       actEdit('اتعدّلت المهمة',
@@ -141,7 +160,44 @@
         s => { s.tasks = restoreFields(s.tasks, t.id, before, TASK_EDIT_KEYS); return s; });
       closeEdit(t.id);
     };
+    // value comes validated and trimmed from ItemForm (text up to 140 characters, a known type, an optional date).
+    const addTask = value => {
+      update(s => { s.tasks.push({id: uid36(), text: value.text, tag: value.tag, due: value.due, done: false, created: now.iso}); return s; });
+      setTaskForm(false);
+    };
+    const isToday = iso === now.iso;
+    const inDay = t => t.due === iso || (isToday && t.due < iso);
+    const open = store.tasks.filter(t => !t.done).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+    const dated = open.filter(t => t.due);
+    const dayList = dated.filter(inDay);
+    const others = dated.filter(t => !inDay(t));
+    const undated = open.filter(t => !t.due);
+    const finished = store.tasks.filter(t => t.done).slice(-20).reverse();
+    const row = t => editing === t.id
+      ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`
+      : html`<${TaskRow} key=${t.id} t=${t} now=${now} update=${update} remove=${remove} actEdit=${actEdit} onEdit=${() => { setTaskForm(false); setPasteOpen(false); openEdit(t.id); }} />`;
+    return html`<div class="sec o-tasks">
+      <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2>
+        ${!taskForm && !pasteOpen ? html`<span class="task-add">
+          <button type="button" class="btn small" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة</button>
+          <button type="button" id="paste-open-btn" class="btn small" onClick=${openPaste}>الصق مهام من AI</button>
+        </span>` : null}
+      </div>
+      <div class="panel">
+        ${taskForm ? html`<div class="form-above"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: iso < now.iso ? '' : iso}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : null}
+        ${pasteOpen ? html`<div class="form-above"><${PasteTasks} now=${now} store=${store} update=${update} actEdit=${actEdit} onClose=${closePaste} /></div>` : null}
+        ${dayList.length ? html`<div class="tlist day-list">${dayList.map(row)}</div>` : html`<p class="empty">مفيش مهام لليوم ده.</p>`}
+        ${undated.length ? html`<div class="task-part"><h3>من غير ميعاد</h3><div class="tlist">${undated.map(row)}</div></div>` : null}
+        ${others.length ? html`<details class="task-part others"><summary>باقي المهام (<bdi class="num">${others.length}</bdi>)</summary><div class="tlist">${others.map(row)}</div></details>` : null}
+        ${finished.length ? html`<details class="task-part finished"><summary>خلصت</summary><div class="tlist">${finished.map(row)}</div></details>` : null}
+      </div>
+    </div>`;
+  }
 
+  // Settings' weekly appointments.
+  function WeeklyAppts({now, store, update, remove, actEdit, goDay}){
+    const [apptForm, setApptForm] = useState(false);
+    const {editing, setEditing, openEdit, closeEdit} = useEditSlot();
     // value comes validated and trimmed from ItemForm (name up to 60 characters, a day number, a time).
     const addAppt = value => {
       update(s => { s.appts.push({id: uid36(), label: value.label, day: value.day, time: value.time}); return s; });
@@ -154,62 +210,23 @@
         s => { s.appts = restoreFields(s.appts, a.id, before, APPT_EDIT_KEYS); return s; });
       closeEdit(a.id);
     };
-    // value comes validated and trimmed from ItemForm (text up to 140 characters, a known type, an optional date).
-    const addTask = value => {
-      update(s => { s.tasks.push({id: uid36(), text: value.text, tag: value.tag, due: value.due, done: false, created: now.iso}); return s; });
-      setTaskForm(false);
-    };
     const appts = store.appts.slice().sort((a, b) => WEEK_ORDER.indexOf(Number(a.day)) - WEEK_ORDER.indexOf(Number(b.day)) || a.time.localeCompare(b.time));
-    const open = store.tasks.filter(t => !t.done).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
-    const doneTasks = store.tasks.filter(t => t.done).slice(-20).reverse();
-    const shown = filter === 'open' ? open : doneTasks;
-
-    return html`<div class="tasksv">
-      <div class="top a-head"><div class="top-meta"><h1>المهام</h1><p class="sub">مهام ليها ميعاد، ومواعيد ثابتة كل أسبوع</p></div></div>
-
-      <div class="sec a-tasks">
-        <div class="sec-head"><h2>المهام</h2>
-          <div class="filters">
-            <button type="button" class="btn small" aria-pressed=${filter === 'open' ? 'true' : 'false'} onClick=${() => { setEditing(null); setFilter('open'); }}>مفتوحة (${open.length})</button>
-            <button type="button" class="btn small" aria-pressed=${filter === 'done' ? 'true' : 'false'} onClick=${() => { setEditing(null); setFilter('done'); }}>خلصت</button>
-          </div>
-        </div>
-        <div class="panel">
-          ${taskForm ? html`<div class="form-above"><${ItemForm} kind="task" initial=${{text: '', tag: 'uni', due: ''}} idPrefix="task" textLabel="مهمة جديدة" submitLabel="ضيف المهمة" focusFirst=${false} onSubmit=${addTask} onCancel=${() => setTaskForm(false)} /></div>` : pasteOpen ? html`<${PasteTasks} now=${now} store=${store} update=${update} actEdit=${actEdit} onClose=${closePaste} />` : html`<button type="button" class="btn add-task" onClick=${() => { setEditing(null); setTaskForm(true); }}><${Plus} />مهمة جديدة</button><button type="button" id="paste-open-btn" class="btn add-task paste-open" onClick=${openPaste}>الصق مهام من AI</button>`}
-          <div class="tlist spaced">
-            ${shown.length ? shown.map(t => editing && editing.kind === 'task' && editing.id === t.id
-              ? html`<div class="titem-edit" key=${t.id}><${ItemForm} kind="task" initial=${{text: t.text, tag: t.tag, due: t.due || ''}} idPrefix="edit-task" textLabel="نص المهمة" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveTask(t, v)} onCancel=${() => closeEdit(t.id)} /></div>`
-              : html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : !t.due ? '' : ' wrap-act')} key=${t.id}>
-              <${Check} on=${!!t.done} cat=${t.tag} label=${(t.done ? 'رجّع: ' : 'خلّص: ') + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = !x.done; return s; })} />
-              <div class="shrink"><p class="ttext">${t.text}</p>
-                <p class="small"><span class="ttag">${TASK_TAGS[t.tag]}</span>${t.due ? html` · <span class=${'tdue' + (!t.done && t.due < now.iso ? ' late' : '')}>${dateLabel(t.due)}</span>` : null}</p></div>
-              <div class="tact">
-                ${!t.done && t.due ? html`<button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>` : null}
-                <button type="button" class="edit" id=${'edit-btn-' + t.id} aria-label=${'عدّل ' + t.text} title="عدّل" onClick=${() => openEdit('task', t.id)}><${Pencil} /></button>
-                <button type="button" class="del" aria-label=${'امسح ' + t.text} onClick=${() => remove('اتمسحت المهمة', s => { s.tasks = s.tasks.filter(x => x.id !== t.id); return s; })}>امسح</button>
-              </div>
-            </div>`) : html`<p class="empty">${filter === 'open' ? 'مفيش مهام مفتوحة. ضيف مثلاً شيت مطلوب أو ميعاد تسليم.' : 'لسه مخلّصتش مهام.'}</p>`}
-          </div>
-        </div>
+    return html`<div class="sec">
+      <div class="sec-head"><h2>مواعيد كل أسبوع</h2>${!apptForm ? html`<button type="button" class="btn small" onClick=${() => { setEditing(null); setApptForm(true); }}><${Plus} />ميعاد</button>` : null}</div>
+      <div class="panel">
+        ${appts.length ? html`<div>${appts.map(a => editing === a.id
+          ? html`<div class="appt-edit" key=${a.id}><${ItemForm} kind="appt" initial=${{label: a.label, day: a.day, time: a.time}} idPrefix="edit-appt" textLabel="الميعاد" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveAppt(a, v)} onCancel=${() => closeEdit(a.id)} /></div>`
+          : html`<div class="appt" key=${a.id}>
+            <div><p>${a.label}</p><p class="when">${DAY_NAMES[a.day]} · ${fmtStr(toMin(a.time))}</p></div>
+            <div class="aact">
+              <button type="button" class="btn ghost small" onClick=${() => goDay(addDays(weekStart(now.iso), WEEK_ORDER.indexOf(Number(a.day))))}>افتح اليوم</button>
+              <button type="button" class="edit" id=${'edit-btn-' + a.id} aria-label=${'عدّل ' + a.label} title="عدّل" onClick=${() => { setApptForm(false); openEdit(a.id); }}><${Pencil} /></button>
+              <button type="button" class="del" aria-label=${'امسح ' + a.label} onClick=${() => remove('اتمسح ميعاد "' + a.label + '"', s => { s.appts = s.appts.filter(x => x.id !== a.id); return s; })}>امسح</button>
+            </div>
+          </div>`)}</div>`
+          : html`<p class="empty">المواعيد الأساسية متحطة في الجدول خلاص. أي ميعاد ثابت تاني، زي ميتنج شغل أسبوعي، ضيفه من "+ ميعاد" وهيظهر جوه يومه.</p>`}
+        ${apptForm ? html`<div class="form-below"><${ItemForm} kind="appt" initial=${{label: '', day: 5, time: ''}} idPrefix="appt" textLabel="الميعاد" submitLabel="ضيف الميعاد" focusFirst=${false} onSubmit=${addAppt} onCancel=${() => setApptForm(false)} /></div>` : null}
       </div>
-      <div class="sec a-appts">
-        <div class="sec-head"><h2>مواعيد كل أسبوع</h2>${!apptForm ? html`<button type="button" class="btn small" onClick=${() => { setEditing(null); setApptForm(true); }}><${Plus} />ميعاد</button>` : null}</div>
-        <div class="panel">
-          ${appts.length ? html`<div>${appts.map(a => editing && editing.kind === 'appt' && editing.id === a.id
-            ? html`<div class="appt-edit" key=${a.id}><${ItemForm} kind="appt" initial=${{label: a.label, day: a.day, time: a.time}} idPrefix="edit-appt" textLabel="الميعاد" submitLabel="احفظ التعديل" focusFirst=${true} onSubmit=${v => saveAppt(a, v)} onCancel=${() => closeEdit(a.id)} /></div>`
-            : html`<div class="appt" key=${a.id}>
-              <div><p>${a.label}</p><p class="when">${DAY_NAMES[a.day]} · ${fmtStr(toMin(a.time))}</p></div>
-              <div class="aact">
-                <button type="button" class="btn ghost small" onClick=${() => goDay(addDays(weekStart(now.iso), WEEK_ORDER.indexOf(Number(a.day))))}>افتح اليوم</button>
-                <button type="button" class="edit" id=${'edit-btn-' + a.id} aria-label=${'عدّل ' + a.label} title="عدّل" onClick=${() => openEdit('appt', a.id)}><${Pencil} /></button>
-                <button type="button" class="del" aria-label=${'امسح ' + a.label} onClick=${() => remove('اتمسح ميعاد "' + a.label + '"', s => { s.appts = s.appts.filter(x => x.id !== a.id); return s; })}>امسح</button>
-              </div>
-            </div>`)}</div>`
-            : html`<p class="empty">المواعيد الأساسية متحطة في الجدول خلاص. أي ميعاد ثابت تاني، زي ميتنج شغل أسبوعي، ضيفه من "+ ميعاد" وهيظهر جوه يومه.</p>`}
-          ${apptForm ? html`<div class="form-below"><${ItemForm} kind="appt" initial=${{label: '', day: 5, time: ''}} idPrefix="appt" textLabel="الميعاد" submitLabel="ضيف الميعاد" focusFirst=${false} onSubmit=${addAppt} onCancel=${() => setApptForm(false)} /></div>` : null}
-        </div>
-      </div>
-
     </div>`;
   }
 

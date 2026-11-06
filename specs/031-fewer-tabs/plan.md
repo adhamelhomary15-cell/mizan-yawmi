@@ -116,13 +116,13 @@ tick at phone size and offline, and confirms no code path sets done state withou
    - `TodayView` loses `goTab`, since nothing in it opens a tab any more.
 7. **CSS.**
    - **Remove**: `.tasksv` and `.coursev` from every rule, keeping the other selectors in shared lists (`.settingsv`,
-     `.course-form`); `.filters`, `.chips`, `.titem.has-act`, and the `.a-tasks` and `.a-appts` desktop grid.
+     `.course-form`); `.chips`, `.titem.has-act`, and the `.a-tasks` and `.a-appts` desktop grid.
    - **Change**: `.nav-in` to `repeat(4,...)` (`planner.html:580`); `.target` loses `cursor:pointer` and its hover border
      (288-289); phone order to `.o-timeline{order:3} .o-tasks{order:4}` (453), because `.today-main` is `display:contents`
      there and `order` decides, not the file.
    - **Keep or move**: `.weeks`, `.week`, `.mod`, `.appt` and `.titem`. The rules scoped to `.coursev .week` and
      `.tasksv .panel` move to `.weeks .week` and `.o-tasks .panel`. `.weeks` stays one column inside `.o-target`, whose width
-     is 340 px. `<summary>` follows `.ed-part summary` (44 px).
+     is 340 px. `.filters` stays, for the workouts switch. `<summary>` is 44 px high and keeps its marker.
 
 ## Design
 

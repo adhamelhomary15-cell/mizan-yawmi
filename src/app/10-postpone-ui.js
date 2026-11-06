@@ -158,7 +158,6 @@
     const [reviewing, setReviewing] = useState(false);
     const [postponing, setPostponing] = useState(null);   // the key of the block whose postpone panel is open
     useEffect(() => { setOpen(null); setAdding(false); setPostponing(null); }, [iso]);
-    const dayTasks = store.tasks.filter(t => !t.done && t.due && (t.due === iso || (isToday && t.due < iso)));
     const wd = weekday(iso);
     const ab = balanceOf([iso], store);
     // The «الآن» line (feature 023): today only, on top of the row nowPlace names, so no row moves.
@@ -236,21 +235,11 @@
           ${ANCHOR_NOTICES[dayNotice(iso)] ? html`<p class="note">${ANCHOR_NOTICES[dayNotice(iso)]}</p>` : null}
           <p class="small muted">دوس على أي بلوك عشان تلغيه أو تأجّله.${p ? 'الفجر ' + fmtStr(p.fajr) + '، والمواعيد محسوبة لـ ' + (CFG.location.label || 'موقعك') + ' بطريقة ' + CFG.prayerMethod + '.' : ''}</p>
         </div>
+        <${DayTasks} key=${iso} iso=${iso} now=${now} store=${store} update=${update} remove=${remove} actEdit=${actEdit} />
       </div>
 
       <aside class="today-side">
         ${mainCourse(store) ? html`<div class="o-target"><${TargetCard} iso=${iso} store=${store} goTab=${goTab} /></div>` : null}
-        ${dayTasks.length ? html`<div class="sec o-tasks">
-          <div class="sec-head"><h2>مهام ${isToday ? 'النهارده' : 'اليوم ده'}</h2><button type="button" class="btn ghost small" onClick=${() => goTab('tasks')}>كل المهام</button></div>
-          <div class="panel tlist">
-            ${dayTasks.map(t => { const late = t.due < iso; return html`<div class=${'titem has-act c-' + t.tag}>
-              <${Check} on=${false} cat=${t.tag} label=${'خلّص: ' + t.text} onToggle=${() => update(finishTask(t.id))} />
-              <span class="ttext">${t.text}</span>
-              <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة' : TASK_TAGS[t.tag]}</span>
-              <button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>
-            </div>`; })}
-          </div>
-        </div>` : null}
         <div class="sec o-prayers"><h2>مواعيد الصلاة</h2><${PrayerCard} iso=${iso} now=${now} /></div>
         <div class="sec o-balance"><h2>ميزان اليوم</h2><div class="panel"><${Balance} key=${iso} a=${ab.a} b=${ab.b} label="النهارده" /></div></div>
       </aside>
