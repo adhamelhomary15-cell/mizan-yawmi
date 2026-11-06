@@ -153,6 +153,7 @@ tick at phone size and offline, and confirms no code path sets done state withou
   - add a task with the date cleared: it is under «من غير ميعاد» on every day;
   - a task due another day is not in the day's list, and is in «باقي المهام» with its count;
   - paste tasks;
+  - tick a task from the day's list, then edit and delete one, with «رجّعها» after the edit and the delete;
   - edit, delete and untick a finished task; edit and delete an undated one.
 - **Appointments in Settings**: add, edit, delete; the appointment shows inside its day; «افتح اليوم» lands on it in Today.
 - **The course**:

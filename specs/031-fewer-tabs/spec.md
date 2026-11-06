@@ -97,8 +97,8 @@ see the target card follow; delete it.
 
 **Acceptance Scenarios**:
 
-1. **Given** a main course, **When** Today shows, **Then** the card shows this week's modules with checkboxes, and the
-   count and bar follow each tap.
+1. **Given** a main course, **When** Today shows, **Then** the card shows the modules of the week containing the day
+   shown, with checkboxes, and the count and bar follow each tap.
 2. **Given** «الخطة كلها», **When** it opens, **Then** every week shows with its modules and checkboxes, the current week
    marked.
 3. **Given** Settings, **When** the user adds a course or makes one main, **Then** the target card shows it.
@@ -125,8 +125,8 @@ see the target card follow; delete it.
 - **FR-002**: Today MUST let the user add, paste, see, tick, untick, edit, postpone and delete tasks, including tasks
   with no date and finished ones.
 - **FR-003**: Settings MUST let the user add, edit and delete weekly appointments.
-- **FR-004**: Today's target card MUST let the user tick and untick the main course's modules, for this week and for
-  the whole plan.
+- **FR-004**: Today's target card MUST let the user tick and untick the main course's modules, for the week of the day
+  shown and for the whole plan.
 - **FR-005**: Settings MUST let the user add a course, delete an added one, choose the main course, and tick and untick
   the modules of a course that is not main.
 - **FR-006**: Stored data MUST NOT change shape; old backups, settings files and synced copies MUST load as now.
