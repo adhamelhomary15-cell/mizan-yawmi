@@ -44,8 +44,8 @@ files stay valid both ways.
 ### User Story 1 - Tasks live in Today (Priority: P1)
 
 The tasks section in Today is always there, even when empty. It has «+ مهمة» and «الصق مهام من AI». It shows the
-day's tasks (due that day, or late on today, as now), then the tasks with no date under «من غير ميعاد», and a closed
-«خلصت» part with the recent finished ones. Each task can be ticked, edited, postponed (if dated) and deleted, as in the
+day's tasks (due that day, or late on today, as now), then the tasks with no date under «من غير ميعاد», a closed
+«باقي المهام» part with every other open dated task, and a closed «خلصت» part with the recent finished ones. Each task can be ticked, edited, postponed (if dated) and deleted, as in the
 Tasks tab today.
 
 **Why this priority**: It is the owner's request, and nothing the Tasks tab does may be lost.
@@ -57,10 +57,13 @@ delete one, all from Today.
 
 1. **Given** no open task, **When** Today shows, **Then** the tasks section shows with «+ مهمة», «الصق مهام من AI» and
    an empty line.
-2. **Given** a task due on another day, **When** Today shows, **Then** it is not in the day's list; it shows on its day.
+2. **Given** a task due on another day, **When** Today shows, **Then** it is not in the day's list; it is under
+   «باقي المهام», and in the day's list on its day.
 3. **Given** a task with no date, **When** any day shows, **Then** it is under «من غير ميعاد».
 4. **Given** a ticked task, **When** the user opens «خلصت», **Then** it is there and can be unticked.
 5. **Given** the old address `#tasks`, **When** the app opens, **Then** it opens Today.
+6. **Given** a day today or later, **When** the user opens «+ مهمة», **Then** the form's date is that day; on a past day
+   it is empty.
 
 ---
 
@@ -84,8 +87,8 @@ still show inside their day, as now.
 
 The target card in Today shows the main course's modules for the current week, each with its own checkbox, and a
 «الخطة كلها» part that opens the whole plan week by week, with checkboxes. Settings gets a «الكورسات» part: add a
-course, remove an added one, and choose the main course. When there is no course, the target card does not show, as
-now.
+course, remove an added one, choose the main course, and open the plan of a course that is not main, with checkboxes.
+When there is no course, the target card does not show, as now.
 
 **Why this priority**: Ticking modules must stay possible by the user's own tap (Principle II); only the tab goes.
 
@@ -107,7 +110,10 @@ see the target card follow; delete it.
 
 - **Many tasks with no date**: the section shows them all; Today's other parts stay reachable by scrolling.
 - **A course from the settings file**: it cannot be deleted, as now; it can be made main or not.
-- **A week with no modules, or a plan not started yet**: the card shows the next modules, as the card does now.
+- **A week with no modules, or a plan not started yet**: the card shows the next modules, as the card does now. After
+  the plan's end with modules open, it shows the next modules too. The card says the course is done only when no module
+  is open.
+- **On the phone**: the tasks section comes after the timeline.
 - **Another tab's address from an old link or a shortcut** (`#tasks`, `#course`): opens Today, with no error.
 - **Ticking**: every checkbox changes a mark only on the user's tap. Nothing ticks, bulk-ticks or clears marks.
 
@@ -121,11 +127,14 @@ see the target card follow; delete it.
 - **FR-003**: Settings MUST let the user add, edit and delete weekly appointments.
 - **FR-004**: Today's target card MUST let the user tick and untick the main course's modules, for this week and for
   the whole plan.
-- **FR-005**: Settings MUST let the user add a course, delete an added one, and choose the main course.
+- **FR-005**: Settings MUST let the user add a course, delete an added one, choose the main course, and tick and untick
+  the modules of a course that is not main.
 - **FR-006**: Stored data MUST NOT change shape; old backups, settings files and synced copies MUST load as now.
 - **FR-007**: The addresses `#tasks` and `#course` MUST open Today.
 - **FR-008**: No mark may change without the user's tap (Principle II).
 - **FR-009**: Code that only the removed tabs used MUST be removed (no dead code).
+- **FR-010**: Every open task MUST be in exactly one list of Today's tasks section, on every day.
+- **FR-011**: A change touching a mark MUST be tested at phone size and offline (constitution, Development Workflow).
 
 ## Success Criteria *(mandatory)*
 
