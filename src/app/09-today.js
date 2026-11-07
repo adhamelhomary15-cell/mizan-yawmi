@@ -32,23 +32,24 @@
     </div>`;
   }
 
-  function TargetCard({iso, store, goTab}){
+  function TargetCard({iso, now, store, update}){
     const c = mainCourse(store);
     if (!c) return null;
     const plan = planOf(c), dm = doneMap(store, c);
     const all = plan.reduce((a, w) => a.concat(w.items), []);
     const n = all.filter(it => dm[it[3]]).length;
-    const wk = plan.find(w => iso >= w.from && iso <= w.to) || (plan.length && iso < plan[0].from ? plan[0] : null);
     const next = all.find(it => !dm[it[3]]);
-    const behind = wk ? wk.items.filter(it => !dm[it[3]]).length : 0;
-    return html`<button type="button" class="target c-course" onClick=${() => goTab('course')}>
+    // The week of the day shown, whole, so a module just ticked can be unticked here. In a gap or past the end, the week of
+    // the next open module; before the plan starts, the first week.
+    const wk = plan.find(w => iso >= w.from && iso <= w.to) || (plan.length && iso < plan[0].from ? plan[0] : null) || (next ? plan.find(w => w.items.indexOf(next) >= 0) : null);
+    return html`<div class="target c-course">
       <span class="target-name"><bdi>${c.name}</bdi></span>
       <span class="small muted">التارجت الأساسي · خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span>
       <span class="track"><span class="fill" style=${{display:'block', width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></span></span>
-      ${next ? html`<span class="small">الجاي: <bdi dir="ltr">${next[0]} · ${next[1]}</bdi></span>
-        ${wk && behind ? html`<span class="small muted">فاضل <bdi class="num">${behind}</bdi> في خطة الأسبوع ده</span>` : null}`
-        : html`<span class="small">خلّصت الكورس كله.</span>`}
-    </button>`;
+      ${next ? html`<span class="small">الجاي: <bdi dir="ltr">${next[0]} · ${next[1]}</bdi></span>` : html`<span class="small">خلّصت الكورس كله.</span>`}
+      ${wk ? html`<div class="target-mods">${wk.items.map(it => html`<${ModuleRow} key=${it[3]} it=${it} on=${!!dm[it[3]]} course=${c} update=${update} />`)}</div>` : null}
+      ${plan.length ? html`<details class="plan-part"><summary>الخطة كلها</summary><${CoursePlan} now=${now} store=${store} update=${update} course=${c} /></details>` : null}
+    </div>`;
   }
 
   function DayProgress({iso, store}){

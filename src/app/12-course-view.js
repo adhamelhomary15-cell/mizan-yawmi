@@ -42,73 +42,65 @@
     </form>`;
   }
 
-  function CourseView({now, store, update, remove}){
-    const [sel, setSel] = useState(store.mainCourse);
-    const [adding, setAdding] = useState(false);
-    const courses = allCourses(store), main = mainCourse(store);
-    const c = courses.find(x => x.id === sel) || main;
-    const save = course => { update(s => { s.courses.push(course); return s; }); setAdding(false); setSel(course.id); };
-    const newCourse = html`<button type="button" class="btn primary" aria-expanded=${adding ? 'true' : 'false'} onClick=${() => setAdding(!adding)}><${Plus} /><span>كورس جديد</span></button>`;
-    const form = adding ? html`<${CourseForm} now=${now} onSave=${save} onCancel=${() => setAdding(false)} />` : null;
-    if (!c) return html`<div class="coursev">
-      <div class="top"><div class="top-meta"><h1>الكورسات</h1><p class="sub">لسه مفيش كورس</p></div>${newCourse}</div>
-      ${form}
+  function ModuleRow({it, on, course, update}){
+    return html`<div class=${'mod' + (on ? ' done' : '')}>
+      <${Check} on=${on} cat="course" label=${'خلّصت: ' + it[1]} onToggle=${() => toggleModule(update, course, it[3])} />
+      <span class="mnum" dir="ltr">${it[0]}</span>
+      <span class="mtitle"><bdi>${it[1]}</bdi>${it[2] ? html` <span class="mextra">· ${it[2]}</span>` : null}</span>
     </div>`;
-    const isMain = c.id === main.id;
+  }
+
+  // Every week of a course; «الأسبوع ده» is the real current week, whatever day is shown.
+  function CoursePlan({now, store, update, course}){
+    const dm = doneMap(store, course);
+    return html`<div class="weeks">
+      ${planOf(course).map((w, wi) => {
+        const cur = now.iso >= w.from && now.iso <= w.to;
+        return html`<div class=${'week' + (cur ? ' is-current' : '')}>
+          <div class="week-head"><h3>الأسبوع ${wi + 1}</h3><span class="week-dates">${w.label}${cur ? html` · <span class="cur-pill">الأسبوع ده</span>` : null}</span></div>
+          ${w.note ? html`<p class="week-note">${w.note}</p>` : null}
+          ${w.items.map(it => html`<${ModuleRow} key=${it[3]} it=${it} on=${!!dm[it[3]]} course=${course} update=${update} />`)}
+        </div>`;
+      })}
+    </div>`;
+  }
+
+  function CourseRow({c, isMain, now, store, update, remove}){
     const plan = planOf(c), dm = doneMap(store, c);
     const all = plan.reduce((a, w) => a.concat(w.items), []);
     const n = all.filter(it => dm[it[3]]).length;
-    const today = now.iso;
     const perWeek = Math.max(1, Math.round(all.length / Math.max(1, plan.length)));
-
     const makeMain = () => update(s => { s.mainCourse = c.id; return s; });
-    const del = () => { setSel(null); remove('اتمسح كورس "' + c.name + '"', s => { s.courses = s.courses.filter(x => x.id !== c.id); if (s.mainCourse === c.id) s.mainCourse = SETTINGS_COURSE_ID; return s; }); };
-
-    return html`<div class="coursev">
-      <div class="top">
-        <div class="top-meta">
-          <h1><bdi>${c.name}</bdi></h1>
-          <p class="sub">${isMain ? 'الكورس الأساسي، التارجت الأول للفترة دي' : 'كورس إضافي'}</p>
-          <p class="small muted">${c.sub ? html`<bdi dir="rtl">${c.sub}</bdi> · ` : null}من ${dateLabel(c.from)} لحد ${dateLabel(c.to)}</p>
-        </div>
-        ${newCourse}
-      </div>
-
-      ${form}
-
-      ${courses.length > 1 ? html`<div class="chips" aria-label="الكورسات">
-        ${courses.map(x => html`<button type="button" class="btn small" aria-pressed=${x.id === c.id ? 'true' : 'false'} onClick=${() => setSel(x.id)}>
-          ${x.id === main.id ? html`<${Star} />` : null}<bdi>${x.name}</bdi></button>`)}
-      </div>` : null}
-
-      <div class="prog c-course">
-        <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span><span class="muted small">${'حوالي ' + perWeek + ' في الأسبوع'}</span></div>
-        <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
-      </div>
-
+    const del = () => remove('اتمسح كورس "' + c.name + '"', s => { s.courses = s.courses.filter(x => x.id !== c.id); if (s.mainCourse === c.id) s.mainCourse = SETTINGS_COURSE_ID; return s; });
+    return html`<div class="course-row">
+      <p class="course-name">${isMain ? html`<${Star} />` : null}<b><bdi>${c.name}</bdi></b>${isMain ? html`<span class="small muted">الكورس الأساسي</span>` : null}</p>
+      <p class="small muted">${c.sub ? html`<bdi dir="rtl">${c.sub}</bdi> · ` : null}من ${dateLabel(c.from)} لحد ${dateLabel(c.to)} · ${'حوالي ' + perWeek + ' في الأسبوع'}</p>
       ${!c.fromSettings || !isMain ? html`<div class="form-row">
         ${!isMain ? html`<button type="button" class="btn" onClick=${makeMain}>خليه الكورس الأساسي</button>` : null}
         ${!c.fromSettings ? html`<button type="button" class="btn ghost" onClick=${del}>امسح الكورس</button>` : null}
       </div>` : null}
       ${isMain && !c.fromSettings && COURSE ? html`<p class="small muted">وقت الكورس في الجدول اليومي بقى لـ <bdi>${c.name}</bdi>.</p>` : null}
+      ${!isMain ? html`<details class="plan-part"><summary>الخطة</summary>
+        <div class="prog c-course">
+          <div class="prog-row"><span>خلّصت <bdi class="num">${n}</bdi> من <bdi class="num">${all.length}</bdi> موديول</span></div>
+          <div class="track"><div class="fill" style=${{width: (all.length ? n/all.length*100 : 0).toFixed(1) + '%'}}></div></div>
+        </div>
+        <${CoursePlan} now=${now} store=${store} update=${update} course=${c} />
+      </details>` : null}
+    </div>`;
+  }
 
-      <h2>الخطة أسبوع بأسبوع</h2>
-      <div class="weeks">
-        ${plan.map((w, wi) => {
-          const cur = today >= w.from && today <= w.to;
-          return html`<div class=${'week' + (cur ? ' is-current' : '')}>
-            <div class="week-head"><h3>الأسبوع ${wi + 1}</h3><span class="week-dates">${w.label}${cur ? html` · <span class="cur-pill">الأسبوع ده</span>` : null}</span></div>
-            ${w.note ? html`<p class="week-note">${w.note}</p>` : null}
-            ${w.items.map(it => {
-              const on = !!dm[it[3]];
-              return html`<div class=${'mod' + (on ? ' done' : '')}>
-                <${Check} on=${on} cat="course" label=${'خلّصت: ' + it[1]} onToggle=${() => toggleModule(update, c, it[3])} />
-                <span class="mnum" dir="ltr">${it[0]}</span>
-                <span class="mtitle"><bdi>${it[1]}</bdi>${it[2] ? html` <span class="mextra">· ${it[2]}</span>` : null}</span>
-              </div>`;
-            })}
-          </div>`;
-        })}
+  // Settings' courses: one row per course, with no selection.
+  function CoursesSection({now, store, update, remove}){
+    const [adding, setAdding] = useState(false);
+    const courses = allCourses(store), main = mainCourse(store);
+    const save = course => { update(s => { s.courses.push(course); return s; }); setAdding(false); };
+    return html`<div class="sec">
+      <div class="sec-head"><h2>الكورسات</h2><button type="button" class="btn small" aria-expanded=${adding ? 'true' : 'false'} onClick=${() => setAdding(!adding)}><${Plus} /><span>كورس جديد</span></button></div>
+      ${adding ? html`<${CourseForm} now=${now} onSave=${save} onCancel=${() => setAdding(false)} />` : null}
+      <div class="panel">
+        ${courses.length ? courses.map(c => html`<${CourseRow} key=${c.id} c=${c} isMain=${c.id === main.id} now=${now} store=${store} update=${update} remove=${remove} />`)
+          : html`<p class="empty">لسه مفيش كورس</p>`}
       </div>
     </div>`;
   }

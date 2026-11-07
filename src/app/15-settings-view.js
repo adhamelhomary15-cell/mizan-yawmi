@@ -280,7 +280,7 @@
     return html`<p class="small muted">النسخة: ${shown}${installed && installed.at ? ' · وصلت ' + dateLabel(zoneParts(new Date(installed.at)).iso) : ''}</p>`;
   }
 
-  function SettingsView({store, wk, sync, replaceAll, settingsChanged}){
+  function SettingsView({now, store, update, remove, actEdit, goDay, wk, sync, replaceAll, settingsChanged}){
     const [pending, setPending] = useState(null);
     const [msgs, setMsgs] = useState([]);
     const [done, setDone] = useState('');
@@ -342,6 +342,8 @@
           <div aria-live="polite">${exported ? (exported.ok ? html`<p class="small">اتحفظ الجدول: <bdi dir="ltr">${exported.name}</bdi>. تقدر تستورده على أي جهاز من «استيراد ملف إعدادات».</p>` : html`<${Notice} role="alert" text="المتصفح ده مش بيسمح بحفظ الملف." />`) : null}</div>
         </div>
       </div>
+      <${WeeklyAppts} now=${now} store=${store} update=${update} remove=${remove} actEdit=${actEdit} goDay=${goDay} />
+      <${CoursesSection} now=${now} store=${store} update=${update} remove=${remove} />
       <div class="sec">
         <div class="sec-head"><h2>استيراد ملف إعدادات</h2></div>
         <div class="panel form">

@@ -1,8 +1,8 @@
-// Postponing a task from anywhere (feature 028): «أجّلها» on every dated task in Today's list and in the Tasks tab,
+// Postponing a task from anywhere (feature 028): «أجّلها» on every dated task in Today's lists,
 // to the day after its date and never earlier than tomorrow, with an undo of that date only. openApp's day is
 // Thursday 15 October 2026, so tomorrow is Friday the 16th. All tasks are generated.
 const {test, expect} = require('@playwright/test');
-const {openApp, tab, button, progress} = require('./helpers');
+const {openApp, button, progress} = require('./helpers');
 
 const TASKS = [
   {id: 'today', text: 'Generated task for today', tag: 'uni', due: '2026-10-15', done: false, created: '2026-10-10'},
@@ -21,11 +21,12 @@ const open = page => openApp(page, {before: seedTasks(TASKS)});
 const dueOf = async (page, id) => (await progress(page)).tasks.find(t => t.id === id).due;
 const postpone = (page, text) => page.getByRole('button', {name: 'أجّلها: ' + text}).click();
 const toast = page => page.locator('.toast p');
+const openOthers = page => page.locator('.o-tasks .others summary').click();
 
 test.describe('US1: from Today', () => {
   test('a task due today and an overdue one go to tomorrow, and leave today\'s list', async ({page}) => {
     await open(page);
-    const list = page.locator('.o-tasks');
+    const list = page.locator('.o-tasks .day-list');
     await postpone(page, 'Generated task for today');
     await expect(toast(page)).toHaveText('اتأجلت المهمة لـ الجمعة، 16 أكتوبر');
     await expect(list.locator('.titem', {hasText: 'Generated task for today'})).toHaveCount(0);
@@ -56,15 +57,15 @@ test.describe('US1: from Today', () => {
   });
 });
 
-test.describe('US2: from the Tasks tab', () => {
+test.describe('US2: from «باقي المهام»', () => {
   test('a later task moves one day per tap, the list stays in date order, and «رجّعها» undoes the last move', async ({page}) => {
     await open(page);
-    await tab(page, 'المهام');
+    await openOthers(page);
     await postpone(page, 'Generated task in three days');
     await expect(toast(page)).toHaveText('اتأجلت المهمة لـ الاتنين، 19 أكتوبر');
     await postpone(page, 'Generated task in three days');
     expect(await dueOf(page, 'later')).toBe('2026-10-20');
-    const order = await page.locator('.a-tasks .titem .ttext').allInnerTexts();
+    const order = await page.locator('.o-tasks .others .titem .ttext').allInnerTexts();
     expect(order.indexOf('Generated task after it')).toBeLessThan(order.indexOf('Generated task in three days'));
     await page.locator('.toast button', {hasText: 'رجّعها'}).click();
     expect(await dueOf(page, 'later')).toBe('2026-10-19');
@@ -72,20 +73,20 @@ test.describe('US2: from the Tasks tab', () => {
 
   test('an undated task, a done task and a task being edited have no «أجّلها»', async ({page}) => {
     await open(page);
-    await tab(page, 'المهام');
-    await expect(page.getByRole('button', {name: /^أجّلها: /})).toHaveCount(4);
+    await openOthers(page);
+    await expect(page.locator('.o-tasks').getByRole('button', {name: /^أجّلها: /})).toHaveCount(4);
     await expect(page.getByRole('button', {name: 'أجّلها: Generated undated task'})).toHaveCount(0);
     await page.getByRole('button', {name: 'عدّل Generated task after it'}).click();
     await expect(page.getByRole('button', {name: 'أجّلها: Generated task after it'})).toHaveCount(0);
-    await button(page, 'خلصت').click();
+    await page.locator('.o-tasks .finished summary').click();
     await expect(page.getByText('Generated done task')).toBeVisible();
-    await expect(page.getByRole('button', {name: /^أجّلها: /})).toHaveCount(0);
+    await expect(page.locator('.o-tasks .finished').getByRole('button', {name: /^أجّلها: /})).toHaveCount(0);
   });
 });
 
 test('FR-005: postponing changes the date only', async ({page}) => {
   await open(page);
-  await tab(page, 'المهام');
+  await openOthers(page);
   const was = (await progress(page)).tasks.find(t => t.id === 'later');
   await postpone(page, 'Generated task in three days');
   const now = (await progress(page)).tasks.find(t => t.id === 'later');
@@ -99,10 +100,10 @@ test('FR-006: the day review still sends a task to the day after the reviewed da
   expect(await dueOf(page, 'today')).toBe('2026-10-16');
 });
 
-test('at phone width a long task wraps and the Tasks tab has no horizontal scroll', async ({page}) => {
+test('at phone width a long task wraps and Today has no horizontal scroll', async ({page}) => {
   await page.setViewportSize({width: 375, height: 812});
   await openApp(page, {before: seedTasks([{id: 'long', text: 'A generated task with a long text that has to wrap at phone width without pushing any button out', tag: 'uni', due: '2026-10-18', done: false}])});
-  await tab(page, 'المهام');
+  await openOthers(page);
   await expect(page.getByRole('button', {name: /^أجّلها: A generated task/})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

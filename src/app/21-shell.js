@@ -2,8 +2,6 @@
   const TABS = [
     ['today','اليوم',html`<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.8"/>`],
     ['week','الأسبوع',html`<path d="M4 6.5h16M4 12h10M4 17.5h13"/>`],
-    ['course','الكورس',html`<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>`],
-    ['tasks','المهام',html`<path d="M10 6.5h10M10 12h10M10 17.5h10"/><path d="M3.8 6.5l1.4 1.4L7.8 5.3M3.8 12l1.4 1.4 2.6-2.6M3.8 17.5l1.4 1.4 2.6-2.6"/>`],
     ['workout','تمارين',html`<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>`],
     ['settings','الإعدادات',html`<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>`]
   ];
@@ -26,7 +24,7 @@
     const saveNow = () => { const r = downloadBackup(store, wk); setSaveMsg(r.ok ? {ok: true, name: r.name} : {ok: false}); };
     const [now, setNow] = useState(effectiveNow);
     const [iso, setIso] = useState(() => effectiveNow().iso);
-    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','course','tasks','workout','settings'].includes(hsh) ? hsh : 'today'; });
+    const [tab, setTab] = useState(() => { const hsh = (location.hash || '').slice(1); return ['today','week','workout','settings'].includes(hsh) ? hsh : 'today'; });
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
     // Shown once after a restore whose write to the synced copy did not finish in time.
@@ -102,12 +100,10 @@
     };
 
     let view;
-    if (tab === 'today') view = html`<${TodayView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} goTab=${goTab} remove=${remove} act=${act} actEdit=${actEdit} />`;
+    if (tab === 'today') view = html`<${TodayView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} update=${update} remove=${remove} act=${act} actEdit=${actEdit} />`;
     else if (tab === 'week') view = html`<${WeekView} key=${settingsEpoch} iso=${iso} setIso=${setIso} now=${now} store=${store} goDay=${goDay} />`;
-    else if (tab === 'course') view = html`<${CourseView} key=${settingsEpoch} now=${now} store=${store} update=${update} remove=${remove} />`;
     else if (tab === 'workout') view = html`<${WorkoutView} key=${settingsEpoch} wk=${wk} showToast=${showToast} />`;
-    else if (tab === 'settings') view = html`<${SettingsView} key=${settingsOpened + '-' + settingsEpoch} store=${store} wk=${wk} sync=${sync} replaceAll=${replaceAll} settingsChanged=${settingsChanged} />`;
-    else view = html`<${TasksView} key=${settingsEpoch} now=${now} store=${store} update=${update} goDay=${goDay} remove=${remove} actEdit=${actEdit} />`;
+    else view = html`<${SettingsView} key=${settingsOpened + '-' + settingsEpoch} now=${now} store=${store} update=${update} remove=${remove} actEdit=${actEdit} goDay=${goDay} wk=${wk} sync=${sync} replaceAll=${replaceAll} settingsChanged=${settingsChanged} />`;
 
     return html`<${MainCourseName.Provider} value=${mainCourseName(store)}><div class="shell">
       <nav class="nav" aria-label="أقسام">

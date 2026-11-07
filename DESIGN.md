@@ -150,7 +150,7 @@ the band text on every shell. The phone's status bar takes the palette's shell.
 **Numerals:** Spectral 700 for denominations and the rosette centre, lining figures.
 
 ### Hierarchy
-- **Heading** (700, 32px): the screen title (the day name, الأسبوع, the course name).
+- **Heading** (700, 32px): the screen title (the day name, الأسبوع, الإعدادات).
 - **Section** (500, 18px): section headings.
 - **Body** (400, 15px): titles and running text; block titles at 600.
 - **Meta** (400, 13px): category label in its ink, then details.

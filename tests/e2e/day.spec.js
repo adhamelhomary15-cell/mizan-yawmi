@@ -5,7 +5,7 @@ const {openApp, tab, button, cspViolations, progress} = require('./helpers');
 
 test('every tab opens with no CSP violation', async ({page}) => {
   await openApp(page);
-  for (const name of ['الأسبوع', 'الكورس', 'المهام', 'تمارين', 'الإعدادات', 'اليوم']) {
+  for (const name of ['الأسبوع', 'تمارين', 'الإعدادات', 'اليوم']) {
     await tab(page, name);
     await expect(page.locator('main')).toBeVisible();
   }
