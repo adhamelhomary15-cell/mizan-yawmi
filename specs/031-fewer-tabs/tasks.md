@@ -141,14 +141,14 @@ follow, and delete it; tick a module of a course that is not main.
 
 ## Phase 3: The band, docs, PR
 
-- [ ] T026 `src/planner.html`: `.nav-in` to `repeat(4,minmax(0,1fr))` (580).
-- [ ] T027 `tests/e2e/fewer-tabs.spec.js`: the band shows اليوم، الأسبوع، تمارين، الإعدادات in that order and fills its width;
+- [x] T026 `src/planner.html`: `.nav-in` to `repeat(4,minmax(0,1fr))` (580).
+- [x] T027 `tests/e2e/fewer-tabs.spec.js`: the band shows اليوم، الأسبوع، تمارين، الإعدادات in that order and fills its width;
   `#tasks` and `#course` open Today; at 375 px nothing scrolls sideways on Today and Settings; at 1280 px, `.today-side` holds
   only the target, prayers and rosette.
-- [ ] T028 [P] `src/app/ORDER`: the notes at lines 34 and 40 name the parts in place of the removed screens.
-- [ ] T029 [P] `README.md`: lines 93, 101 and 144 name the four tabs, and where tasks, appointments and courses now are.
-- [ ] T030 [P] `PRODUCT.md`: lines 41-47 describe four tabs, with tasks in Today, appointments and courses in Settings.
-- [ ] T031 [P] `DESIGN.md`: line 153 no longer gives the course name as a screen title.
+- [x] T028 [P] `src/app/ORDER`: the notes at lines 34 and 40 name the parts in place of the removed screens.
+- [x] T029 [P] `README.md`: lines 93, 101 and 144 name the four tabs, and where tasks, appointments and courses now are.
+- [x] T030 [P] `PRODUCT.md`: lines 41-47 describe four tabs, with tasks in Today, appointments and courses in Settings.
+- [x] T031 [P] `DESIGN.md`: line 153 no longer gives the course name as a screen title.
 - [ ] T032 The gate; a by-hand check at 375 px and offline, as the constitution requires for done-state changes;
   `check-private`. Tick the tasks.
 - [ ] T033 Open the PR only when the owner asks.

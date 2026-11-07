@@ -270,3 +270,47 @@ test.describe('done state', () => {
     expect(JSON.stringify(await progress(page))).toBe(before);
   });
 });
+
+test.describe('the band and the widths', () => {
+  const TABS = ['اليوم', 'الأسبوع', 'تمارين', 'الإعدادات'];
+  const noSideways = page => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+  test('four tabs, in order, fill the band', async ({page}) => {
+    await open(page, []);
+    await expect(page.locator('nav button')).toHaveText(TABS);
+    const band = await page.locator('.nav-in').boundingBox();
+    const last = await page.locator('nav button').nth(3).boundingBox();
+    const first = await page.locator('nav button').nth(0).boundingBox();
+    expect(Math.max(first.x + first.width, last.x + last.width) - Math.min(first.x, last.x)).toBeGreaterThan(band.width - 2);
+  });
+
+  for (const name of ['tasks', 'course']) {
+    test('the old address #' + name + ' opens Today', async ({page}) => {
+      await page.clock.setFixedTime(new Date('2026-10-15T20:30:00Z'));
+      await page.goto('index.html#' + name);
+      await expect(page.locator('nav button', {hasText: 'اليوم'})).toHaveAttribute('aria-current', 'page');
+      await expect(section(page)).toBeVisible();
+    });
+  }
+
+  test('at 375 px nothing scrolls sideways on Today and Settings, with lists and the plan open', async ({page}) => {
+    await open(page, [task('today', '2026-10-15'), task('later', '2026-10-20'), task('undated', ''), task('finished', '2026-10-14', true)]);
+    await summary(page, 'others').click();
+    await summary(page, 'finished').click();
+    await page.locator('.target details summary').click();
+    expect(await noSideways(page)).toBe(true);
+    await button(page, 'مهمة').click();
+    expect(await noSideways(page)).toBe(true);
+    await tab(page, 'الإعدادات');
+    expect(await noSideways(page)).toBe(true);
+  });
+
+  test('on desktop the side column holds only the target, prayers and rosette, and the tasks follow the timeline', async ({page}) => {
+    await page.setViewportSize({width: 1280, height: 900});
+    await open(page, [task('today', '2026-10-15')]);
+    await expect(page.locator('.today-side > *')).toHaveCount(3);
+    await expect(page.locator('.today-side .o-tasks')).toHaveCount(0);
+    await expect(page.locator('.today-main > .o-timeline + .o-tasks')).toHaveCount(1);
+    expect(await noSideways(page)).toBe(true);
+  });
+});

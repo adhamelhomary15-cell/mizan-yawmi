@@ -39,16 +39,18 @@ cities of the 57 OIC member states (GeoNames, CC BY 4.0), the device location on
 ## Capabilities and Constraints
 
 - Tabs: Today (timeline with check-offs and a «الآن» line that crosses the block in progress at the share of its time
-  that has passed, following the clock, prayer times, main-course target card, day progress, and an end-of-day
+  that has passed, following the clock, prayer times, a main-course target card that ticks modules by week, a tasks
+  section (the day's tasks, undated ones and the rest of the open tasks, each editable in place with undo, and pasted in
+  bulk from any AI's answer in a fixed line format, with a preview and one undo), day progress, and an end-of-day
   review where open blocks of kinds marked postponable, and tasks due that day, can be postponed into the next
   free time, with a proposal the user confirms or changes and one undo; after a day ends with open items, Today
   asks on its own, with the proposed places, and moves nothing until the user taps), Week (shape of the
-  week, planned vs done hours, per-subject study), Course (main course modules by week, add new courses from a
-  template, pick the main course), Tasks (one-off tasks with due dates, weekly fixed appointments; both can be edited in place, with undo; tasks can also be pasted in bulk from any AI's answer in a fixed line format, with a preview and one undo),
+  week, planned vs done hours, per-subject study),
   Workouts (a gym log in kilograms: sets with last time's values, rest and workout timers, user-named splits
   with planned set counts, history by month with best set, volume and records, and fixing or deleting a finished
   workout with undo; kept under its own key, separate from progress and settings), Settings
-  (what is in use; a first-run guide (place, a week template, subjects) and a schedule editor: blocks with a day
+  (what is in use; weekly fixed appointments, editable in place with undo; courses: add one from a template, pick the
+  main one, and tick the modules of any other; a first-run guide (place, a week template, subjects) and a schedule editor: blocks with a day
   preview, copying a day, ties to a prayer, renaming the 9 kinds, adding up to 12 kinds of the user's own (a name, one of six ready colours, its options and its half of the balance; deleted only when no block uses it), subjects and place, all on a draft that is checked
   and summarised before it is saved; export the schedule as a settings file; import a settings file, reset to the example, save a backup file of all the data to the
   device and restore it after a preview, all or nothing, and whether the browser agreed to keep the data; the look: light, dark or automatic (following the phone, the

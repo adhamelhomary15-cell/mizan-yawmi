@@ -31,13 +31,13 @@
 10b-postpone-ask.js
 # Week screen
 11-week.js
-# Course screen
+# course form, module row, course plan, Settings' courses section
 12-course-view.js
 # pure rule blocks: edit, task paste, workout, backup, postpone, guide (markers used by tools/check-*.js)
 13-rules.js
 # schedule rules: draft operations, places, week templates, change summary (pure)
 13a-schedule-rules.js
-# task and appointment form, paste tasks UI, Tasks screen
+# task and appointment form, paste tasks UI, Today's tasks section, Settings' appointments
 14-tasks-view.js
 # Settings screen: import, status, reset, backup and restore
 # first-run guide and the place picker (city list, device location, coordinates)
