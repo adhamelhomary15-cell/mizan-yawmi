@@ -4,7 +4,7 @@
 const {test, expect} = require('@playwright/test');
 const {openApp, cspViolations} = require('./helpers');
 
-const look = theme => `localStorage.setItem('mizan-look', JSON.stringify({palette: 'oxblood', theme: '${theme}'}));`;
+const look = theme => `localStorage.setItem('mizan-look', JSON.stringify({theme: '${theme}'}));`;
 const layer = page => page.evaluate(() => {
   const s = getComputedStyle(document.body, '::before');
   return {display: s.display, position: s.position, zIndex: s.zIndex, pointerEvents: s.pointerEvents, opacity: s.opacity, image: s.backgroundImage.startsWith('url("data:image/svg+xml,')};
