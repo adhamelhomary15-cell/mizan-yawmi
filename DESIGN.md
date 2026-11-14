@@ -1,24 +1,24 @@
 ---
 name: ميزان يومي
-description: A day planner set in Egyptian banknote inks on security paper, with the day's balance drawn as a guilloche rosette.
+description: A day planner in graphite and ink, where the kinds of time are the only colour, with the day's balance drawn as a guilloche rosette.
 colors:
-  paper: "#E7ECE3"
-  surface: "#FAFBF6"
-  ink: "#1D1B17"
-  muted: "#585C52"
-  line: "#CDD3C6"
-  quiet: "#D6DBCF"
-  shell: "#6E1A28"
-  shell-fg: "#FAFBF6"
-  shell-dim: "#E9C9CF"
-  oxblood-university: "#7B1E2E"
-  madder-study: "#94304B"
-  plum-course: "#5B2A6B"
-  sepia-work: "#5A402B"
-  ochre-gym: "#735600"
-  ochre-quran: "#6A4E00"
-  ochre-personal: "#7A5A0A"
-  danger: "#B4300C"
+  paper: "#F2F2F0"
+  surface: "#FCFCFB"
+  ink: "#18191B"
+  muted: "#5E6166"
+  line: "#DCDCD8"
+  quiet: "#D4D4D0"
+  accent: "#1F1F22"
+  on-accent: "#FFFFFF"
+  accent-dim: "#A9ABAF"
+  navy-university: "#163A7A"
+  violet-study: "#7A3C8C"
+  teal-course: "#007470"
+  amber-work: "#A04D00"
+  rose-gym: "#B02B4E"
+  moss-quran: "#3A4A12"
+  gold-personal: "#7A5C00"
+  danger: "#B42318"
 typography:
   heading:
     fontFamily: "Readex Pro, Segoe UI, Tahoma, system-ui, sans-serif"
@@ -59,8 +59,8 @@ spacing:
   s6: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.paper}"
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.sm}"
     padding: "8px 14px"
     height: "40px"
@@ -71,13 +71,13 @@ components:
     padding: "8px 14px"
     height: "40px"
   day-chip-selected:
-    backgroundColor: "{colors.shell}"
-    textColor: "{colors.shell-fg}"
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.on-accent}"
     rounded: "{rounded.sm}"
     height: "52px"
-  nav-shell:
-    backgroundColor: "{colors.shell}"
-    textColor: "{colors.shell-dim}"
+  nav-band:
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.accent-dim}"
   check:
     size: "44px"
   card:
@@ -90,14 +90,14 @@ components:
 
 ## Overview
 
-**Creative North Star: "The day as a banknote"**
+**Creative North Star: "Graphite and ink"**
 
-Every kind of time is a denomination with its own ink, the way each Egyptian pound note carries its colour. The ground is pale security paper, the inks are intaglio colours (oxblood, madder, plum, sepia, ochre), and the shell around the app is a solid oxblood band. The world lends type, palette, density and one signature move; layout, navigation and controls stay the standard ones for a phone app.
+A quiet graphite page with one dark accent, so the only colour on screen is the day itself. Every kind of time keeps its own ink, and it is the ink, not the frame, that tells you what an hour was for. Fine one-pixel lines, no ornament, no glow. Layout, navigation and controls stay the standard ones for a phone app.
 
-It is used mostly outdoors in daylight, so the light theme is primary and every ink holds AA contrast on paper and on its own tint. A dark theme follows the phone for night review, or the user fixes light or dark in Settings.
+It is used mostly outdoors in daylight, so the light theme is primary and every ink holds AA contrast on paper, on cards, on its own tint and on the grained paper. A dark theme follows the phone for night review, or the user fixes light or dark in Settings.
 
 **Key Characteristics:**
-- Oxblood shell: bottom bar on phones, side rail from 960px.
+- One accent band: bottom bar on phones, side rail from 960px; near black in light, near white in dark.
 - Category inks on a 9% tint of themselves for each block row.
 - Hour amounts set as large Spectral denomination numerals at the end of each row.
 - The guilloche rosette as ميزان اليوم and ميزان الأسبوع.
@@ -105,39 +105,41 @@ It is used mostly outdoors in daylight, so the light theme is primary and every 
 
 ## Colors
 
-### Primary
-- **Oxblood shell** (`#6E1A28`): the navigation band and the selected day chip. Text on it uses `shell-fg`, inactive items `shell-dim`.
+### Accent
+- **Accent** (`#1F1F22` light, `#ECECEA` dark): the navigation band, the primary button, the selected day chip and the
+  phone's status bar. Text on it uses `on-accent` (`#FFFFFF` / `#121314`), inactive items `accent-dim`
+  (`#A9ABAF` / `#55575C`).
 
 ### Neutral
-- **Security paper** (`#E7ECE3`): page ground.
-- **Surface** (`#FAFBF6`): cards and panels.
-- **Ink** (`#1D1B17`) for text, **muted** (`#585C52`) for secondary text, **line** (`#CDD3C6`) for borders, **quiet** (`#D6DBCF`) for rest and commute segments.
+- **Paper** (`#F2F2F0` / `#121314`): page ground.
+- **Surface** (`#FCFCFB` / `#1B1C1E`): cards and panels.
+- **Ink** (`#18191B` / `#ECECEA`) for text, **muted** (`#5E6166` / `#A0A2A6`) for secondary text, **line**
+  (`#DCDCD8` / `#2C2E31`) for borders, **quiet** (`#D4D4D0` / `#36383C`) for rest and commute segments.
 
-### Denominations
-- University: oxblood `#7B1E2E` (lectures), madder `#94304B` (study).
-- Course: plum `#5B2A6B`.
-- Work: sepia `#5A402B`.
-- Life: ochre `#735600` (gym), `#6A4E00` (Quran), `#7A5A0A` (personal time).
-- Danger: `#B4300C`, only for late tasks and destructive actions.
+### The kinds' inks (light / dark)
+- University: navy `#163A7A` / `#9EBDFA` (lectures), violet `#7A3C8C` / `#C287D1` (study).
+- Course: teal `#007470` / `#65AFAA`.
+- Work: amber `#A04D00` / `#D9884B`.
+- Life: rose `#B02B4E` / `#FFBACC` (gym), moss `#3A4A12` / `#B0C384` (Quran), gold `#7A5C00` / `#E3C25A` (personal
+  time).
+- Danger: `#B42318` / `#FF8A7A`, only for late tasks and destructive actions. A late task also carries an icon, so
+  colour is never the only mark.
 - Added kinds (feature 016), one of six ready inks, each a light and dark pair: teal `#0E5E58` / `#7FD3C9`,
   blue `#244F8C` / `#A3C2F2`, green `#2F5E22` / `#A9D68F`, slate `#46515F` / `#B9C4D1`, copper `#8A3A14` / `#F0A57D`,
   olive `#535C14` / `#CBD48A`. `tools/check-schedule.js` checks each at AA on paper and on its own tint. Two added
   kinds may share an ink; the kind's name always shows beside it.
 
-### Palettes (feature 022)
-The user picks one of four palettes in Settings, «الشكل». A palette changes only the frame and the ground:
-`--shell`, `--shell-dim`, `--bg`, `--surface`, `--line`, `--quiet` and `--muted`. The inks, `--fg`, `--shell-fg`
-and `--danger` stay the same in every palette.
+### The palette (feature 032)
+There is one palette, graphite with one accent; it replaced the four of feature 022. Settings «الشكل» chooses only
+light, dark or automatic (following the phone).
 
-| Palette | Light shell / paper / surface | Dark shell / paper / surface |
+| Theme | Accent / paper / surface | Text / muted / line |
 |---|---|---|
-| Oxblood «عنابي» (default) | `#6E1A28` / `#E7ECE3` / `#FAFBF6` | `#3A1119` / `#16141A` / `#201D24` |
-| Olive «زيتي» | `#434C14` / `#E9EADF` / `#FBFBF5` | `#262B0C` / `#151611` / `#1E2019` |
-| Navy «كحلي» | `#1F2F4F` / `#E4E8EE` / `#F8FAFC` | `#121C30` / `#12151B` / `#1A1F27` |
-| Graphite «رمادي» | `#2E3135` / `#E8E8E6` / `#FAFAF9` | `#1E2023` / `#141516` / `#1D1E20` |
+| Light | `#1F1F22` / `#F2F2F0` / `#FCFCFB` | `#18191B` / `#5E6166` / `#DCDCD8` |
+| Dark | `#ECECEA` / `#121314` / `#1B1C1E` | `#ECECEA` / `#A0A2A6` / `#2C2E31` |
 
-`tools/check-schedule.js` checks every ink at AA on every palette's paper, surface and tint, in light and dark, and
-the band text on every shell. The phone's status bar takes the palette's shell.
+`tools/check-schedule.js` checks every kind ink, the six ready inks and danger at AA on paper, surface, tint and the
+grained paper, the text and muted text on paper and surface, and the band text on the accent, in light and dark.
 
 ### Named Rules
 **The Denomination Rule.** A category's ink is its identity everywhere: row tint, check circle, denomination numeral, week strip segment and rosette petals. Never use a category ink for anything that is not that category.
@@ -168,7 +170,7 @@ Phone first, one column, 16px side gutter, bottom bar of 52px targets. From 960p
 Flat. Depth comes from the paper/surface step and one-pixel lines. The only shadow is the undo toast (`0 8px 24px rgba(10,16,22,.22)`).
 
 The paper has a faint grain (feature 030): a fixed grey noise tile behind the content, at `--grain` (4.5% light, 6%
-dark, the same in every palette). Cards, rows and the band are solid, so it shows on the ground only. It never moves,
+dark). Cards, rows and the band are solid, so it shows on the ground only. It never moves,
 and it is gone under more contrast, forced colours and print. `tools/check-schedule.js` checks every ink and the text
 at AA on the ground at the grain's darkest and lightest.
 
@@ -179,13 +181,13 @@ Radii of 10px (buttons, chips), 14px (cards, rows) and 18px (now card, review). 
 ## Components
 
 ### Buttons
-Primary is ink on paper; inside a category context (now card, review) it takes the category ink. Secondary is surface with a line border. Ghost is text only.
+Primary is the accent with `on-accent` text; inside a category context (now card, review) it takes the category ink. Secondary is surface with a line border. Ghost is text only.
 
 ### Navigation
-Oxblood band. Active item: `shell-fg` text on a 16% `shell-fg` wash.
+The accent band. Active item: `on-accent` text on a 16% `on-accent` wash; inactive items in `accent-dim`.
 
 ### Day chips
-Seven equal chips; the selected one fills with oxblood, today carries a line border.
+Seven equal chips; the selected one fills with the accent, today carries a line border.
 
 ### Block rows
 Check, start and end time, title with its meta line (category label in ink), denomination numeral. Done and skipped rows strike the title and fade the numeral; skipped rows lose their tint and get a dashed border. An open block of a postponable kind whose time has come (today from the one in progress back, a past day all of them) carries «أجّلها» on a line under its title, a 44px button; the «الآن» line on that row is placed over the block part, never across the button (feature 029).
@@ -210,14 +212,15 @@ draw again: its petal fades its ink as before and the numbers change at once. Un
 numbers show whole.
 
 ### Changing the look
-When the palette or the theme changes, every colour fades to the new one together over 450ms, on the rosette's
+When the theme changes, every colour fades to the new one together over 450ms, on the rosette's
 curve (`cubic-bezier(.16,1,.3,1)`). Nothing moves or resizes. Under reduced motion, and on the first paint, the
 colours show at once.
 
 ## Do's and Don'ts
 
 ### Do:
-- Do keep every category ink at AA on paper and on its own 9% tint.
+- Do keep every category ink at AA on paper, on cards, on its own tint and on the grained paper.
+- Do mark a state with a shape or a word as well as a colour, as the late icon does.
 - Do show amounts of time as denominations, not as progress rings.
 - Do keep line work at one pixel.
 - Do keep the paper grain on the ground only, faint enough that every ink holds AA.
@@ -225,6 +228,6 @@ colours show at once.
 ### Don't:
 - Don't add Islamic ornament, mosque or Mushaf motifs.
 - Don't use neon, glow or gradients.
-- Don't reuse the retired palette (blue, violet, amber, green on blue-grey).
+- Don't colour the frame or add a second palette: the kinds' inks are the only colour.
 - Don't use a category ink for decoration.
 - Don't put the grain on cards, or turn it into a pattern or a motif.
