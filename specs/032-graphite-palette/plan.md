@@ -68,7 +68,7 @@ All gates pass, before and after the design.
    meta before the first paint, as today.
 5. **The late mark.**
    - **Decision**: in a task's row, the late date reads `[icon] متأخرة · <date>` in the danger colour. The icon is a
-     line icon (a clock with an exclamation), drawn like the app's other icons, with `role="img"` and
+     line icon (a circle with an exclamation mark), drawn like the app's other icons, with `role="img"` and
      `aria-label="متأخرة"`. The visible word beside it is `aria-hidden`, so a screen reader reads the state once.
    - **Why**: FR-008 asks for an icon with an accessible label and the word kept; reading it twice would be noise
      (spec US3 scenario 2).
