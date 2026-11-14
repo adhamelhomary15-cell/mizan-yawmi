@@ -3,34 +3,25 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&family=Spectral:wght@700&display=swap">
 <script>
-/* The look (feature 022): runs before the first paint, so the app opens in the kept palette and theme with no flash.
-   It owns the palette list; the Settings section reads and sets it through window.mizanLook. The choice is kept
-   under its own key, outside the settings, the progress and the backup. */
+/* The look (feature 022): runs before the first paint, so the app opens in the kept theme with no flash. There is
+   one palette (032); the Settings section reads and sets the theme through window.mizanLook. The choice is kept under
+   its own key, outside the settings, the progress and the backup. A palette kept from 022 is ignored. */
 (function(){
   const KEY = 'mizan-look', root = document.documentElement, phone = matchMedia('(prefers-color-scheme: dark)');
-  const palettes = [
-    {id: 'oxblood', name: 'عنابي', light: '#6E1A28', dark: '#3A1119'},
-    {id: 'olive', name: 'زيتي', light: '#434C14', dark: '#262B0C'},
-    {id: 'navy', name: 'كحلي', light: '#1F2F4F', dark: '#121C30'},
-    {id: 'graphite', name: 'رمادي', light: '#2E3135', dark: '#1E2023'}
-  ];
-  // A missing, broken or unknown field reads as its default.
-  const clean = v => ({
-    palette: v && palettes.some(p => p.id === v.palette) ? v.palette : 'oxblood',
-    theme: v && ['light', 'dark', 'auto'].indexOf(v.theme) >= 0 ? v.theme : 'auto'
-  });
+  const STATUS_BAR = {light: '#1F1F22', dark: '#ECECEA'};   // the accent, as in the colour style below
+  // A missing, broken or unknown theme reads as automatic.
+  const clean = v => ({theme: v && ['light', 'dark', 'auto'].indexOf(v.theme) >= 0 ? v.theme : 'auto'});
   let look;
   try { look = clean(JSON.parse(localStorage.getItem(KEY))); } catch(e){ look = clean(null); }
   function apply(){
     const theme = look.theme === 'auto' ? (phone.matches ? 'dark' : 'light') : look.theme;
     root.setAttribute('data-theme', theme);
-    root.setAttribute('data-palette', look.palette);
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', palettes.find(p => p.id === look.palette)[theme]);
+    if (meta) meta.setAttribute('content', STATUS_BAR[theme]);
   }
   apply();
   phone.addEventListener('change', () => { if (look.theme === 'auto') apply(); });
-  const get = () => ({palette: look.palette, theme: look.theme});
+  const get = () => ({theme: look.theme});
   // Applies at once even when the browser refuses to keep it; the choice then lasts until the page closes.
   function set(next){
     look = clean(Object.assign(get(), next));
@@ -38,16 +29,17 @@
     try { localStorage.setItem(KEY, JSON.stringify(look)); } catch(e){}
     return get();
   }
-  window.mizanLook = {palettes, get, set};
+  window.mizanLook = {get, set};
 })();
 </script>
 <style>
-/* Layout: phone-first RTL app. Oxblood shell (bottom bar on phones, side rail from 960px). World: Egyptian banknote inks on security paper; signature: the day's guilloche rosette. */
+/* Layout: phone-first RTL app. Accent band (bottom bar on phones, side rail from 960px). World: graphite and ink, where the kinds' inks are the only colour (feature 032); signature: the day's guilloche rosette. */
 :root{
-  --bg:#E7ECE3; --surface:#FAFBF6; --fg:#1D1B17; --muted:#585C52; --line:#CDD3C6; --quiet:#D6DBCF; --danger:#B4300C;
-  --shell:#6E1A28; --shell-fg:#FAFBF6; --shell-dim:#E9C9CF;
-  /* denominations: oxblood and madder (university), plum (course), sepia (work), ochre (gym, Quran, your time) */
-  --uni:#7B1E2E; --study:#94304B; --course:#5B2A6B; --work:#5A402B; --gym:#735600; --quran:#6A4E00; --personal:#7A5A0A;
+  --bg:#F2F2F0; --surface:#FCFCFB; --fg:#18191B; --muted:#5E6166; --line:#DCDCD8; --quiet:#D4D4D0; --danger:#B42318;
+  --accent:#1F1F22; --on-accent:#FFFFFF; --accent-dim:#A9ABAF;
+  /* the kinds' inks (feature 032): navy and violet (university), teal (course), amber (work), rose (gym), moss (Quran),
+     gold (your time) */
+  --uni:#163A7A; --study:#7A3C8C; --course:#007470; --work:#A04D00; --gym:#B02B4E; --quran:#3A4A12; --personal:#7A5C00;
   /* the ready colours for kinds the user adds (feature 016) */
   --k-teal:#0E5E58; --k-blue:#244F8C; --k-green:#2F5E22; --k-slate:#46515F; --k-copper:#8A3A14; --k-olive:#535C14;
   --tint:9%;
@@ -60,39 +52,31 @@
 }
 /* The one dark set. data-theme is always light or dark (feature 022), so no media-query copy is needed. */
 :root[data-theme="dark"]{
-  --bg:#16141A; --surface:#201D24; --fg:#EDE9E1; --muted:#A7A39A; --line:#36313B; --quiet:#3A3540; --danger:#FF9A76;
-  --shell:#3A1119; --shell-fg:#EDE9E1; --shell-dim:#C9A3AA;
-  --uni:#EE8E9C; --study:#F2A7B8; --course:#CFA0DD; --work:#D8B898; --gym:#E4C55C; --quran:#E8C96A; --personal:#EFD98F;
+  --bg:#121314; --surface:#1B1C1E; --fg:#ECECEA; --muted:#A0A2A6; --line:#2C2E31; --quiet:#36383C; --danger:#FF8A7A;
+  --accent:#ECECEA; --on-accent:#121314; --accent-dim:#55575C;
+  --uni:#9EBDFA; --study:#C287D1; --course:#65AFAA; --work:#D9884B; --gym:#FFBACC; --quran:#B0C384; --personal:#E3C25A;
   --k-teal:#7FD3C9; --k-blue:#A3C2F2; --k-green:#A9D68F; --k-slate:#B9C4D1; --k-copper:#F0A57D; --k-olive:#CBD48A;
   --tint:15%; --grain:.06; color-scheme:dark;
 }
-/* Palettes (feature 022): the frame and the ground only. The kinds' inks and --fg never change (the Denomination
-   Rule); tools/check-schedule.js checks every ink on every palette, light and dark. Oxblood is :root above. */
-:root[data-palette="olive"]{--bg:#E9EADF; --surface:#FBFBF5; --muted:#5A5C4E; --line:#D0D2C2; --quiet:#D9DBCC; --shell:#434C14; --shell-dim:#DDE3BF;}
-:root[data-palette="olive"][data-theme="dark"]{--bg:#151611; --surface:#1E2019; --muted:#A6A796; --line:#33352B; --quiet:#383A2F; --shell:#262B0C; --shell-dim:#C3C9A0;}
-:root[data-palette="navy"]{--bg:#E4E8EE; --surface:#F8FAFC; --muted:#545B66; --line:#CBD2DC; --quiet:#D4DAE3; --shell:#1F2F4F; --shell-dim:#C7D2E6;}
-:root[data-palette="navy"][data-theme="dark"]{--bg:#12151B; --surface:#1A1F27; --muted:#A0A7B2; --line:#2E3540; --quiet:#343B46; --shell:#121C30; --shell-dim:#A9B8D3;}
-:root[data-palette="graphite"]{--bg:#E8E8E6; --surface:#FAFAF9; --muted:#57585A; --line:#D1D1CE; --quiet:#D9D9D6; --shell:#2E3135; --shell-dim:#D3D5D8;}
-:root[data-palette="graphite"][data-theme="dark"]{--bg:#141516; --surface:#1D1E20; --muted:#A5A6A8; --line:#333538; --quiet:#393B3E; --shell:#1E2023; --shell-dim:#BFC1C4;}
-/* The soft change (feature 022): registered as colours, the variables fade from one palette or theme to the next, and
+/* The soft change (feature 022): registered as colours, the variables fade from one theme to the next, and
    everything drawn with them fades together, at the rosette's pace. The first paint has nothing to fade from. */
-@property --bg{syntax:'<color>';inherits:true;initial-value:#E7ECE3}
-@property --surface{syntax:'<color>';inherits:true;initial-value:#FAFBF6}
-@property --fg{syntax:'<color>';inherits:true;initial-value:#1D1B17}
-@property --muted{syntax:'<color>';inherits:true;initial-value:#585C52}
-@property --line{syntax:'<color>';inherits:true;initial-value:#CDD3C6}
-@property --quiet{syntax:'<color>';inherits:true;initial-value:#D6DBCF}
-@property --danger{syntax:'<color>';inherits:true;initial-value:#B4300C}
-@property --shell{syntax:'<color>';inherits:true;initial-value:#6E1A28}
-@property --shell-fg{syntax:'<color>';inherits:true;initial-value:#FAFBF6}
-@property --shell-dim{syntax:'<color>';inherits:true;initial-value:#E9C9CF}
-@property --uni{syntax:'<color>';inherits:true;initial-value:#7B1E2E}
-@property --study{syntax:'<color>';inherits:true;initial-value:#94304B}
-@property --course{syntax:'<color>';inherits:true;initial-value:#5B2A6B}
-@property --work{syntax:'<color>';inherits:true;initial-value:#5A402B}
-@property --gym{syntax:'<color>';inherits:true;initial-value:#735600}
-@property --quran{syntax:'<color>';inherits:true;initial-value:#6A4E00}
-@property --personal{syntax:'<color>';inherits:true;initial-value:#7A5A0A}
+@property --bg{syntax:'<color>';inherits:true;initial-value:#F2F2F0}
+@property --surface{syntax:'<color>';inherits:true;initial-value:#FCFCFB}
+@property --fg{syntax:'<color>';inherits:true;initial-value:#18191B}
+@property --muted{syntax:'<color>';inherits:true;initial-value:#5E6166}
+@property --line{syntax:'<color>';inherits:true;initial-value:#DCDCD8}
+@property --quiet{syntax:'<color>';inherits:true;initial-value:#D4D4D0}
+@property --danger{syntax:'<color>';inherits:true;initial-value:#B42318}
+@property --accent{syntax:'<color>';inherits:true;initial-value:#1F1F22}
+@property --on-accent{syntax:'<color>';inherits:true;initial-value:#FFFFFF}
+@property --accent-dim{syntax:'<color>';inherits:true;initial-value:#A9ABAF}
+@property --uni{syntax:'<color>';inherits:true;initial-value:#163A7A}
+@property --study{syntax:'<color>';inherits:true;initial-value:#7A3C8C}
+@property --course{syntax:'<color>';inherits:true;initial-value:#007470}
+@property --work{syntax:'<color>';inherits:true;initial-value:#A04D00}
+@property --gym{syntax:'<color>';inherits:true;initial-value:#B02B4E}
+@property --quran{syntax:'<color>';inherits:true;initial-value:#3A4A12}
+@property --personal{syntax:'<color>';inherits:true;initial-value:#7A5C00}
 @property --k-teal{syntax:'<color>';inherits:true;initial-value:#0E5E58}
 @property --k-blue{syntax:'<color>';inherits:true;initial-value:#244F8C}
 @property --k-green{syntax:'<color>';inherits:true;initial-value:#2F5E22}
@@ -101,7 +85,7 @@
 @property --k-olive{syntax:'<color>';inherits:true;initial-value:#535C14}
 @property --tint{syntax:'<percentage>';inherits:true;initial-value:9%}
 :root{
-  transition-property:--bg,--surface,--fg,--muted,--line,--quiet,--danger,--shell,--shell-fg,--shell-dim,--uni,--study,--course,--work,--gym,--quran,--personal,--k-teal,--k-blue,--k-green,--k-slate,--k-copper,--k-olive,--tint;
+  transition-property:--bg,--surface,--fg,--muted,--line,--quiet,--danger,--accent,--on-accent,--accent-dim,--uni,--study,--course,--work,--gym,--quran,--personal,--k-teal,--k-blue,--k-green,--k-slate,--k-copper,--k-olive,--tint;
   transition-duration:.45s; transition-timing-function:cubic-bezier(.16,1,.3,1);
 }
 html{scrollbar-color:var(--quiet) var(--bg);scroll-padding-bottom:calc(128px + env(safe-area-inset-bottom, 0px))}
@@ -140,7 +124,7 @@ button{font:inherit;color:inherit}
 .sync.cloud i{background:var(--gym)}
 .btn{min-height:40px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .btn:hover{border-color:var(--muted)}
-.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .btn.ghost{background:none;border-color:transparent}
 .btn.danger{background:var(--danger);border-color:var(--danger);color:var(--surface)}
 .btn svg{width:16px;height:16px;flex:none}
@@ -156,8 +140,8 @@ button{font:inherit;color:inherit}
 .dp .dd{font-family:var(--font-mono);font-weight:600;font-size:15px}
 .dp.is-today .dn{color:var(--fg);font-weight:600}
 .dp.is-today{border-color:var(--line)}
-.dp[aria-pressed="true"]{background:var(--shell);color:var(--shell-fg);border-color:var(--shell)}
-.dp[aria-pressed="true"] .dn{color:var(--shell-dim)}
+.dp[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.dp[aria-pressed="true"] .dn{color:var(--accent-dim)}
 
 /* now card: the block in progress, one tap to finish it */
 .now{display:flex;flex-direction:column;gap:var(--s3);background:color-mix(in srgb,var(--c) var(--tint),var(--surface));border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));border-radius:18px;padding:var(--s4)}
@@ -296,6 +280,7 @@ button{font:inherit;color:inherit}
 .ttag{font-size:12px;color:var(--c);font-weight:600}
 .tdue{font-size:12px;color:var(--muted)}
 .tdue.late{color:var(--danger);font-weight:600}
+.late-ic{width:13px;height:13px;vertical-align:-2px;margin-inline-end:3px}
 .del{min-height:44px;min-width:44px;background:none;border:0;color:var(--muted);cursor:pointer;padding:0 8px;border-radius:10px;font-size:13px}
 .del:hover{color:var(--danger)}
 .edit{min-height:44px;min-width:44px;background:none;border:0;color:var(--muted);cursor:pointer;padding:0 8px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center}
@@ -434,7 +419,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .o-head .daypick{padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
 .o-head .days{gap:5px}
 .o-head .dp{min-height:58px;border-radius:11px}
-.o-head .dp[aria-pressed="true"]{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--shell-fg) 28%,transparent)}
+.o-head .dp[aria-pressed="true"]{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--on-accent) 28%,transparent)}
 .o-tasks .sec-head,.settingsv .sec-head,.wk-routines .sec-head{align-items:center}
 .o-tasks .panel,.settingsv .panel{border-radius:16px}
 .empty{padding:14px 16px;border:1px dashed var(--line);border-radius:12px;background:color-mix(in srgb,var(--fg) 2.5%,var(--surface));line-height:1.7}
@@ -575,13 +560,13 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .toast .btn{background:transparent;color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
 
 /* bottom nav */
-.nav{position:fixed;inset-inline:0;bottom:0;z-index:5;background:var(--shell);color:var(--shell-fg);padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px))}
+.nav{position:fixed;inset-inline:0;bottom:0;z-index:5;background:var(--accent);color:var(--on-accent);padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px))}
 .nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
-.nav button .dot{position:absolute;top:8px;inset-inline-end:calc(50% - 20px);width:8px;height:8px;border-radius:50%;background:var(--shell-fg);box-shadow:0 0 0 2px var(--shell)}
-.nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;min-height:52px;padding:6px 0;border-radius:12px;cursor:pointer;color:var(--shell-dim);font-size:12px}
-.nav button:focus-visible{outline-color:var(--shell-fg)}
+.nav button .dot{position:absolute;top:8px;inset-inline-end:calc(50% - 20px);width:8px;height:8px;border-radius:50%;background:var(--on-accent);box-shadow:0 0 0 2px var(--accent)}
+.nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;min-height:52px;padding:6px 0;border-radius:12px;cursor:pointer;color:var(--accent-dim);font-size:12px}
+.nav button:focus-visible{outline-color:var(--on-accent)}
 .nav button svg{width:22px;height:22px}
-.nav button[aria-current="page"]{color:var(--shell-fg);font-weight:600;background:color-mix(in srgb,var(--shell-fg) 16%,transparent)}
+.nav button[aria-current="page"]{color:var(--on-accent);font-weight:600;background:color-mix(in srgb,var(--on-accent) 16%,transparent)}
 
 .fail{max-width:560px;margin:40px auto;padding-inline:16px;color:var(--muted);text-align:center}
 @media (max-width:400px){
@@ -601,7 +586,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   .nav-in{display:flex;flex-direction:column;gap:4px;max-width:none;margin:0}
   .nav button{flex-direction:row;justify-content:flex-start;gap:12px;min-height:44px;padding:10px 12px;font-size:15px}
   .brand{display:block;font-family:var(--font-display);font-weight:700;font-size:21px;line-height:1.3;padding-inline:12px}
-  .brand small{display:block;font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--shell-dim);margin-top:4px}
+  .brand small{display:block;font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--accent-dim);margin-top:4px}
   .wrap{max-width:1120px;padding-inline:40px;padding-block:36px 48px;gap:var(--s6)}
   .toast,.wk-sheet{bottom:var(--s5)}
   .today-view{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"head head" "main side";gap:var(--s6) 36px;align-items:start}

@@ -54,8 +54,8 @@ cities of the 57 OIC member states (GeoNames, CC BY 4.0), the device location on
   preview, copying a day, ties to a prayer, renaming the 9 kinds, adding up to 12 kinds of the user's own (a name, one of six ready colours, its options and its half of the balance; deleted only when no block uses it), subjects and place, all on a draft that is checked
   and summarised before it is saved; export the schedule as a settings file; import a settings file, reset to the example, save a backup file of all the data to the
   device and restore it after a preview, all or nothing, and whether the browser agreed to keep the data; the look: light, dark or automatic (following the phone, the
-  default), and one of four palettes (oxblood, the default, olive, navy, graphite) that change only the frame and
-  the ground, with a soft fade; kept on the device under its own key, outside the settings, the progress and the
+  default), on one graphite palette with one accent (feature 032; the four palettes of 022 are gone), with a soft
+  fade; kept on the device under its own key, outside the settings, the progress and the
   backup). If the browser refuses to save a change to progress, a notice on every tab says so and offers a backup
   of what is on screen, until a later save succeeds. Every save also goes to a second copy on the device (IndexedDB), and the first
   save of each day keeps a snapshot of the last 7 days; a wiped or damaged copy comes back on its own, and a day can

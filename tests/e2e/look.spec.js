@@ -1,5 +1,5 @@
-// The look (feature 022): four palettes that change only the frame and the ground, a light, dark or automatic theme
-// kept on the device under its own key, and a soft change of colours. Tests that are not about the fade run with
+// The look (features 022, 032): one graphite palette with one accent, a light, dark or automatic theme kept on the
+// device under its own key, and a soft change of colours. Tests that are not about the fade run with
 // reduced motion, so colours are read at their end value. All data is generated.
 const {test, expect} = require('@playwright/test');
 const {openApp, tab, button, cspViolations} = require('./helpers');
@@ -31,7 +31,7 @@ const loadFrames = () => {
   window.__frames = [];
   const tick = () => {
     const d = document.documentElement;
-    window.__frames.push({palette: d.getAttribute('data-palette'), theme: d.getAttribute('data-theme'), bg: document.body && getComputedStyle(document.body).backgroundColor});
+    window.__frames.push({theme:d.getAttribute('data-theme'), bg: document.body && getComputedStyle(document.body).backgroundColor});
     if (document.querySelector('nav button')) window.__loaded = true; else requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -42,38 +42,39 @@ const otherFrames = async page => {
   await expect.poll(() => page.evaluate(() => !!window.__loaded)).toBe(true);
   return page.evaluate(() => {
     const d = document.documentElement;
-    const now = {palette: d.getAttribute('data-palette'), theme: d.getAttribute('data-theme'), bg: getComputedStyle(document.body).backgroundColor};
+    const now = {theme:d.getAttribute('data-theme'), bg: getComputedStyle(document.body).backgroundColor};
     return window.__frames.filter(f => JSON.stringify(f) !== JSON.stringify(now));
   });
 };
 
-test.describe('US1: picking a palette', () => {
-  test('a palette changes the band and the ground, never a kind\'s ink, and is kept with no flash', async ({page}) => {
+test.describe('US1: one palette', () => {
+  test('the app opens in the graphite palette with no flash, and Settings offers only the theme', async ({page}) => {
     await openLive(page, loadFrames);
-    const ink = await root(page, '--uni'), oldBand = await band(page), oldBg = await root(page, '--bg');
-    await tab(page, 'الإعدادات');
-    expect(await pressed(page)).toEqual(['تلقائي', 'عنابي']);
-    await pick(page, 'كحلي');
-    expect(await attr(page, 'data-palette')).toBe('navy');
-    expect(await band(page)).not.toBe(oldBand);
-    expect(await root(page, '--bg')).not.toBe(oldBg);
-    expect(await root(page, '--uni')).toBe(ink);
-    expect(await pressed(page)).toEqual(['تلقائي', 'كحلي']);
-    await page.reload();
-    await expect(page.locator('nav button').first()).toBeVisible();
-    expect(await attr(page, 'data-palette')).toBe('navy');
+    expect(await attr(page, 'data-palette')).toBe(null);
+    expect([await root(page, '--bg'), await root(page, '--accent'), await root(page, '--uni')]).toEqual(['rgb(242, 242, 240)', 'rgb(31, 31, 34)', 'rgb(22, 58, 122)']);
+    expect(await band(page)).toBe('rgb(31, 31, 34)');
     expect(await otherFrames(page)).toEqual([]);
+    await tab(page, 'الإعدادات');
+    expect(await pressed(page)).toEqual(['تلقائي']);
+    await expect(page.locator('main [role=group][aria-label="الألوان"]')).toHaveCount(0);
     expect(await cspViolations(page)).toEqual([]);
   });
 
-  test('the status bar takes the band of the palette, in light and in dark', async ({page}) => {
+  test('the status bar takes the accent, in light and in dark', async ({page}) => {
     await openApp(page);
     await tab(page, 'الإعدادات');
-    await pick(page, 'كحلي');
     await pick(page, 'فاتح');
-    expect((await statusBar(page)).toUpperCase()).toBe('#1F2F4F');
+    expect((await statusBar(page)).toUpperCase()).toBe('#1F1F22');
     await pick(page, 'غامق');
-    expect((await statusBar(page)).toUpperCase()).toBe('#121C30');
+    expect((await statusBar(page)).toUpperCase()).toBe('#ECECEA');
+  });
+
+  test('a palette kept from before opens in the new one, with its theme kept', async ({page}) => {
+    await openApp(page, {before: () => { localStorage.setItem('mizan-look', JSON.stringify({palette: 'navy', theme: 'dark'})); }});
+    expect([await attr(page, 'data-palette'), await attr(page, 'data-theme')]).toEqual([null, 'dark']);
+    expect(await root(page, '--bg')).toBe('rgb(18, 19, 20)');
+    await tab(page, 'الإعدادات');
+    expect(await pressed(page)).toEqual(['غامق']);
   });
 });
 
@@ -85,7 +86,7 @@ test.describe('US2: light, dark or automatic', () => {
       expect(await attr(page, 'data-theme')).toBe('dark');
       expect(await otherFrames(page)).toEqual([]);
       await tab(page, 'الإعدادات');
-      expect(await pressed(page)).toEqual(['تلقائي', 'عنابي']);
+      expect(await pressed(page)).toEqual(['تلقائي']);
     });
   });
 
@@ -138,7 +139,7 @@ test.describe('US3: a soft change of colours', () => {
       };
       requestAnimationFrame(tick);
     }));
-    expect(r.after).toEqual(['rgb(22, 20, 26)', 'rgb(238, 142, 156)']);
+    expect(r.after).toEqual(['rgb(18, 19, 20)', 'rgb(158, 189, 250)']);
     r.mid.forEach((v, i) => { expect(v).not.toBe(r.before[i]); expect(v).not.toBe(r.after[i]); });
   });
 
@@ -172,7 +173,7 @@ test.describe('US3: a soft change of colours', () => {
       };
       requestAnimationFrame(tick);
     }));
-    expect(lights[lights.length - 1]).toBe(22 + 20 + 26);
+    expect(lights[lights.length - 1]).toBe(18 + 19 + 20);
     lights.slice(1).forEach((v, i) => expect(v).toBeLessThanOrEqual(lights[i]));
   });
 
@@ -181,7 +182,7 @@ test.describe('US3: a soft change of colours', () => {
     test('the new colours show at once', async ({page}) => {
       await openLive(page);
       const bg = await page.evaluate(() => { mizanLook.set({theme: 'dark'}); return getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(); });
-      expect(bg).toBe('rgb(22, 20, 26)');
+      expect(bg).toBe('rgb(18, 19, 20)');
     });
   });
 });
@@ -190,41 +191,41 @@ test.describe('edge cases', () => {
   test('with storage blocked the choice applies, and a reload opens in the default with no error', async ({page}) => {
     await openApp(page, {before: () => { Storage.prototype.setItem = () => { throw new Error('blocked'); }; }});
     await tab(page, 'الإعدادات');
-    await pick(page, 'رمادي');
-    expect(await attr(page, 'data-palette')).toBe('graphite');
+    await pick(page, 'غامق');
+    expect(await attr(page, 'data-theme')).toBe('dark');
     await page.reload();
     await expect(page.locator('nav button').first()).toBeVisible();
-    expect(await attr(page, 'data-palette')).toBe('oxblood');
+    expect(await page.evaluate(() => mizanLook.get().theme)).toBe('auto');
   });
 
-  test('a broken stored look reads as the defaults', async ({page}) => {
+  test('a broken stored look reads as automatic', async ({page}) => {
     await openApp(page, {before: () => { localStorage.setItem('mizan-look', '{"palette":"pink","theme":7'); }});
-    expect([await attr(page, 'data-palette'), await page.evaluate(() => mizanLook.get().theme)]).toEqual(['oxblood', 'auto']);
+    expect(await page.evaluate(() => mizanLook.get())).toEqual({theme: 'auto'});
     await tab(page, 'الإعدادات');
-    expect(await pressed(page)).toEqual(['تلقائي', 'عنابي']);
+    expect(await pressed(page)).toEqual(['تلقائي']);
   });
 
-  test('a backup holds no look, and restoring it or importing settings leaves the look as it is', async ({page}, info) => {
+  test('a backup holds no look, and restoring it or importing settings leaves the theme as it is', async ({page}, info) => {
     await openApp(page);
     await tab(page, 'الإعدادات');
-    await pick(page, 'كحلي');
+    await pick(page, 'غامق');
     const [download] = await Promise.all([page.waitForEvent('download'), button(page, 'احفظ نسخة احتياطية').click()]);
     const file = info.outputPath('backup.json');
     await download.saveAs(file);
     expect(require('fs').readFileSync(file, 'utf8')).not.toContain('mizan-look');
-    await pick(page, 'رمادي');
+    await pick(page, 'فاتح');
     await page.setInputFiles('#backup-file', file);
     await button(page, 'استرجع').click();
     await page.waitForLoadState('load');
-    await expect.poll(() => attr(page, 'data-palette')).toBe('graphite');
+    await expect.poll(() => attr(page, 'data-theme')).toBe('light');
     await tab(page, 'الإعدادات');
     await page.locator('main input[type=file]:not(#backup-file)').setInputFiles(require('path').join(__dirname, '..', '..', 'settings.example.json'));
     await button(page, 'استبدل').click();
     await page.waitForLoadState('load');
-    expect(await attr(page, 'data-palette')).toBe('graphite');
+    expect(await attr(page, 'data-theme')).toBe('light');
   });
 
-  test('offline, the app opens in the kept look', async ({page, context, browserName}) => {
+  test('offline, the app opens in the kept theme', async ({page, context, browserName}) => {
     // As in offline.spec.js: Playwright's WebKit blocks offline navigation before the service worker can answer.
     test.skip(browserName === 'webkit', 'Playwright WebKit blocks offline navigation before the service worker');
     await openApp(page);
@@ -232,12 +233,11 @@ test.describe('edge cases', () => {
     await page.reload();
     await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
     await tab(page, 'الإعدادات');
-    await pick(page, 'زيتي');
     await pick(page, 'غامق');
     await context.setOffline(true);
     await page.reload();
     await expect(page.locator('nav button').first()).toBeVisible();
-    expect([await attr(page, 'data-palette'), await attr(page, 'data-theme')]).toEqual(['olive', 'dark']);
+    expect(await attr(page, 'data-theme')).toBe('dark');
     await context.setOffline(false);
   });
 });

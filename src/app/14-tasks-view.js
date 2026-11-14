@@ -137,7 +137,7 @@
     return html`<div class=${'titem c-' + t.tag + (t.done ? ' done' : !t.due ? '' : ' wrap-act')}>
       <${Check} on=${!!t.done} cat=${t.tag} label=${(t.done ? 'رجّع: ' : 'خلّص: ') + t.text} onToggle=${() => update(s => { const x = s.tasks.find(y => y.id === t.id); if (x) x.done = !x.done; return s; })} />
       <div class="shrink"><p class="ttext">${t.text}</p>
-        <p class="small"><span class="ttag">${TASK_TAGS[t.tag]}</span>${t.due ? html` · <span class=${'tdue' + (late ? ' late' : '')}>${late ? 'متأخرة · ' : ''}${dateLabel(t.due)}</span>` : null}</p></div>
+        <p class="small"><span class="ttag">${TASK_TAGS[t.tag]}</span>${t.due ? html` · <span class=${'tdue' + (late ? ' late' : '')}>${late ? html`<${Late} /><span aria-hidden="true">متأخرة</span> · ` : ''}${dateLabel(t.due)}</span>` : null}</p></div>
       <div class="tact">
         ${!t.done && t.due ? html`<button type="button" class="btn" aria-label=${'أجّلها: ' + t.text} onClick=${() => postponeTask(actEdit, t, taskNextDay(t.due, now.iso, addDays))}>أجّلها</button>` : null}
         <button type="button" class="edit" id=${'edit-btn-' + t.id} aria-label=${'عدّل ' + t.text} title="عدّل" onClick=${onEdit}><${Pencil} /></button>
