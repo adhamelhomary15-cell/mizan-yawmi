@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="43c84906c7"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-h8D8tVeHFlo6x5HGqhEhJe7opPkFA1zez3GAtyeGrM4=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-o/eDbm8pia46mUHdtM6KNvEvXR1VN+4Tpkrt3BfaJSI=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-/UDl8EUd+VTUZCPpd5XmNtiFPIsjZN/UTCQ8306tT+4=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F1F22"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="850a4213eb"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-h8D8tVeHFlo6x5HGqhEhJe7opPkFA1zez3GAtyeGrM4=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-pe3JAeNydZ+8oOulfBf7u8JePos1U7jRCNzaf9wDK3E=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-xpGjIyXHQXehqJDETJU1laaZphJDhqayt+aQA4hdJfk=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F1F22"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept theme with no flash. There is
    one palette (032); the Settings section reads and sets the theme through window.mizanLook. The choice is kept under
    its own key, outside the settings, the progress and the backup. A palette kept from 022 is ignored. */
@@ -406,6 +406,12 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .course-form{gap:12px}
 .install,.notice{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .install p,.notice p{display:flex;flex-direction:column;min-width:0}
+/* How to add the app to the home screen (feature 034): two short numbered steps under the reason. */
+.install-hint{align-items:flex-start}
+.hint-body{display:flex;flex-direction:column;min-width:0}
+.install-steps{margin:6px 0 0;padding-inline-start:20px;font-size:14px}
+.install-steps li{margin-top:2px}
+.share-ic{width:16px;height:16px;vertical-align:-3px;color:var(--fg)}
 .notice .btn{flex:none}
 
 /* UI polish: give daily navigation, empty states, and secondary controls a clearer rhythm. */
@@ -2964,6 +2970,22 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   // end of now line
 
+  // start of install hint
+  // Which "add to home screen" steps a device needs (feature 034): none once the app runs from the home screen and none
+  // on a computer. Safari never offers installing, so an iPhone or iPad always gets the steps; an iPad can present
+  // itself as a Mac, and is told apart by its touch points. A browser inside another app cannot add to the home
+  // screen, so inApp asks to open the link in the browser first. On Android the browser may offer installing itself
+  // (offer); the app's own «ثبّت» button shows then, so the steps do not.
+  const IN_APP = /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|Snapchat|musical_ly|TikTok|Twitter/i;
+  function installHintFor({ua, touch, standalone, offer}){
+    if (standalone) return null;
+    const inApp = IN_APP.test(ua);
+    if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch > 1)) return {os: 'ios', inApp};
+    if (/Android/.test(ua)) return offer && !inApp ? null : {os: 'android', inApp};
+    return null;
+  }
+  // end of install hint
+
   // start of schedule rules
   /* ---------------- schedule rules (pure; tools/check-schedule.js runs this block) ---------------- */
   // The editor and the guide change a draft: a copy of the settings. Each function returns a new draft (or a refusal)
@@ -3788,6 +3810,56 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </div>
     </div>`;
   }
+  /* ---------------- install hint (feature 034) ---------------- */
+  // How to add the app to the home screen. On an iPhone it is what keeps the data: Safari may clear a site that has
+  // not been opened for a while, but not an app on the home screen. The device is read once; installHintFor decides.
+  const INSTALL_DEVICE = (() => {
+    try {
+      const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+      return {ua: navigator.userAgent || '', touch: navigator.maxTouchPoints || 0, standalone};
+    } catch(e){ return {ua: '', touch: 0, standalone: true}; }
+  })();
+  // Its own key, like the look: outside the progress, the settings and the backup.
+  const INSTALL_HINT_KEY = 'mizan-install-hint';
+  const installHintDone = () => { try { return localStorage.getItem(INSTALL_HINT_KEY) === 'done'; } catch(e){ return false; } };
+
+  const ShareIcon = () => html`<svg class="share-ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8v8.4M5.2 4.4L8 1.6l2.8 2.8"/><path d="M5 6.6H3.6v7.6h8.8V6.6H11"/></svg>`;
+  const INSTALL_REASON = {
+    ios: 'على الآيفون، Safari ممكن يمسح بياناتك لو مافتحتش التطبيق فترة. من الشاشة الرئيسية بتفضل محفوظة.',
+    android: 'هتلاقيه بسرعة، ويفتح من غير نت زي أي تطبيق.'
+  };
+
+  function InstallSteps({hint}){
+    const browser = hint.os === 'ios' ? 'Safari' : 'المتصفح (Chrome مثلًا)';
+    if (hint.inApp) return html`<ol class="install-steps"><li>افتح اللينك في ${browser} الأول، من قايمة التطبيق اللي انت فيه، وبعدها ضيفه من هناك.</li></ol>`;
+    if (hint.os === 'android') return html`<ol class="install-steps">
+      <li>افتح قايمة المتصفح، النقط التلاتة <span aria-hidden="true">⋮</span> فوق.</li>
+      <li>اختار «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية» <bdi dir="ltr">(Install app / Add to Home screen)</bdi>.</li>
+    </ol>`;
+    return html`<ol class="install-steps">
+      <li>دوس على زرار المشاركة <${ShareIcon} /> في Safari.</li>
+      <li>اختار «إضافة إلى الشاشة الرئيسية» <bdi dir="ltr">(Add to Home Screen)</bdi>.</li>
+    </ol>`;
+  }
+
+  // The notice above the day. «تمام» hides it for good on this device; with storage refused, until the page closes.
+  // offer: the browser offers installing itself, so the shell's «ثبّت» button shows instead of the Android steps.
+  function InstallHint({offer}){
+    const hint = installHintFor(Object.assign({offer}, INSTALL_DEVICE));
+    const [done, setDone] = useState(installHintDone);
+    if (!hint || done) return null;
+    const dismiss = () => { try { localStorage.setItem(INSTALL_HINT_KEY, 'done'); } catch(e){} setDone(true); };
+    return html`<div class="notice install-hint" role="status">
+      <div class="hint-body"><b>ضيف ميزان يومي للشاشة الرئيسية</b><span class="small muted">${INSTALL_REASON[hint.os]}</span><${InstallSteps} hint=${hint} /></div>
+      <button type="button" class="btn primary" onClick=${dismiss}>تمام</button>
+    </div>`;
+  }
+
+  // The same steps in Settings, while the app runs in a browser, whether or not the notice was dismissed.
+  function InstallLine(){
+    const hint = installHintFor(Object.assign({offer: false}, INSTALL_DEVICE));
+    return hint ? html`<div class="install-line"><p class="small">ضيف التطبيق للشاشة الرئيسية عشان بياناتك تفضل محفوظة:</p><${InstallSteps} hint=${hint} /></div>` : null;
+  }
   /* ---------------- Settings (import, status, reset) ---------------- */
   const MAX_SETTINGS_BYTES = 1024 * 1024;
   // Same order as tools/check-settings.js: size, empty, JSON, then the format rules.
@@ -3870,6 +3942,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       <p class="small">${STORAGE_LINES[st]}</p>
       ${copy ? html`<p class="small">${COPY_LINES[copy] || COPY_LINES.on}</p>` : null}
       ${st === 'may-clear' && IS_FIREFOX ? html`<span class="backup-act"><button type="button" class="btn" disabled=${asking} onClick=${ask}>اطلب من المتصفح يحتفظ بالبيانات</button></span>` : null}
+      <${InstallLine} />
     </div>`;
   }
 
@@ -4941,6 +5014,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </nav>
       <main class="wrap">
         ${installEvt ? html`<div class="install"><p><b>ثبّت ميزان يومي</b><span class="small muted">أيقونة على الشاشة الرئيسية، ويشتغل من غير نت</span></p><button type="button" class="btn primary" onClick=${install}>ثبّت</button></div>` : null}
+        <${InstallHint} offer=${!!installEvt} />
         ${newVersion ? html`<${Notice} role="status" title="فيه نسخة جديدة من التطبيق" line="هتفتح لوحدها المرة الجاية، أو افتحها دلوقتي."><button type="button" class="btn primary" onClick=${() => location.reload()}>افتحها</button></${Notice}>` : null}
         ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات، أو اعمل جدولك من هنا.' : 'اعمل جدولك من هنا في دقايق، أو استورد ملف إعدادات من الإعدادات.'}><button type="button" class="btn primary" onClick=${startGuide}>اعمل جدولك</button></${Notice}>` : null}
         <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
