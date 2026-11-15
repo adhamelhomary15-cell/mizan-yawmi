@@ -453,12 +453,14 @@
   // Which "add to home screen" steps a device needs (feature 034): none once the app runs from the home screen and none
   // on a computer. Safari never offers installing, so an iPhone or iPad always gets the steps; an iPad can present
   // itself as a Mac, and is told apart by its touch points. A browser inside another app cannot add to the home
-  // screen, so inApp asks to open the link in the browser first.
+  // screen, so inApp asks to open the link in the browser first. On Android the browser may offer installing itself
+  // (offer); the app's own «ثبّت» button shows then, so the steps do not.
   const IN_APP = /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|Snapchat|musical_ly|TikTok|Twitter/i;
-  function installHintFor({ua, touch, standalone}){
+  function installHintFor({ua, touch, standalone, offer}){
     if (standalone) return null;
     const inApp = IN_APP.test(ua);
     if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch > 1)) return {os: 'ios', inApp};
+    if (/Android/.test(ua)) return offer && !inApp ? null : {os: 'android', inApp};
     return null;
   }
   // end of install hint

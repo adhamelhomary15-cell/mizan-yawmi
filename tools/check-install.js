@@ -35,7 +35,12 @@ const CASES = [
   ['Instagram\'s browser on an iPhone asks to open Safari first', {ua: UA.instagramIos, touch: 5}, {os: 'ios', inApp: true}],
   ['an iPhone opened from the home screen gets nothing', {ua: UA.iphone, touch: 5, standalone: true}, null],
   ['Safari on a Mac gets nothing', {ua: UA.safariMac, touch: 0}, null],
-  ['Chrome on a computer gets nothing', {ua: UA.chromeDesktop, touch: 0}, null]
+  ['Chrome on a computer gets nothing', {ua: UA.chromeDesktop, touch: 0}, null],
+  ['Chrome on Android with no install offer gets the Android steps', {ua: UA.chromeAndroid, touch: 5}, {os: 'android', inApp: false}],
+  ['Chrome on Android offering to install gets nothing (its button shows)', {ua: UA.chromeAndroid, touch: 5, offer: true}, null],
+  ['Firefox on Android gets the Android steps', {ua: UA.firefoxAndroid, touch: 5}, {os: 'android', inApp: false}],
+  ['the WhatsApp browser on Android asks to open the browser first', {ua: UA.whatsappAndroid, touch: 5}, {os: 'android', inApp: true}],
+  ['Android opened from the home screen gets nothing', {ua: UA.chromeAndroid, touch: 5, standalone: true}, null]
 ];
 
 let failed = 0;
@@ -58,7 +63,9 @@ if (process.argv.includes('--self-test')) {
     ['an iPad presenting itself as a Mac is missed', s => s.replace("(/Macintosh/.test(ua) && touch > 1)", 'false')],
     ['the home screen is ignored', s => s.replace('if (standalone) return null;', '')],
     ['an in-app browser is not noticed', s => s.replace('const inApp = IN_APP.test(ua);', 'const inApp = false;')],
-    ['a computer gets the steps', s => s.replace("(/Macintosh/.test(ua) && touch > 1)", "/Macintosh/.test(ua)")]
+    ['a computer gets the steps', s => s.replace("(/Macintosh/.test(ua) && touch > 1)", "/Macintosh/.test(ua)")],
+    ['Android shows the steps beside the install offer', s => s.replace('return offer && !inApp ? null :', 'return')],
+    ['Android is missed', s => s.replace("if (/Android/.test(ua)) return", "if (false) return")]
   ];
   let missed = 0;
   mutations.forEach(([name, mutate]) => {

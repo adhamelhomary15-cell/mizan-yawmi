@@ -13,11 +13,17 @@
 
   const ShareIcon = () => html`<svg class="share-ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8v8.4M5.2 4.4L8 1.6l2.8 2.8"/><path d="M5 6.6H3.6v7.6h8.8V6.6H11"/></svg>`;
   const INSTALL_REASON = {
-    ios: 'على الآيفون، Safari ممكن يمسح بياناتك لو مافتحتش التطبيق فترة. من الشاشة الرئيسية بتفضل محفوظة.'
+    ios: 'على الآيفون، Safari ممكن يمسح بياناتك لو مافتحتش التطبيق فترة. من الشاشة الرئيسية بتفضل محفوظة.',
+    android: 'هتلاقيه بسرعة، ويفتح من غير نت زي أي تطبيق.'
   };
 
   function InstallSteps({hint}){
-    if (hint.inApp) return html`<ol class="install-steps"><li>افتح اللينك في Safari الأول، من قايمة التطبيق اللي انت فيه، وبعدها ضيفه من هناك.</li></ol>`;
+    const browser = hint.os === 'ios' ? 'Safari' : 'المتصفح (Chrome مثلًا)';
+    if (hint.inApp) return html`<ol class="install-steps"><li>افتح اللينك في ${browser} الأول، من قايمة التطبيق اللي انت فيه، وبعدها ضيفه من هناك.</li></ol>`;
+    if (hint.os === 'android') return html`<ol class="install-steps">
+      <li>افتح قايمة المتصفح، النقط التلاتة <span aria-hidden="true">⋮</span> فوق.</li>
+      <li>اختار «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية» <bdi dir="ltr">(Install app / Add to Home screen)</bdi>.</li>
+    </ol>`;
     return html`<ol class="install-steps">
       <li>دوس على زرار المشاركة <${ShareIcon} /> في Safari.</li>
       <li>اختار «إضافة إلى الشاشة الرئيسية» <bdi dir="ltr">(Add to Home Screen)</bdi>.</li>
@@ -25,8 +31,9 @@
   }
 
   // The notice above the day. «تمام» hides it for good on this device; with storage refused, until the page closes.
-  function InstallHint(){
-    const hint = installHintFor(INSTALL_DEVICE);
+  // offer: the browser offers installing itself, so the shell's «ثبّت» button shows instead of the Android steps.
+  function InstallHint({offer}){
+    const hint = installHintFor(Object.assign({offer}, INSTALL_DEVICE));
     const [done, setDone] = useState(installHintDone);
     if (!hint || done) return null;
     const dismiss = () => { try { localStorage.setItem(INSTALL_HINT_KEY, 'done'); } catch(e){} setDone(true); };
@@ -38,6 +45,6 @@
 
   // The same steps in Settings, while the app runs in a browser, whether or not the notice was dismissed.
   function InstallLine(){
-    const hint = installHintFor(INSTALL_DEVICE);
+    const hint = installHintFor(Object.assign({offer: false}, INSTALL_DEVICE));
     return hint ? html`<div class="install-line"><p class="small">ضيف التطبيق للشاشة الرئيسية عشان بياناتك تفضل محفوظة:</p><${InstallSteps} hint=${hint} /></div>` : null;
   }

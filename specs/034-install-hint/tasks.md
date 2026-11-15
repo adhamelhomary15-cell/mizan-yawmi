@@ -23,8 +23,8 @@ description: "Task list for feature 034: how to add the app to the home screen"
 
 ## Phase 2: Android (US2)
 
-- [ ] T006 The rule and the steps for Android, only without the browser's own offer.
-- [ ] T007 Build and every check.
+- [x] T006 The rule and the steps for Android, only without the browser's own offer.
+- [x] T007 Build and every check.
 
 ## Phase 3: Tests and docs
 
