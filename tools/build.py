@@ -111,7 +111,7 @@ if not look:
 src = src.replace(look.group(0), '', 1)
 head = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-        '<meta name="theme-color" content="#6E1A28"><link rel="manifest" href="manifest.webmanifest">'
+        '<meta name="theme-color" content="#1F1F22"><link rel="manifest" href="manifest.webmanifest">'
         '<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">'
         '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان">'
         '<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}'
@@ -157,7 +157,7 @@ manifest = {
     "name": "ميزان يومي", "short_name": "ميزان",
     "description": "يومك موزون بين مذاكرتك وشغلك والتزاماتك",
     "lang": "ar", "dir": "rtl", "start_url": "./", "scope": "./", "display": "standalone",
-    "orientation": "any", "background_color": "#E7ECE3", "theme_color": "#6E1A28",
+    "orientation": "any", "background_color": "#F2F2F0", "theme_color": "#1F1F22",
     "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
               {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
               {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]}
@@ -185,7 +185,8 @@ self.addEventListener('fetch', e => {{
 }});
 """)
 
-# 7. Icons: the guilloche rosette in paper ink on the oxblood shell colour.
+# 7. Icons: the guilloche rosette on the graphite accent (feature 033), its two halves in the dark inks of the two
+#    halves of the balance: navy (university) and amber (work), with a light ring.
 ICONS = ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png']
 want_icons = '--icons' in sys.argv[1:] or not all((ROOT / n).exists() for n in ICONS)
 try:
@@ -197,27 +198,27 @@ except ImportError:
         print('Pillow not installed; icons left as they are')
 else:
     import math
-    SHELL, PAPER, OCHRE = (110, 26, 40), (250, 251, 246), (228, 197, 92)
+    GROUND, RING, NAVY, AMBER = (31, 31, 34), (236, 236, 234), (158, 189, 250), (217, 136, 75)
     def icon(size, maskable=False):
         k = 4; W = 512 * k
         if maskable:
-            im = Image.new('RGBA', (W, W), SHELL + (255,)); d = ImageDraw.Draw(im)
+            im = Image.new('RGBA', (W, W), GROUND + (255,)); d = ImageDraw.Draw(im)
         else:
             im = Image.new('RGBA', (W, W), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
-            d.rounded_rectangle([0, 0, W - 1, W - 1], radius=112 * k, fill=SHELL + (255,))
+            d.rounded_rectangle([0, 0, W - 1, W - 1], radius=112 * k, fill=GROUND + (255,))
         sc = (0.78 if maskable else 0.9) * k
         cx = cy = W / 2
         for i in range(48):
             ang = math.radians(i * 7.5)
-            col = OCHRE if i >= 24 else PAPER
+            col = AMBER if i >= 24 else NAVY
             pts = []
             for t in range(0, 361, 6):
                 tt = math.radians(t)
                 x, y = 92 + 92 * math.cos(tt), 30 * math.sin(tt)
                 pts.append((cx + (x * math.cos(ang) - y * math.sin(ang)) * sc, cy + (x * math.sin(ang) + y * math.cos(ang)) * sc))
             d.line(pts, fill=col, width=int(3.2 * k))
-        r = 52 * sc; d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=SHELL)
-        r2 = 52 * sc; d.ellipse([cx - r2, cy - r2, cx + r2, cy + r2], outline=PAPER, width=int(3 * k))
+        r = 52 * sc; d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=GROUND)
+        r2 = 52 * sc; d.ellipse([cx - r2, cy - r2, cx + r2, cy + r2], outline=RING, width=int(3 * k))
         return im.resize((size, size), Image.LANCZOS)
     icon(192).save(ROOT / 'icon-192.png'); icon(512).save(ROOT / 'icon-512.png')
     icon(512, True).save(ROOT / 'icon-maskable-512.png')

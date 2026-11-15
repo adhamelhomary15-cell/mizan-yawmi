@@ -77,7 +77,7 @@ cities of the 57 OIC member states (GeoNames, CC BY 4.0), the device location on
 
 ## Brand Commitments
 
-- Name: ميزان يومي (binding). Short name on the home screen: ميزان. Icon: the guilloche rosette on oxblood.
+- Name: ميزان يومي (binding). Short name on the home screen: ميزان. Icon: the guilloche rosette on graphite, one half navy and one half amber (the two halves of the balance).
 - Avoid: religious ornament as decoration, neon or glow, anything that reads as a corporate app.
 - Language: Egyptian colloquial Arabic for UI copy by default; the language is a setting.
 
