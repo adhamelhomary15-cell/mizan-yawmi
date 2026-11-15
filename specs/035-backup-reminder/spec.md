@@ -98,8 +98,9 @@ reopen: the notice shows.
   shows at once.
 - **Storage refused** (private browsing): «مش دلوقتي» and the start of the count last until the page closes; nothing
   breaks and no error shows.
-- **The clock goes back** (a date in the future is stored): the reminder treats it as "now", so it neither shows at once
-  nor stays hidden for months.
+- **The clock goes back** (a date in the future is stored): a last-backup time in the future cannot be trusted, so the
+  backup counts as due, and saving one writes the right time. The reminder's own start date is brought back to now, and
+  «مش دلوقتي» never hides it for more than 3 days from now, so it never stays hidden for months.
 - **Restoring a backup** does not count as making one, and it does not change the reminder's dates.
 - **«رجّع المثال»** clears the stored settings only and keeps the marks, so it changes nothing for the reminder.
 - **Other tabs**: the notice shows on «اليوم» only.
