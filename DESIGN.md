@@ -100,7 +100,8 @@ It is used mostly outdoors in daylight, so the light theme is primary and every 
 - One accent band: bottom bar on phones, side rail from 960px; near black in light, near white in dark.
 - Category inks on a 9% tint of themselves for each block row.
 - Hour amounts set as large Spectral denomination numerals at the end of each row.
-- The guilloche rosette as ميزان اليوم and ميزان الأسبوع.
+- The guilloche rosette as ميزان اليوم and ميزان الأسبوع, and as the app icon: on the graphite accent `#1F1F22`, one
+  half navy `#9EBDFA` and one half amber `#D9884B`, ring `#ECECEA` (feature 033).
 - Fine one-pixel line work only; no ornament, no glow.
 
 ## Colors
