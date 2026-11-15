@@ -28,6 +28,6 @@ description: "Task list for feature 034: how to add the app to the home screen"
 
 ## Phase 3: Tests and docs
 
-- [ ] T008 `tests/e2e/install-hint.spec.js`.
-- [ ] T009 [P] README: the dismissal key in the privacy part.
-- [ ] T010 Full E2E with `--workers=2`, `check-private`. Tick the tasks.
+- [x] T008 `tests/e2e/install-hint.spec.js`.
+- [x] T009 [P] README: the dismissal key in the privacy part.
+- [x] T010 Full E2E with `--workers=2`, `check-private`. Tick the tasks.
