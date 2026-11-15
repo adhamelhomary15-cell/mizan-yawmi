@@ -44,6 +44,8 @@
 14a-guide-view.js
 # schedule editor: blocks, preview, prayer tie, kinds, subjects, place, save
 14b-editor-view.js
+# how to add the app to the home screen: the notice and the Settings steps (feature 034)
+14c-install-hint.js
 15-settings-view.js
 # workout log storage hook, timers, confirm dialog, exercise picker
 16-workouts.js

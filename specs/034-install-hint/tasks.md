@@ -14,12 +14,12 @@ description: "Task list for feature 034: how to add the app to the home screen"
 
 ## Phase 1: iPhone (US1, US3)
 
-- [ ] T001 `src/app/13-rules.js`: the `install hint` rule block (iPhone, iPad, standalone, in-app).
-- [ ] T002 [P] `tools/check-install.js` with `--self-test`; `.github/workflows/checks.yml`.
-- [ ] T003 `src/app/14c-install-hint.js` and its `ORDER` line: device, steps, notice with «تمام».
-- [ ] T004 `src/app/21-shell.js`, `src/app/15-settings-view.js`, `src/planner.html`: the notice, the Settings steps,
+- [x] T001 `src/app/13-rules.js`: the `install hint` rule block (iPhone, iPad, standalone, in-app).
+- [x] T002 [P] `tools/check-install.js` with `--self-test`; `.github/workflows/checks.yml`.
+- [x] T003 `src/app/14c-install-hint.js` and its `ORDER` line: device, steps, notice with «تمام».
+- [x] T004 `src/app/21-shell.js`, `src/app/15-settings-view.js`, `src/planner.html`: the notice, the Settings steps,
   the styles.
-- [ ] T005 Build; every check; parity 0; a look as iPhone at 375 px.
+- [x] T005 Build; every check; parity 0; a look as iPhone at 375 px.
 
 ## Phase 2: Android (US2)
 

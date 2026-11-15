@@ -80,6 +80,7 @@
       <p class="small">${STORAGE_LINES[st]}</p>
       ${copy ? html`<p class="small">${COPY_LINES[copy] || COPY_LINES.on}</p>` : null}
       ${st === 'may-clear' && IS_FIREFOX ? html`<span class="backup-act"><button type="button" class="btn" disabled=${asking} onClick=${ask}>اطلب من المتصفح يحتفظ بالبيانات</button></span>` : null}
+      <${InstallLine} />
     </div>`;
   }
 

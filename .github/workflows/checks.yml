@@ -99,6 +99,11 @@ jobs:
           node tools/check-now.js
           node tools/check-now.js --self-test
 
+      - name: Install hint rule
+        run: |
+          node tools/check-install.js
+          node tools/check-install.js --self-test
+
       - name: Exercise art
         run: |
           node tools/check-guides.js
