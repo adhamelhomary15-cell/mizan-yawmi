@@ -30,13 +30,16 @@
     </ol>`;
   }
 
-  // The notice above the day. «تمام» hides it for good on this device; with storage refused, until the page closes.
-  // offer: the browser offers installing itself, so the shell's «ثبّت» button shows instead of the Android steps.
-  function InstallHint({offer}){
-    const hint = installHintFor(Object.assign({offer}, INSTALL_DEVICE));
+  // Whether the notice above the day shows, held by the shell so the backup reminder (035) waits behind it. «تمام» hides
+  // it for good on this device; with storage refused, until the page closes. offer: the browser offers installing
+  // itself, so the shell's «ثبّت» button shows instead of the Android steps.
+  function useInstallHint(offer){
     const [done, setDone] = useState(installHintDone);
-    if (!hint || done) return null;
+    const hint = done ? null : installHintFor(Object.assign({offer}, INSTALL_DEVICE));
     const dismiss = () => { try { localStorage.setItem(INSTALL_HINT_KEY, 'done'); } catch(e){} setDone(true); };
+    return {hint, dismiss};
+  }
+  function InstallHint({hint, dismiss}){
     return html`<div class="notice install-hint" role="status">
       <div class="hint-body"><b>ضيف ميزان يومي للشاشة الرئيسية</b><span class="small muted">${INSTALL_REASON[hint.os]}</span><${InstallSteps} hint=${hint} /></div>
       <button type="button" class="btn primary" onClick=${dismiss}>تمام</button>

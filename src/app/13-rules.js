@@ -465,3 +465,17 @@
   }
   // end of install hint
 
+  // start of backup reminder
+  // Whether a backup is due (feature 035). Times are milliseconds or null. With no sync, the data is on this device
+  // only, so a backup is due 14 days after the last one, or 14 days after the app first ran here when there is none.
+  // «مش دلوقتي» puts it off 3 days; a later put-off time, or a last backup in the future, comes from a wrong clock and
+  // is not trusted. Nothing to lose, nothing to remind.
+  const BACKUP_DUE_DAYS = 14, BACKUP_SNOOZE_DAYS = 3, DAY_MS = 86400000;
+  function backupReminderDue({now, lastBackupAt, since, snoozedUntil, hasData}){
+    if (!hasData) return false;
+    if (snoozedUntil !== null && snoozedUntil > now && snoozedUntil - now <= BACKUP_SNOOZE_DAYS * DAY_MS) return false;
+    if (lastBackupAt !== null) return lastBackupAt > now || now - lastBackupAt >= BACKUP_DUE_DAYS * DAY_MS;
+    return since !== null && now - since >= BACKUP_DUE_DAYS * DAY_MS;
+  }
+  // end of backup reminder
+

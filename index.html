@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="850a4213eb"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-h8D8tVeHFlo6x5HGqhEhJe7opPkFA1zez3GAtyeGrM4=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-pe3JAeNydZ+8oOulfBf7u8JePos1U7jRCNzaf9wDK3E=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-xpGjIyXHQXehqJDETJU1laaZphJDhqayt+aQA4hdJfk=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F1F22"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="b573a1b7d5"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-h8D8tVeHFlo6x5HGqhEhJe7opPkFA1zez3GAtyeGrM4=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-ejLuFV4GoOWsBcqOGQHp5LcWz73Brt8He7xITJB1/rY=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-GZG3YMvavGY9tyBKwfln5u6RhXppPPO8awcxxCh4ONo=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F1F22"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept theme with no flash. There is
    one palette (032); the Settings section reads and sets the theme through window.mizanLook. The choice is kept under
    its own key, outside the settings, the progress and the backup. A palette kept from 022 is ignored. */
@@ -413,6 +413,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
 .install-steps li{margin-top:2px}
 .share-ic{width:16px;height:16px;vertical-align:-3px;color:var(--fg)}
 .notice .btn{flex:none}
+/* The backup reminder (feature 035): the reason above its two buttons. */
+.backup-due{flex-direction:column;align-items:stretch}
 
 /* UI polish: give daily navigation, empty states, and secondary controls a clearer rhythm. */
 .o-head{gap:var(--s3)}
@@ -2986,6 +2988,20 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
   // end of install hint
 
+  // start of backup reminder
+  // Whether a backup is due (feature 035). Times are milliseconds or null. With no sync, the data is on this device
+  // only, so a backup is due 14 days after the last one, or 14 days after the app first ran here when there is none.
+  // «مش دلوقتي» puts it off 3 days; a later put-off time, or a last backup in the future, comes from a wrong clock and
+  // is not trusted. Nothing to lose, nothing to remind.
+  const BACKUP_DUE_DAYS = 14, BACKUP_SNOOZE_DAYS = 3, DAY_MS = 86400000;
+  function backupReminderDue({now, lastBackupAt, since, snoozedUntil, hasData}){
+    if (!hasData) return false;
+    if (snoozedUntil !== null && snoozedUntil > now && snoozedUntil - now <= BACKUP_SNOOZE_DAYS * DAY_MS) return false;
+    if (lastBackupAt !== null) return lastBackupAt > now || now - lastBackupAt >= BACKUP_DUE_DAYS * DAY_MS;
+    return since !== null && now - since >= BACKUP_DUE_DAYS * DAY_MS;
+  }
+  // end of backup reminder
+
   // start of schedule rules
   /* ---------------- schedule rules (pure; tools/check-schedule.js runs this block) ---------------- */
   // The editor and the guide change a draft: a copy of the settings. Each function returns a new draft (or a refusal)
@@ -3842,13 +3858,16 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </ol>`;
   }
 
-  // The notice above the day. «تمام» hides it for good on this device; with storage refused, until the page closes.
-  // offer: the browser offers installing itself, so the shell's «ثبّت» button shows instead of the Android steps.
-  function InstallHint({offer}){
-    const hint = installHintFor(Object.assign({offer}, INSTALL_DEVICE));
+  // Whether the notice above the day shows, held by the shell so the backup reminder (035) waits behind it. «تمام» hides
+  // it for good on this device; with storage refused, until the page closes. offer: the browser offers installing
+  // itself, so the shell's «ثبّت» button shows instead of the Android steps.
+  function useInstallHint(offer){
     const [done, setDone] = useState(installHintDone);
-    if (!hint || done) return null;
+    const hint = done ? null : installHintFor(Object.assign({offer}, INSTALL_DEVICE));
     const dismiss = () => { try { localStorage.setItem(INSTALL_HINT_KEY, 'done'); } catch(e){} setDone(true); };
+    return {hint, dismiss};
+  }
+  function InstallHint({hint, dismiss}){
     return html`<div class="notice install-hint" role="status">
       <div class="hint-body"><b>ضيف ميزان يومي للشاشة الرئيسية</b><span class="small muted">${INSTALL_REASON[hint.os]}</span><${InstallSteps} hint=${hint} /></div>
       <button type="button" class="btn primary" onClick=${dismiss}>تمام</button>
@@ -4239,6 +4258,59 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     </div>`;
   }
 
+  /* ---------------- backup reminder (feature 035) ---------------- */
+  // With no sync the data is on this device only. Above the day, a calm notice asks for a backup when the rule says
+  // one is due (the "backup reminder" block). Saving goes through the same path as Settings, so the file and «آخر نسخة»
+  // are the same.
+  // Its own key, like the install hint: outside the progress, the settings and the backup.
+  const REMINDER_KEY = 'mizan-backup-reminder';
+  const timeOf = iso => { const t = typeof iso === 'string' ? Date.parse(iso) : NaN; return Number.isNaN(t) ? null : t; };
+  // The reminder's dates. since (when the app first ran here) is written once, and again when it is missing or lies in
+  // the future, so a wrong clock cannot keep the count from starting.
+  function readReminder(now){
+    const r = readJSON(REMINDER_KEY) || {}, since = timeOf(r.since), dates = {since, snoozedUntil: timeOf(r.snoozedUntil)};
+    if (since !== null && since <= now) return dates;
+    dates.since = now;
+    writeReminder(dates);
+    return dates;
+  }
+  function writeReminder({since, snoozedUntil}){
+    writeJSON(REMINDER_KEY, {since: new Date(since).toISOString(), snoozedUntil: snoozedUntil === null ? null : new Date(snoozedUntil).toISOString()});
+  }
+  // Something to lose: a day with marks (done, skipped or moved), a course module mark, or a logged workout.
+  function hasMarks(store, wk){
+    const workouts = wk.data && Array.isArray(wk.data.workouts) ? wk.data.workouts : [];
+    return Object.keys(store.checks).length > 0 || Object.keys(store.modules).length > 0
+      || store.courses.some(c => Object.keys(c.done).length > 0) || workouts.length > 0;
+  }
+
+  function BackupReminder({store, wk, showToast}){
+    const [dates, setDates] = useState(() => readReminder(Date.now()));
+    const [last, setLast] = useState(readBackupMeta);
+    const [failed, setFailed] = useState(false);
+    const lastAt = timeOf(last);
+    const due = backupReminderDue({now: Date.now(), lastBackupAt: lastAt, since: dates.since, snoozedUntil: dates.snoozedUntil, hasData: hasMarks(store, wk)});
+    if (!due) return null;
+    const save = () => {
+      const r = downloadBackup(store, wk);
+      if (!r.ok) { setFailed(true); return; }
+      setLast(r.at);
+      showToast(html`اتحفظت النسخة: <bdi dir="ltr">${r.name}</bdi>`);
+    };
+    const later = () => {
+      const next = {since: dates.since, snoozedUntil: Date.now() + BACKUP_SNOOZE_DAYS * DAY_MS};
+      writeReminder(next);
+      setDates(next);
+    };
+    // Its own markup, stacked: the two buttons do not fit beside the title at phone width.
+    return html`<div class="notice backup-due" role="status"><p>
+        <b>${lastAt === null ? 'لسه ما عملتش نسخة احتياطية' : 'بقالك أسبوعين أو أكتر من غير نسخة احتياطية'}</b>
+        <span class="small muted">مفيش مزامنة، فبياناتك على التليفون ده بس. لو اتمسحت، النسخة هي اللي بترجّعها.</span>
+        ${failed ? html`<span class="small">${BACKUP_FAILED}</span>` : null}
+      </p>
+      <span class="backup-act"><button type="button" class="btn primary" onClick=${save}>احفظ نسخة دلوقتي</button><button type="button" class="btn ghost" onClick=${later}>مش دلوقتي</button></span>
+    </div>`;
+  }
   /* ---------------- Workouts (own storage key and hook; knows nothing of the progress store) ---------------- */
   // The log as stored: {root, tooNew}. Data written by a newer app, or that could not be brought forward, is never
   // written over (tooNew), and the screen says so.
@@ -4945,6 +5017,10 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       window.addEventListener('appinstalled', onDone);
       return () => { window.removeEventListener('beforeinstallprompt', onPrompt); window.removeEventListener('appinstalled', onDone); };
     }, []);
+    const installHint = useInstallHint(!!installEvt);
+    // One notice at a time: the backup reminder (035) waits behind the install notice, and is not needed while a
+    // notice that already offers a backup is up.
+    const remind = !installHint.hint && tab === 'today' && !saveFailed && health.problem !== 'failed';
     const install = async () => { if (!installEvt) return; try { await installEvt.prompt(); } catch(e){} setInstallEvt(null); };
     // A new version took over in the background (see sw.js): offer to open it now; the next open shows it anyway.
     // Coming back to the app (feature 026): a phone resumes an installed app without reloading it, so the browser
@@ -5014,7 +5090,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
       </nav>
       <main class="wrap">
         ${installEvt ? html`<div class="install"><p><b>ثبّت ميزان يومي</b><span class="small muted">أيقونة على الشاشة الرئيسية، ويشتغل من غير نت</span></p><button type="button" class="btn primary" onClick=${install}>ثبّت</button></div>` : null}
-        <${InstallHint} offer=${!!installEvt} />
+        ${installHint.hint ? html`<${InstallHint} hint=${installHint.hint} dismiss=${installHint.dismiss} />` : null}
+        ${remind ? html`<${BackupReminder} store=${store} wk=${wk} showToast=${showToast} />` : null}
         ${newVersion ? html`<${Notice} role="status" title="فيه نسخة جديدة من التطبيق" line="هتفتح لوحدها المرة الجاية، أو افتحها دلوقتي."><button type="button" class="btn primary" onClick=${() => location.reload()}>افتحها</button></${Notice}>` : null}
         ${LOADED.isExample ? html`<${Notice} title=${LOADED.problem ? 'الإعدادات المحفوظة مش صالحة، فبنعرض المثال' : 'ده جدول مثال عام'} line=${LOADED.problem ? 'استورد ملف الإعدادات تاني من الإعدادات، أو اعمل جدولك من هنا.' : 'اعمل جدولك من هنا في دقايق، أو استورد ملف إعدادات من الإعدادات.'}><button type="button" class="btn primary" onClick=${startGuide}>اعمل جدولك</button></${Notice}>` : null}
         <div aria-live="polite">${phaseNotice ? html`<${Notice} text=${(PRAYERS.find(x => x[0] === CFG.versions.prayer) || [0, 'الصلاة'])[1] + ' بقى ' + (phaseNow === 'A' ? 'بعد ' : 'قبل ') + fmt(CFG.versions.thresholdMinutes).t + '، فمواعيد ' + CATS.work.label + ' و' + CATS.gym.label + ' اتغيرت.'}><button type="button" class="btn primary" onClick=${ackPhase}>تمام</button></${Notice}>` : null}</div>
