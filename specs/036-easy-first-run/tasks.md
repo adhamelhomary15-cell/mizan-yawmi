@@ -30,6 +30,6 @@ description: "Task list for feature 036: an easier first run"
 
 ## Phase 3: Tests and docs
 
-- [ ] T009 `tests/e2e/first-run.spec.js`.
-- [ ] T010 [P] README: the guide's lines.
-- [ ] T011 Full E2E with `--workers=2`, a look at 375 px, `check-private`. Tick the tasks.
+- [x] T009 `tests/e2e/first-run.spec.js`.
+- [x] T010 [P] README: the guide's lines.
+- [x] T011 Full E2E with `--workers=2`, a look at 375 px, `check-private`. Tick the tasks.
