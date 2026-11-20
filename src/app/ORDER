@@ -47,6 +47,8 @@
 # how to add the app to the home screen: the notice and the Settings steps (feature 034)
 14c-install-hint.js
 15-settings-view.js
+# the backup reminder above the day (feature 035)
+15a-backup-reminder.js
 # workout log storage hook, timers, confirm dialog, exercise picker
 16-workouts.js
 # exercise drawings: tables, loading, download on tap
