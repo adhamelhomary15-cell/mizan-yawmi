@@ -23,10 +23,10 @@ description: "Task list for feature 036: an easier first run"
 
 ## Phase 2: Cities near you (US2)
 
-- [ ] T005 `tools/make-cities.py` writes `rank`; add `rank` to `cities.json` from `cities15000.zip`; `NOTICE.md`.
-- [ ] T006 `src/app/13a-schedule-rules.js`: `citiesInZone`; `tools/check-schedule.js` cases and mutations.
-- [ ] T007 `PlacePicker`: «قريبة منك» suggestions.
-- [ ] T008 Build and every check.
+- [x] T005 `tools/make-cities.py` writes `rank`; add `rank` to `cities.json` from `cities15000.zip`; `NOTICE.md`.
+- [x] T006 `src/app/13a-schedule-rules.js`: `citiesInZone`; `tools/check-schedule.js` cases and mutations.
+- [x] T007 `PlacePicker`: «قريبة منك» suggestions.
+- [x] T008 Build and every check.
 
 ## Phase 3: Tests and docs
 

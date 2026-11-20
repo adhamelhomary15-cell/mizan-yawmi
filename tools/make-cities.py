@@ -5,7 +5,9 @@
 It downloads, once into the scratch folder, GeoNames cities15000.zip, alternateNamesV2.zip and countryInfo.txt
 (CC BY 4.0, https://www.geonames.org). It keeps the 57 member states of the Organisation of Islamic Cooperation, and in
 them every capital plus every city at or above the population threshold. It writes one line per city:
-{ar, en, cc, lat, lng, tz}, with the Arabic name when GeoNames has one (preferred names first), else the English one.
+{ar, en, cc, lat, lng, tz, rank}, with the Arabic name when GeoNames has one (preferred names first), else the English
+one. rank orders the cities by population over the whole list, 1 for the largest (feature 036: the guide suggests a
+time zone's largest cities first); the population itself is not kept.
 """
 import io, json, pathlib, sys, urllib.request, zipfile
 
@@ -52,9 +54,11 @@ def main():
             if gid not in arabic or (preferred and not arabic[gid][1]):
                 arabic[gid] = (name, preferred)
 
+    by_size = sorted(cities, key=lambda g: (-cities[g]['pop'], cities[g]['cc'], cities[g]['en']))
+    rank = {g: i + 1 for i, g in enumerate(by_size)}
     rows = []
     for gid, c in cities.items():
-        rows.append({'ar': arabic.get(gid, (c['en'], False))[0], 'en': c['en'], 'cc': c['cc'], 'lat': c['lat'], 'lng': c['lng'], 'tz': c['tz']})
+        rows.append({'ar': arabic.get(gid, (c['en'], False))[0], 'en': c['en'], 'cc': c['cc'], 'lat': c['lat'], 'lng': c['lng'], 'tz': c['tz'], 'rank': rank[gid]})
     rows.sort(key=lambda r: (r['cc'], r['en']))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     text = '[\n' + ',\n'.join(json.dumps(r, ensure_ascii=False, separators=(',', ':')) for r in rows) + '\n]\n'

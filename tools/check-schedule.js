@@ -15,7 +15,7 @@ const {readSource, ruleBlock, grabFunction} = require('./lib/source.js');
 const html = readSource();
 
 const block = source => ruleBlock(source, 'schedule rules');
-const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt, setDayBounds, dayOn, withHistory, HISTORY_MAX_BYTES';
+const NAMES = 'SCHEDULE_DAYS, setPlace, draftOf, isTwoVersionDay, setBlock, addBlock, removeBlock, copyDay, setAnchor, setKind, addKind, kindUses, removeKind, addSubject, renameSubject, subjectUses, removeSubject, methodFor, placeOf, nearestCity, citiesInZone, WEEK_TEMPLATES, weekFromTemplate, newSettings, changesBetween, dayAt, setDayBounds, dayOn, withHistory, HISTORY_MAX_BYTES';
 const load = source => new Function(grabFunction(source, 'clone') + grabFunction(source, 'dayBounds') + grabFunction(source, 'validateSettings') + block(source) + '\nreturn {dayBounds, validateSettings, ' + NAMES + '};')();
 
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -171,13 +171,22 @@ function runChecks(h, source) {
       && h.changesBetween(s, early).day && !h.changesBetween(s, back).day && !h.changesBetween(s, early).days.length
       && eq(h.setDayBounds(s, '03:00', '05:00').day, {start: '03:00', end: '05:00'});
   });
-  check('the city list: under 100 KB, all 57 OIC states, valid coordinates and time zones', () => {
+  check('cities in a zone: exact zone only, largest first, at most the limit; none for UTC', () => {
+    const z = (en, tz, rank) => ({ar: en, en, cc: 'EG', lat: 30, lng: 31, tz, rank});
+    const list = [z('C', 'Africa/Cairo', 9), z('A', 'Africa/Cairo', 2), z('X', 'Asia/Riyadh', 1), z('B', 'Africa/Cairo', 5), z('D', 'Africa/Cairo', 12)];
+    const names = l => l.map(c => c.en).join('');
+    return names(h.citiesInZone(list, 'Africa/Cairo', 3)) === 'ABC' && names(h.citiesInZone(list, 'Africa/Cairo', 6)) === 'ABCD'
+      && h.citiesInZone(list, 'UTC', 6).length === 0 && h.citiesInZone(list, 'Africa', 6).length === 0;
+  });
+  check('the city list: under 100 KB, all 57 OIC states, valid coordinates and time zones, ranks 1 to N, Cairo first in its zone', () => {
     const file = require('path').join(__dirname, 'vendor', 'cities', 'cities.json');
     const text = require('fs').readFileSync(file, 'utf8'), cities = JSON.parse(text);
     const zoneOk = tz => { try { new Intl.DateTimeFormat('en', {timeZone: tz}); return true; } catch (e) { return false; } };
     return Buffer.byteLength(text) < 100 * 1024 && new Set(cities.map(c => c.cc)).size === 57 && cities.length > 100
       && cities.every(c => typeof c.ar === 'string' && c.ar && typeof c.en === 'string' && c.en && /^[A-Z]{2}$/.test(c.cc)
-        && Math.abs(c.lat) <= 90 && Math.abs(c.lng) <= 180 && zoneOk(c.tz));
+        && Math.abs(c.lat) <= 90 && Math.abs(c.lng) <= 180 && zoneOk(c.tz))
+      && cities.map(c => c.rank).sort((a, b) => a - b).every((r, i) => r === i + 1)
+      && h.citiesInZone(cities, 'Africa/Cairo', 6)[0].en === 'Cairo';
   });
   check('added kinds: ids in order up to k12, a taken name refused, colour and side kept', () => {
     let d = h.draftOf(base()), ids = [];
@@ -386,6 +395,9 @@ function report(results) {
 
 if (process.argv.includes('--self-test')) {
   const mutations = [
+    ['suggested cities ignore the rank', s => s.replace('.sort((a, b) => a.rank - b.rank).slice(0, max)', '.slice(0, max)')],
+    ['suggested cities have no limit', s => s.replace('.sort((a, b) => a.rank - b.rank).slice(0, max)', '.sort((a, b) => a.rank - b.rank)')],
+    ['a near zone is suggested', s => s.replace('cities.filter(c => c.tz === tz)', 'cities.filter(c => c.tz.startsWith(tz))')],
     ['copying a day writes every day', s => s.replace("toDays.filter(t => t !== from && !skipped.includes(t))", "SCHEDULE_DAYS.filter(t => t !== from && !skipped.includes(t))")],
     ['a new schedule cannot postpone', s => s.replace("if (cats[k]) cats[k] = Object.assign({}, NEW_SCHEDULE_FLAGS[k], cats[k]);", '')],
     ['a new schedule overrides a flag it was given', s => s.replace("Object.assign({}, NEW_SCHEDULE_FLAGS[k], cats[k])", "Object.assign({}, cats[k], NEW_SCHEDULE_FLAGS[k])")],

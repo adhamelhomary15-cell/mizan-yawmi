@@ -16,6 +16,11 @@
     return {location: {lat: Math.round(lat * 1e4) / 1e4, lng: Math.round(lng * 1e4) / 1e4, label}, timezone: deviceZone(), prayerMethod: methodFor(near && near.km < 300 ? near.city.cc : '')};
   }
 
+  // A city as a one-tap choice, in the search results and the suggestions.
+  const CityPick = ({c, onPick}) => html`<button type="button" class="wk-pick" onClick=${() => onPick(c)}><bdi>${c.ar}</bdi> <span class="small muted">(<bdi>${c.en}</bdi>)</span></button>`;
+  // At most 6 cities suggested from the device's time zone (feature 036), read once: no location, no network.
+  const NEAR_CITIES = citiesInZone(CITIES, deviceZone(), 6);
+
   function PlacePicker({place, onPlace}){
     const [q, setQ] = useState(''), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false);
     const [lat, setLat] = useState(''), [lng, setLng] = useState('');
@@ -32,6 +37,7 @@
         e => { setBusy(false); setMsg(e && e.code === 1 ? 'مفيش إذن بالموقع. اختار مدينتك أو اكتب الإحداثيات.' : 'مقدرتش أعرف الموقع دلوقتي. اختار مدينتك أو اكتب الإحداثيات.'); },
         {enableHighAccuracy: false, timeout: 15000, maximumAge: 600000});
     };
+    const pick = c => { onPlace(placeOf(c)); setQ(''); };
     const manual = () => {
       const a = Number(lat), b = Number(lng);
       if (!lat.trim() || !lng.trim() || !(Math.abs(a) <= 90) || !(Math.abs(b) <= 180)) { setMsg('خط العرض من -90 لـ 90، وخط الطول من -180 لـ 180.'); return; }
@@ -42,8 +48,9 @@
       ${place ? html`<p><b><bdi>${place.location.label}</bdi></b> <span class="small muted">· <bdi dir="ltr">${place.timezone}</bdi></span></p>
         ${times ? html`<p class="small">${PRAYERS.map(([k, n]) => n + ' ' + fmtStr(times[k])).join(' · ')}</p>` : null}
         <label class="field" for="pl-method">طريقة الحساب<select id="pl-method" value=${place.prayerMethod} onChange=${e => onPlace(Object.assign({}, place, {prayerMethod: e.target.value}))}>${Object.keys(METHOD_NAMES).map(m => html`<option value=${m}>${METHOD_NAMES[m]}</option>`)}</select></label>` : null}
+      ${!needle && NEAR_CITIES.length ? html`<div class="near-cities"><p class="small muted">قريبة منك</p><div class="tlist">${NEAR_CITIES.map(c => html`<${CityPick} key=${c.cc + c.en + c.lat} c=${c} onPick=${pick} />`)}</div></div>` : null}
       <label class="field wide" for="pl-search">دوّر على مدينتك<input id="pl-search" value=${q} placeholder="مثلاً: القاهرة" onInput=${e => setQ(e.target.value)} /></label>
-      ${found.length ? html`<div class="tlist">${found.map(c => html`<button type="button" class="wk-pick" key=${c.cc + c.en + c.lat} onClick=${() => { onPlace(placeOf(c)); setQ(''); }}><bdi>${c.ar}</bdi> <span class="small muted">(<bdi>${c.en}</bdi>)</span></button>`)}</div>`
+      ${found.length ? html`<div class="tlist">${found.map(c => html`<${CityPick} key=${c.cc + c.en + c.lat} c=${c} onPick=${pick} />`)}</div>`
         : needle ? html`<p class="small muted">مفيش مدينة بالاسم ده في القايمة. استخدم موقعك أو اكتب الإحداثيات.</p>` : null}
       <span class="backup-act"><button type="button" class="btn" disabled=${busy} onClick=${locate}>${busy ? 'بدوّر على موقعك…' : 'استخدم موقعي'}</button></span>
       <details><summary class="small">اكتب الإحداثيات بإيدك</summary><div class="form-row">
