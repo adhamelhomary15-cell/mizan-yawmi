@@ -65,29 +65,43 @@
   }
 
   const TEMPLATE_CHOICES = [['student', 'طالب', 'محاضرات الصبح ومذاكرة بعد الضهر'], ['student-work', 'طالب وبيشتغل', 'محاضرات الصبح وشغل بعد الضهر ومذاكرة بالليل'], ['empty', 'فاضي', 'هبدأ من الصفر']];
-  // Three steps, then the editor with the new week; nothing is stored before «احفظ الجدول» there.
-  function Guide({onClose, onEditor}){
+  // Two steps (feature 036): the place, then the week. «ابدأ» stores the schedule as the editor's save does and opens
+  // «اليوم»; «عدّل الأيام الأول» opens the editor on it instead. Nothing is stored before one of the two saves.
+  function Guide({onClose, onEditor, onStarted}){
     const [step, setStep] = useState('place');
     const [place, setPlaceState] = useState(null);
     const [template, setTemplate] = useState('student');
     const [subjects, setSubjects] = useState(['', '', '']);
     const [day, setDay] = useState({start: '07:00', end: '01:00'});
-    const finish = () => { openEditor(setDayBounds(newSettings(place, template, subjects.map(s => s.trim()), DEFAULT_CATS), day.start, day.end)); onEditor(); };
+    const [confirm, setConfirm] = useState(false);   // over a stored schedule, «ابدأ» asks once
+    const [err, setErr] = useState('');
+    const built = () => setDayBounds(newSettings(place, template, subjects.map(s => s.trim()), DEFAULT_CATS), day.start, day.end);
+    const edit = () => { openEditor(built()); onEditor(); };
+    // A schedule the checks refuse goes to the editor, which names the problem.
+    const store = () => {
+      const res = validateSettings(clone(built()));
+      if (!res.ok) { edit(); return; }
+      if (!saveStore('settings', settingsToSave(res.settings))) { setConfirm(false); setErr(SAVE_REFUSED); return; }
+      onStarted();
+    };
+    const start = () => { setErr(''); if (LOADED.isExample) store(); else setConfirm(true); };
+    const hoursOk = !!dayBounds(day);
     return html`<div class="settingsv guide">
-      <div class="top a-head"><div class="top-meta"><h1>اعمل جدولك</h1><p class="sub">${step === 'place' ? '1 من 3: إنت فين؟' : step === 'week' ? '2 من 3: أسبوعك شكله إيه؟' : '3 من 3: موادك'}</p></div>
+      <div class="top a-head"><div class="top-meta"><h1>اعمل جدولك</h1><p class="sub">${step === 'place' ? '1 من 2: إنت فين؟' : '2 من 2: أسبوعك شكله إيه؟'}</p></div>
         <button type="button" class="btn" onClick=${onClose}>رجوع</button></div>
       ${step === 'place' ? html`<div class="sec"><p class="small muted">عشان مواعيد الصلاة. الموقع بيتحسب على جهازك بس ومبيتبعتش لأي مكان.</p>
           <${PlacePicker} place=${place} onPlace=${setPlaceState} />
           <span class="backup-act"><button type="button" class="btn primary" disabled=${!place} onClick=${() => setStep('week')}>التالي</button></span></div>`
-      : step === 'week' ? html`<div class="sec"><div class="panel tlist" role="radiogroup" aria-label="شكل الأسبوع">
+      : html`<div class="sec"><div class="panel tlist" role="radiogroup" aria-label="شكل الأسبوع">
           ${TEMPLATE_CHOICES.map(([id, name, line]) => html`<label class="check-line" key=${id}><input type="radio" name="tpl" checked=${template === id} onChange=${() => setTemplate(id)} /> <b>${name}</b> <span class="small muted">${line}</span></label>`)}</div>
-          <div class="panel form"><${DayFields} start=${day.start} end=${day.end} onSet=${(start, end) => setDay({start, end})} /></div>
+          <details class="panel form ed-part"><summary>تفاصيل اختيارية</summary>
+            <${DayFields} start=${day.start} end=${day.end} onSet=${(start, end) => setDay({start, end})} />
+            <p class="small muted">موادك: أسامي قصيرة زي «رياضة 1» أو «فيزيا»، وتقدر تزوّد بعدين.</p>
+            ${subjects.map((s, i) => html`<label class="field wide" key=${i} for=${'gs-' + i}>مادة ${i + 1}<input id=${'gs-' + i} value=${s} maxlength="60" onInput=${e => { const v = e.target.value; setSubjects(list => list.map((x, k) => k === i ? v : x)); }} /></label>`)}
+            <button type="button" class="btn ghost" onClick=${() => setSubjects(list => list.concat(''))}>مادة كمان</button></details>
           <p class="small muted">هتقدر تعدّل كل يوم بعد كده.</p>
-          <span class="backup-act"><button type="button" class="btn primary" disabled=${!dayBounds(day)} onClick=${() => setStep('subjects')}>التالي</button><button type="button" class="btn ghost" onClick=${() => setStep('place')}>اللي قبله</button></span></div>`
-      : html`<div class="sec"><div class="panel form">
-          <p class="small muted">اختياري. أسامي قصيرة زي «رياضة 1» أو «فيزيا»، وتقدر تزوّد بعدين.</p>
-          ${subjects.map((s, i) => html`<label class="field wide" key=${i} for=${'gs-' + i}>مادة ${i + 1}<input id=${'gs-' + i} value=${s} maxlength="60" onInput=${e => { const v = e.target.value; setSubjects(list => list.map((x, k) => k === i ? v : x)); }} /></label>`)}
-          <button type="button" class="btn ghost" onClick=${() => setSubjects(list => list.concat(''))}>مادة كمان</button></div>
-          <span class="backup-act"><button type="button" class="btn primary" onClick=${finish}>كمّل وعدّل الأيام</button><button type="button" class="btn ghost" onClick=${() => setStep('week')}>اللي قبله</button></span></div>`}
+          ${confirm ? html`<${Notice} role="alert" title="ده هيبدّل جدولك الحالي" line="علاماتك بتفضل زي ما هي."><span class="backup-act"><button type="button" class="btn primary" onClick=${store}>أيوه، ابدأ</button><button type="button" class="btn ghost" onClick=${() => setConfirm(false)}>لأ</button></span></${Notice}>`
+            : html`<span class="backup-act"><button type="button" class="btn primary" disabled=${!hoursOk} onClick=${start}>ابدأ</button><button type="button" class="btn" disabled=${!hoursOk} onClick=${edit}>عدّل الأيام الأول</button><button type="button" class="btn ghost" onClick=${() => setStep('place')}>اللي قبله</button></span>`}
+          ${err ? html`<p class="form-err" role="alert">${err}</p>` : null}</div>`}
     </div>`;
   }

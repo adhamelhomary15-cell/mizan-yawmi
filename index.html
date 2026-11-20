@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="b573a1b7d5"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-h8D8tVeHFlo6x5HGqhEhJe7opPkFA1zez3GAtyeGrM4=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-ejLuFV4GoOWsBcqOGQHp5LcWz73Brt8He7xITJB1/rY=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-GZG3YMvavGY9tyBKwfln5u6RhXppPPO8awcxxCh4ONo=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F1F22"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="mizan-version" content="9a579b2d26"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-h8D8tVeHFlo6x5HGqhEhJe7opPkFA1zez3GAtyeGrM4=' 'sha256-HigrtptQYoGHR3Qe+WmdYUBijwsWVC/twzsialvBY+0=' 'sha256-fUcEdSTddR1zLXVA2ucCKeW4fslAHu2MKozvpAoKJ10=' 'sha256-ejF3bgS9Sv3g1DCBd9JvN3cW/PfkvXC+WQdG1qpZTwg=' 'sha256-yTijZyOcyA81/Eom63GQJaGCWHoXoQPCWtjfDr84f8k=' 'sha256-WPYGF5IDs/+k2do5t4GjIqY7LFCKS8Wfmnd4Gr56N6Q=' 'sha256-RwC3d3NOGUrenIM+QJytWcM2pt3QCulrWVgNCU9rG7w='; style-src 'sha256-Jh8kZFuISGECykEFbQj/YrRSeV55J/swxk9O1wwUjpI=' 'sha256-GZG3YMvavGY9tyBKwfln5u6RhXppPPO8awcxxCh4ONo=' 'sha256-JbZw1yXU0TVkoVoCLF4Nyb3wwo3cT9rVI1rnkePm9sc='; img-src 'self' data:; font-src data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1F1F22"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ميزان"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>ميزان يومي</title><script>
 /* The look (feature 022): runs before the first paint, so the app opens in the kept theme with no flash. There is
    one palette (032); the Settings section reads and sets the theme through window.mizanLook. The choice is kept under
    its own key, outside the settings, the progress and the backup. A palette kept from 022 is ignored. */
@@ -3560,30 +3560,44 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
   }
 
   const TEMPLATE_CHOICES = [['student', 'طالب', 'محاضرات الصبح ومذاكرة بعد الضهر'], ['student-work', 'طالب وبيشتغل', 'محاضرات الصبح وشغل بعد الضهر ومذاكرة بالليل'], ['empty', 'فاضي', 'هبدأ من الصفر']];
-  // Three steps, then the editor with the new week; nothing is stored before «احفظ الجدول» there.
-  function Guide({onClose, onEditor}){
+  // Two steps (feature 036): the place, then the week. «ابدأ» stores the schedule as the editor's save does and opens
+  // «اليوم»; «عدّل الأيام الأول» opens the editor on it instead. Nothing is stored before one of the two saves.
+  function Guide({onClose, onEditor, onStarted}){
     const [step, setStep] = useState('place');
     const [place, setPlaceState] = useState(null);
     const [template, setTemplate] = useState('student');
     const [subjects, setSubjects] = useState(['', '', '']);
     const [day, setDay] = useState({start: '07:00', end: '01:00'});
-    const finish = () => { openEditor(setDayBounds(newSettings(place, template, subjects.map(s => s.trim()), DEFAULT_CATS), day.start, day.end)); onEditor(); };
+    const [confirm, setConfirm] = useState(false);   // over a stored schedule, «ابدأ» asks once
+    const [err, setErr] = useState('');
+    const built = () => setDayBounds(newSettings(place, template, subjects.map(s => s.trim()), DEFAULT_CATS), day.start, day.end);
+    const edit = () => { openEditor(built()); onEditor(); };
+    // A schedule the checks refuse goes to the editor, which names the problem.
+    const store = () => {
+      const res = validateSettings(clone(built()));
+      if (!res.ok) { edit(); return; }
+      if (!saveStore('settings', settingsToSave(res.settings))) { setConfirm(false); setErr(SAVE_REFUSED); return; }
+      onStarted();
+    };
+    const start = () => { setErr(''); if (LOADED.isExample) store(); else setConfirm(true); };
+    const hoursOk = !!dayBounds(day);
     return html`<div class="settingsv guide">
-      <div class="top a-head"><div class="top-meta"><h1>اعمل جدولك</h1><p class="sub">${step === 'place' ? '1 من 3: إنت فين؟' : step === 'week' ? '2 من 3: أسبوعك شكله إيه؟' : '3 من 3: موادك'}</p></div>
+      <div class="top a-head"><div class="top-meta"><h1>اعمل جدولك</h1><p class="sub">${step === 'place' ? '1 من 2: إنت فين؟' : '2 من 2: أسبوعك شكله إيه؟'}</p></div>
         <button type="button" class="btn" onClick=${onClose}>رجوع</button></div>
       ${step === 'place' ? html`<div class="sec"><p class="small muted">عشان مواعيد الصلاة. الموقع بيتحسب على جهازك بس ومبيتبعتش لأي مكان.</p>
           <${PlacePicker} place=${place} onPlace=${setPlaceState} />
           <span class="backup-act"><button type="button" class="btn primary" disabled=${!place} onClick=${() => setStep('week')}>التالي</button></span></div>`
-      : step === 'week' ? html`<div class="sec"><div class="panel tlist" role="radiogroup" aria-label="شكل الأسبوع">
+      : html`<div class="sec"><div class="panel tlist" role="radiogroup" aria-label="شكل الأسبوع">
           ${TEMPLATE_CHOICES.map(([id, name, line]) => html`<label class="check-line" key=${id}><input type="radio" name="tpl" checked=${template === id} onChange=${() => setTemplate(id)} /> <b>${name}</b> <span class="small muted">${line}</span></label>`)}</div>
-          <div class="panel form"><${DayFields} start=${day.start} end=${day.end} onSet=${(start, end) => setDay({start, end})} /></div>
+          <details class="panel form ed-part"><summary>تفاصيل اختيارية</summary>
+            <${DayFields} start=${day.start} end=${day.end} onSet=${(start, end) => setDay({start, end})} />
+            <p class="small muted">موادك: أسامي قصيرة زي «رياضة 1» أو «فيزيا»، وتقدر تزوّد بعدين.</p>
+            ${subjects.map((s, i) => html`<label class="field wide" key=${i} for=${'gs-' + i}>مادة ${i + 1}<input id=${'gs-' + i} value=${s} maxlength="60" onInput=${e => { const v = e.target.value; setSubjects(list => list.map((x, k) => k === i ? v : x)); }} /></label>`)}
+            <button type="button" class="btn ghost" onClick=${() => setSubjects(list => list.concat(''))}>مادة كمان</button></details>
           <p class="small muted">هتقدر تعدّل كل يوم بعد كده.</p>
-          <span class="backup-act"><button type="button" class="btn primary" disabled=${!dayBounds(day)} onClick=${() => setStep('subjects')}>التالي</button><button type="button" class="btn ghost" onClick=${() => setStep('place')}>اللي قبله</button></span></div>`
-      : html`<div class="sec"><div class="panel form">
-          <p class="small muted">اختياري. أسامي قصيرة زي «رياضة 1» أو «فيزيا»، وتقدر تزوّد بعدين.</p>
-          ${subjects.map((s, i) => html`<label class="field wide" key=${i} for=${'gs-' + i}>مادة ${i + 1}<input id=${'gs-' + i} value=${s} maxlength="60" onInput=${e => { const v = e.target.value; setSubjects(list => list.map((x, k) => k === i ? v : x)); }} /></label>`)}
-          <button type="button" class="btn ghost" onClick=${() => setSubjects(list => list.concat(''))}>مادة كمان</button></div>
-          <span class="backup-act"><button type="button" class="btn primary" onClick=${finish}>كمّل وعدّل الأيام</button><button type="button" class="btn ghost" onClick=${() => setStep('week')}>اللي قبله</button></span></div>`}
+          ${confirm ? html`<${Notice} role="alert" title="ده هيبدّل جدولك الحالي" line="علاماتك بتفضل زي ما هي."><span class="backup-act"><button type="button" class="btn primary" onClick=${store}>أيوه، ابدأ</button><button type="button" class="btn ghost" onClick=${() => setConfirm(false)}>لأ</button></span></${Notice}>`
+            : html`<span class="backup-act"><button type="button" class="btn primary" disabled=${!hoursOk} onClick=${start}>ابدأ</button><button type="button" class="btn" disabled=${!hoursOk} onClick=${edit}>عدّل الأيام الأول</button><button type="button" class="btn ghost" onClick=${() => setStep('place')}>اللي قبله</button></span>`}
+          ${err ? html`<p class="form-err" role="alert">${err}</p>` : null}</div>`}
     </div>`;
   }
   /* ---------------- schedule editor (the rules are in the "schedule rules" block) ---------------- */
@@ -3602,6 +3616,8 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     const today = effectiveNow().iso;
     return withHistory(storedData('settings'), next, {today, yesterday: addDays(today, -1), cutoff: addDays(today, -365)}, fromExample);
   }
+  // The editor's save and the guide's «ابدأ» (feature 036) say the same when the browser refuses to store.
+  const SAVE_REFUSED = 'المتصفح ده مش بيسمح بالحفظ، فالجدول مش هيتخزن.';
   const editorDirty = () => !!editorSession && JSON.stringify(editorSession.draft) !== JSON.stringify(editorSession.original);
   addEventListener('beforeunload', e => { if (editorDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
@@ -3784,7 +3800,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     };
     const save = () => {
       if (storedSavedAt() !== editorSession.savedAt) { setCheck({moved: true}); return; }
-      if (!saveStore('settings', settingsToSave(check.settings))) { setCheck({errors: ['المتصفح ده مش بيسمح بالحفظ، فالجدول مش هيتخزن.']}); return; }
+      if (!saveStore('settings', settingsToSave(check.settings))) { setCheck({errors: [SAVE_REFUSED]}); return; }
       onSaved();
     };
     const close = () => { if (editorDirty() && !leaving) { setLeaving(true); return; } editorSession = null; onClose(); };
@@ -4199,7 +4215,7 @@ details.rules-box summary{cursor:pointer;font-family:var(--font-display);font-we
     useEffect(() => { guideRequested = false; }, []);
     const edit = () => { openEditor(); setScreen('editor'); };
     if (screen === 'editor') return html`<${ScheduleEditor} onClose=${() => setScreen('main')} onSaved=${() => settingsChanged('اتحفظ الجدول', 'today')} />`;
-    if (screen === 'guide') return html`<${Guide} onClose=${() => setScreen('main')} onEditor=${() => setScreen('editor')} />`;
+    if (screen === 'guide') return html`<${Guide} onClose=${() => setScreen('main')} onEditor=${() => setScreen('editor')} onStarted=${() => settingsChanged('اتحفظ الجدول', 'today')} />`;
     const sm = pending ? summaryOf(pending.settings) : null;
     return html`<div class="settingsv">
       <div class="top a-head"><div class="top-meta"><h1>الإعدادات</h1><p class="sub">جدولك ومواقيت الصلاة واللغة، بتتخزن على الجهاز ده بس</p></div></div>

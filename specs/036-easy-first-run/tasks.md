@@ -15,11 +15,11 @@ description: "Task list for feature 036: an easier first run"
 
 ## Phase 1: Two steps and «ابدأ» (US1, US3)
 
-- [ ] T001 `src/app/14a-guide-view.js`: two steps; the day hours and subjects folded on the week step.
-- [ ] T002 «ابدأ» stores through the editor's checks and storing; the confirmation over a stored schedule;
+- [x] T001 `src/app/14a-guide-view.js`: two steps; the day hours and subjects folded on the week step.
+- [x] T002 «ابدأ» stores through the editor's checks and storing; the confirmation over a stored schedule;
   `src/app/15-settings-view.js` passes `onStarted`.
-- [ ] T003 `tests/e2e/schedule.spec.js`, `tests/e2e/day-bounds.spec.js`: the two-step flow.
-- [ ] T004 Build; every check; parity 0; the guide E2E.
+- [x] T003 `tests/e2e/schedule.spec.js`, `tests/e2e/day-bounds.spec.js`: the two-step flow.
+- [x] T004 Build; every check; parity 0; the guide E2E.
 
 ## Phase 2: Cities near you (US2)
 

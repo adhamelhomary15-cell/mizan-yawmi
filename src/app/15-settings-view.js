@@ -318,7 +318,7 @@
     useEffect(() => { guideRequested = false; }, []);
     const edit = () => { openEditor(); setScreen('editor'); };
     if (screen === 'editor') return html`<${ScheduleEditor} onClose=${() => setScreen('main')} onSaved=${() => settingsChanged('اتحفظ الجدول', 'today')} />`;
-    if (screen === 'guide') return html`<${Guide} onClose=${() => setScreen('main')} onEditor=${() => setScreen('editor')} />`;
+    if (screen === 'guide') return html`<${Guide} onClose=${() => setScreen('main')} onEditor=${() => setScreen('editor')} onStarted=${() => settingsChanged('اتحفظ الجدول', 'today')} />`;
     const sm = pending ? summaryOf(pending.settings) : null;
     return html`<div class="settingsv">
       <div class="top a-head"><div class="top-meta"><h1>الإعدادات</h1><p class="sub">جدولك ومواقيت الصلاة واللغة، بتتخزن على الجهاز ده بس</p></div></div>
