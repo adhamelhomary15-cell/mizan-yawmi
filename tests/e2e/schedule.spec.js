@@ -14,9 +14,9 @@ test('the guide makes a week from a listed city, a template and subjects', async
   await page.locator('main .wk-pick').first().click();
   await expect(page.locator('main .place-pick b').first()).toHaveText('القاهرة');
   await button(page, 'التالي').click();
-  await button(page, 'التالي').click();
+  await page.getByText('تفاصيل اختيارية').click();
   await page.fill('#gs-0', 'مادة تجريبية');
-  await button(page, 'كمّل وعدّل الأيام').click();
+  await button(page, 'عدّل الأيام الأول').click();
   expect(await stored(page, 'mizan-settings')).toBeNull();
   await saveSchedule(page);
   const s = await settings(page);

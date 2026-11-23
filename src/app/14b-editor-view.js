@@ -14,6 +14,8 @@
     const today = effectiveNow().iso;
     return withHistory(storedData('settings'), next, {today, yesterday: addDays(today, -1), cutoff: addDays(today, -365)}, fromExample);
   }
+  // The editor's save and the guide's «ابدأ» (feature 036) say the same when the browser refuses to store.
+  const SAVE_REFUSED = 'المتصفح ده مش بيسمح بالحفظ، فالجدول مش هيتخزن.';
   const editorDirty = () => !!editorSession && JSON.stringify(editorSession.draft) !== JSON.stringify(editorSession.original);
   addEventListener('beforeunload', e => { if (editorDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
@@ -196,7 +198,7 @@
     };
     const save = () => {
       if (storedSavedAt() !== editorSession.savedAt) { setCheck({moved: true}); return; }
-      if (!saveStore('settings', settingsToSave(check.settings))) { setCheck({errors: ['المتصفح ده مش بيسمح بالحفظ، فالجدول مش هيتخزن.']}); return; }
+      if (!saveStore('settings', settingsToSave(check.settings))) { setCheck({errors: [SAVE_REFUSED]}); return; }
       onSaved();
     };
     const close = () => { if (editorDirty() && !leaving) { setLeaving(true); return; } editorSession = null; onClose(); };

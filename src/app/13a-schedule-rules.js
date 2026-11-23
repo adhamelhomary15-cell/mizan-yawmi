@@ -136,7 +136,7 @@
     KW: 'Kuwait', QA: 'Qatar', BH: 'Qatar', PK: 'Karachi', BD: 'Karachi', AF: 'Karachi', TR: 'Turkey', IR: 'Tehran',
     MY: 'Singapore', ID: 'Singapore', BN: 'Singapore'};
   const methodFor = cc => COUNTRY_METHOD[cc] || 'MuslimWorldLeague';
-  // A city from the list: {ar, en, cc, lat, lng, tz}.
+  // A city from the list: {ar, en, cc, lat, lng, tz, rank}; rank 1 is the city with the most people.
   const placeOf = city => ({location: {lat: city.lat, lng: city.lng, label: city.ar || city.en}, timezone: city.tz, prayerMethod: methodFor(city.cc)});
   // The nearest listed city (for a device location): great-circle distance, in km.
   function nearestCity(cities, lat, lng){
@@ -148,6 +148,12 @@
       if (km < bestKm) { best = c; bestKm = km; }
     });
     return best ? {city: best, km: bestKm} : null;
+  }
+
+  // The guide's suggestions (feature 036): the listed cities in exactly the device's time zone, largest first, at most
+  // max. The zone is read on the device; UTC or an unlisted zone suggests none.
+  function citiesInZone(cities, tz, max){
+    return cities.filter(c => c.tz === tz).sort((a, b) => a.rank - b.rank).slice(0, max);
   }
 
   // Generic starting weeks for the guide. Sunday to Thursday are workdays, Friday and Saturday the weekend.

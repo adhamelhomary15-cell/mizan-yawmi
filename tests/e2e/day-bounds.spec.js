@@ -60,10 +60,10 @@ test('the guide stores the day the user chose', async ({page}) => {
   await page.fill('#pl-search', 'القاهرة');
   await page.locator('main .wk-pick').first().click();
   await button(page, 'التالي').click();
+  await page.getByText('تفاصيل اختيارية').click();
   await page.fill('#day-start', '05:00');
   await page.fill('#day-end', '02:00');
-  await button(page, 'التالي').click();
-  await button(page, 'كمّل وعدّل الأيام').click();
+  await button(page, 'عدّل الأيام الأول').click();
   await saveSchedule(page);
   expect((await settings(page)).day).toEqual({start: '05:00', end: '02:00'});
 });
