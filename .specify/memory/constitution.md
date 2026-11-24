@@ -43,6 +43,10 @@ leave it only as the owner's **synced copy**, and only under all of these rules:
   code; the encrypted copy with its size and save times; the devices' push subscriptions; and
   for reminders, the moments they are due, with no title, kind or text. Reminder text is written on
   the device from its own data.
+- **Abuse limits, short-lived:** to limit email requests and wrong sign-ins, the server MAY also
+  hold the times of those attempts, counted per account and per request IP. An IP is held only as
+  a keyed hash (with a server secret), never as the address itself, and every such row MUST be
+  deleted within an hour after its window ends. These counts MUST NOT be used for anything else.
 - **Where requests go:** only to the app's own site and to the sync server. Each address MUST be
   listed in the page's Content-Security-Policy and approved under Principle I, and so MUST any
   service the server uses (for example, the one that sends sign-in emails).
@@ -129,4 +133,4 @@ PATCH for clarifications. Principles I and II are non-negotiable and can be rela
 MAJOR amendment. Every plan and review MUST verify compliance; any deviation MUST be justified
 in writing in the plan. Runtime guidance lives in `PRODUCT.md`, `DESIGN.md`, and `README.md`.
 
-**Version**: 3.0.1 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-24
+**Version**: 3.1.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-11-24
