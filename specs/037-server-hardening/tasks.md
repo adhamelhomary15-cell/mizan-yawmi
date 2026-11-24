@@ -31,5 +31,5 @@ description: "Task list for feature 037: harden the sync server before it is dep
 
 ## Phase 3: Docs and checks (points 6, 7)
 
-- [ ] T009 README: the PEPPER, its backup, and the constitution's version.
-- [ ] T010 Every `tools/check-*.js` and its self-test; `check-private`. Tick the tasks.
+- [x] T009 README: the PEPPER, its backup, and the constitution's version.
+- [x] T010 Every `tools/check-*.js` and its self-test; `check-private`. Tick the tasks.
