@@ -18,9 +18,11 @@ Date.now = () => clock;
 function server(){
   const emails = [];
   const env = {DB: localD1(), PEPPER: 'test-pepper-' + rnd(8), APP_URL, sendEmail: async m => { emails.push(m); }};
-  const call = async (method, path, body, token) => {
+  // ip: the CF-Connecting-IP header Cloudflare adds; without one, the per-IP limits are skipped.
+  const call = async (method, path, body, token, ip) => {
     const headers = {'Content-Type': 'application/json'};
     if (token) headers.Authorization = 'Bearer ' + token;
+    if (ip) headers['CF-Connecting-IP'] = ip;
     const r = await worker.fetch(new Request('https://sync.test' + path, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)}), env);
     return {status: r.status, body: r.status === 204 ? null : await r.json(), headers: r.headers};
   };
@@ -35,7 +37,7 @@ function server(){
   };
   const rows = () => {
     const out = [];
-    for (const t of ['accounts', 'signins', 'stores', 'email_tokens', 'failures']) out.push(...env.DB.sqlite.prepare('SELECT * FROM ' + t).all().map(r => [t, r]));
+    for (const t of ['accounts', 'signins', 'stores', 'email_tokens', 'attempts']) out.push(...env.DB.sqlite.prepare('SELECT * FROM ' + t).all().map(r => [t, r]));
     return out;
   };
   return {env, emails, call, linkToken, account, rows};
@@ -68,13 +70,14 @@ async function runAll(w, src){
     return r.status === 200 && JSON.stringify(r.body) === JSON.stringify({ok: true}) && before === after && s.emails.at(-1).subject === 'عندك حساب بالفعل' && !s.emails.at(-1).text.includes('#sync-');
   });
 
-  await check('five wrong sign-ins make the right one wait 15 minutes; a right one clears the count', async () => {
+  await check('ten wrong sign-ins on an account make the right one wait 5 minutes, from any IP; a right one clears the count', async () => {
     const s = server(), a = await s.account('owner@example.test');
-    for (let i = 0; i < 5; i++) if ((await s.call('POST', '/signin', {email: a.email, signinKey: rnd(32)})).status !== 401) return false;
-    const blocked = await s.call('POST', '/signin', {email: a.email, signinKey: a.signinKey});
-    clock += 15 * 60 * 1000 + 1;
-    const after = await s.call('POST', '/signin', {email: a.email, signinKey: a.signinKey});
-    return blocked.status === 429 && after.status === 200 && !s.rows().some(r => r[0] === 'failures');
+    for (let i = 0; i < 10; i++) if ((await s.call('POST', '/signin', {email: a.email, signinKey: rnd(32)}, undefined, '203.0.113.' + i)).status !== 401) return false;
+    const blocked = await s.call('POST', '/signin', {email: a.email, signinKey: a.signinKey}, undefined, '198.51.100.1');
+    clock += 5 * 60 * 1000 + 1;
+    const after = await s.call('POST', '/signin', {email: a.email, signinKey: a.signinKey}, undefined, '198.51.100.1');
+    return blocked.status === 429 && blocked.body.retryAfter === 300 && after.status === 200
+      && !s.rows().some(r => r[0] === 'attempts' && r[1].kind === 'signin' && r[1].who.startsWith('a:'));
   });
 
   await check('a store takes only the next version; otherwise the current copy comes back', async () => {
@@ -147,7 +150,7 @@ async function runAll(w, src){
     await s.call('POST', '/reset/start', {email: a.email});
     const del = await s.call('DELETE', '/account', undefined, a.token);
     const left = s.rows(), aId = left.find(r => r[0] === 'accounts' && r[1].email === b.email)[1].id;
-    return del.status === 200 && left.every(([t, r]) => (t === 'accounts' ? r.id : r.account_id) === aId) && left.some(r => r[0] === 'stores')
+    return del.status === 200 && left.every(([t, r]) => t === 'attempts' ? r.who === 'a:' + aId : (t === 'accounts' ? r.id : r.account_id) === aId) && left.some(r => r[0] === 'stores')
       && (await s.call('GET', '/versions', undefined, a.token)).status === 401;
   });
 
@@ -167,6 +170,89 @@ async function runAll(w, src){
     return r.status === 204 && r.headers.get('Access-Control-Allow-Origin') === 'https://app.test' && /Authorization/.test(r.headers.get('Access-Control-Allow-Headers'));
   });
 
+  await check('an address gets at most 3 emails an hour, silently: every answer stays 200, also for no account (037)', async () => {
+    const s = server(), a = await s.account('owner@example.test');
+    const answers = [];
+    for (let i = 0; i < 5; i++) answers.push((await s.call('POST', '/reset/start', {email: a.email})).status);
+    for (let i = 0; i < 5; i++) answers.push((await s.call('POST', '/reset/start', {email: 'nobody@example.test'})).status);
+    const capped = s.emails.filter(e => e.to === a.email).length;
+    clock += 60 * 60 * 1000 + 1;
+    await s.call('POST', '/reset/start', {email: a.email});
+    const later = s.emails.filter(e => e.to === a.email).length;
+    const t = server(), keys = () => ({email: 'new@example.test', salt: rnd(16), signinKey: rnd(32), keyByPassword: rnd(60), keyByRecovery: rnd(60)});
+    for (let i = 0; i < 5; i++) await t.call('POST', '/signup', keys());
+    return answers.every(x => x === 200) && capped === 3 && later === 4 && t.emails.length === 3
+      && t.rows().filter(r => r[0] === 'accounts').length === 1;
+  });
+
+  await check('one IP gets 10 email requests an hour, then 429 with a wait and no email; another IP still works (037)', async () => {
+    const s = server(), a = await s.account('owner@example.test'), sent = s.emails.length, statuses = [];
+    clock += 60 * 60 * 1000 + 1;
+    for (let i = 0; i < 10; i++) statuses.push((await s.call('POST', '/reset/start', {email: 'x' + i + '@example.test'}, undefined, '203.0.113.7')).status);
+    const eleventh = await s.call('POST', '/reset/start', {email: a.email}, undefined, '203.0.113.7');
+    const signup = await s.call('POST', '/signup', {email: 'n@example.test', salt: rnd(16), signinKey: rnd(32), keyByPassword: rnd(60), keyByRecovery: rnd(60)}, undefined, '203.0.113.7');
+    const other = await s.call('POST', '/reset/start', {email: a.email}, undefined, '198.51.100.2');
+    return statuses.every(x => x === 200) && eleventh.status === 429 && eleventh.body.error === 'wait' && eleventh.body.retryAfter === 3600
+      && signup.status === 429 && other.status === 200 && s.emails.length === sent + 1;
+  });
+
+  await check('20 wrong sign-ins from one IP stop that IP for 15 minutes; the owner signs in from another (037)', async () => {
+    const s = server(), a = await s.account('owner@example.test'), b = await s.account('other@example.test'), bad = '203.0.113.9';
+    for (let i = 0; i < 20; i++) await s.call('POST', '/signin', {email: [a.email, b.email, 'nobody@example.test'][i % 3], signinKey: rnd(32)}, undefined, bad);
+    const stopped = await s.call('POST', '/signin', {email: a.email, signinKey: a.signinKey}, undefined, bad);
+    const owner = await s.call('POST', '/signin', {email: a.email, signinKey: a.signinKey}, undefined, '198.51.100.4');
+    clock += 15 * 60 * 1000 + 1;
+    const back = await s.call('POST', '/signin', {email: b.email, signinKey: b.signinKey}, undefined, bad);
+    return stopped.status === 429 && stopped.body.retryAfter === 900 && owner.status === 200 && back.status === 200;
+  });
+
+  await check('a wrong password change 5 times makes the right one wait 15 minutes; a right one clears the count (037)', async () => {
+    const s = server(), a = await s.account('owner@example.test'), next = () => ({salt: rnd(16), newSigninKey: rnd(32), keyByPassword: rnd(60)});
+    for (let i = 0; i < 5; i++) if ((await s.call('POST', '/password', Object.assign({signinKey: rnd(32)}, next()), a.token)).status !== 401) return false;
+    const blocked = await s.call('POST', '/password', Object.assign({signinKey: a.signinKey}, next()), a.token);
+    clock += 15 * 60 * 1000 + 1;
+    const ok = await s.call('POST', '/password', Object.assign({signinKey: a.signinKey}, next()), a.token);
+    return blocked.status === 429 && ok.status === 200 && !s.rows().some(r => r[0] === 'attempts' && r[1].kind === 'password');
+  });
+
+  await check('a sign-in unused for 60 days stops working and is deleted; one used weekly still works after 90 days (037)', async () => {
+    const s = server(), a = await s.account('owner@example.test'), idle = (await s.call('POST', '/signin', {email: a.email, signinKey: a.signinKey})).body.token;
+    for (let d = 0; d < 13; d++) { clock += 7 * 24 * 60 * 60 * 1000; if ((await s.call('GET', '/versions', undefined, a.token)).status !== 200) return false; }
+    const gone = await s.call('GET', '/versions', undefined, idle);
+    return gone.status === 401 && s.rows().filter(r => r[0] === 'signins').length === 1;
+  });
+
+  await check('old sign-ins, old attempts and expired links are swept on the next sign-in (037)', async () => {
+    const s = server(), a = await s.account('owner@example.test');
+    await s.call('POST', '/signin', {email: a.email, signinKey: a.signinKey});
+    await s.call('POST', '/signin', {email: a.email, signinKey: rnd(32)});
+    await s.call('POST', '/reset/start', {email: a.email});
+    clock += 61 * 24 * 60 * 60 * 1000;
+    await s.call('POST', '/signin', {email: 'nobody@example.test', signinKey: rnd(32)});
+    const left = s.rows();
+    return !left.some(r => r[0] === 'signins' || r[0] === 'email_tokens' || r[0] === 'attempts');
+  });
+
+  await check('an account never confirmed gives the same made-up salt as no account, across sign-ups (037)', async () => {
+    const s = server(), email = 'pending@example.test', salt = async () => (await s.call('POST', '/prelogin', {email})).body.salt;
+    const before = await salt();
+    await s.call('POST', '/signup', {email, salt: rnd(16), signinKey: rnd(32), keyByPassword: rnd(60), keyByRecovery: rnd(60)});
+    const first = await salt();
+    const keys = {email, salt: rnd(16), signinKey: rnd(32), keyByPassword: rnd(60), keyByRecovery: rnd(60)};
+    await s.call('POST', '/signup', keys);
+    const second = await salt();
+    await s.call('POST', '/confirm', {token: s.linkToken('confirm')});
+    return before === first && first === second && (await salt()) === keys.salt;
+  });
+
+  await check('an IP is never stored as it came; only its keyed hash, and only in attempts (037)', async () => {
+    const s = server(), ip = '203.0.113.42';
+    await s.call('POST', '/reset/start', {email: 'nobody@example.test'}, undefined, ip);
+    await s.call('POST', '/signin', {email: 'nobody@example.test', signinKey: rnd(32)}, undefined, ip);
+    const dump = JSON.stringify(s.rows()), ipRows = s.rows().filter(r => r[0] === 'attempts' && r[1].who.startsWith('ip:'));
+    return !dump.includes(ip) && ipRows.length === 2 && ipRows.every(r => /^ip:[A-Za-z0-9_-]{43}$/.test(r[1].who));
+  });
+
   await check('the server never logs a request body or an account', () => {
     const logs = source.match(/console\.\w+\([^)]*\)/g) || [];
     return logs.length === 1 && logs[0] === "console.error('server error on ' + route)";
@@ -180,11 +266,22 @@ if (process.argv.includes('--self-test')) {
     ['any version is taken', s => s.replace('if (body.version !== (cur ? cur.version : 0) + 1) return', 'if (false) return').replace("+ 'WHERE stores.version = ?')", "+ 'WHERE ? IS NOT NULL')")],
     ['a token reads any account', s => s.replace("JOIN accounts a ON a.id = s.account_id WHERE s.token_hash = ?').bind(hash)", "JOIN accounts a ON a.id = s.account_id WHERE s.token_hash != ?').bind(hash)")],
     ['deleting the account leaves its stores', s => s.replace("['stores', 'signins',", "['signins',")],
-    ['failures are not slowed', s => s.replace('if (fails.n >= FAIL_LIMIT) return', 'if (false) return')],
+    ['failures are not slowed', s => s.replace("if (await over(env, 'signin', 'account', who)) return", 'if (false) return')],
+    ['an account stays locked 15 minutes', s => s.replace('signin: {account: [10, 5 * MIN]', 'signin: {account: [10, 15 * MIN]')],
+    ['wrong sign-ins do not slow the IP', s => s.replace("if (await over(env, 'signin', 'ip', ip)) return", 'if (false) return')],
+    ['an address gets every email', s => s.replace("if (await over(env, 'email', 'account', who)) return false;", '')],
+    ['an address at its limit is told to wait', s => s.replace("if (await over(env, 'email', 'account', who)) return false;", "if (await over(env, 'email', 'account', who)) throw new Error('wait');")],
+    ['an IP may ask for any number of emails', s => s.replaceAll("if (await over(env, 'email', 'ip', ip)) return", 'if (false) return')],
+    ['a password change has no guess limit', s => s.replace("if (await over(env, 'password', 'account', accountKey(a.id))) return", 'if (false) return')],
+    ['a sign-in never expires', s => s.replace('if (row.signin_seen < Date.now() - SIGNIN_LIFE) {', 'if (false) {')],
+    ['a sign-in expires from when it was made', s => s.replace('SELECT a.*, s.last_seen_at AS signin_seen', 'SELECT a.*, s.created_at AS signin_seen')],
+    ['nothing is swept', s => s.replace('async function sweep(env){\n  const now = Date.now();', 'async function sweep(env){\n  return;\n  const now = Date.now();')],
+    ['an unconfirmed account gives its own salt', s => s.replace('salt: a && a.confirmed_at ? a.salt :', 'salt: a ? a.salt :')],
+    ['the IP is stored as it came', s => s.replace("return ip ? 'ip:' + b64url(await hmac(env.PEPPER, 'ip:' + ip)) : null;", "return ip ? 'ip:' + ip : null;")],
     ['an unknown email gets a random salt', s => s.replace("(await hmac(env.PEPPER, 'salt:' + body.email)).slice(0, 16)", 'crypto.getRandomValues(new Uint8Array(16))')],
     ['a new password keeps other devices signed in', s => s.replace(",\n      env.DB.prepare('DELETE FROM signins WHERE account_id = ? AND token_hash != ?').bind(a.id, a.tokenHash)", '')],
     ['a reset link works twice', s => s.replace("env.DB.prepare('DELETE FROM email_tokens WHERE account_id = ? AND kind = ?').bind(t.account_id, 'reset'),", '')],
-    ['a known email is told apart at sign-up', s => s.replace("      return [200, {ok: true}];\n    }\n    if (old) await deleteAccount", "      return [409, {error: 'known'}];\n    }\n    if (old) await deleteAccount")],
+    ['a known email is told apart at sign-up', s => s.replace("      return [200, {ok: true}];\n    }\n    const verifier", "      return [409, {error: 'known'}];\n    }\n    const verifier")],
     ['a body is logged', s => s.replace("console.error('server error on ' + route);", "console.error('server error on ' + route, JSON.stringify(body));")]
   ];
   const dir = mkdtempSync(join(tmpdir(), 'mizan-server-'));

@@ -1,6 +1,7 @@
 -- The sync server's database (feature 025, Cloudflare D1, which is SQLite). It holds only what constitution 3.0.1,
 -- Principle III, allows: the email, a sign-in verifier and the devices' sign-ins, the data key encrypted by the
--- password and by the recovery code, and the encrypted stores with their size and save times. No plain data, no IP.
+-- password and by the recovery code, and the encrypted stores with their size and save times. No plain data. An IP is
+-- never stored: the abuse limits (feature 037, constitution 3.1.0) keep only a keyed hash of it, for at most an hour.
 
 CREATE TABLE IF NOT EXISTS accounts (
   id INTEGER PRIMARY KEY,
@@ -40,8 +41,12 @@ CREATE TABLE IF NOT EXISTS email_tokens (
 );
 CREATE INDEX IF NOT EXISTS email_tokens_expiry ON email_tokens (expires_at);
 
-CREATE TABLE IF NOT EXISTS failures (
-  account_id INTEGER NOT NULL,
+-- The abuse limits (feature 037): one row per counted attempt. who is 'a:<account id>' or 'ip:<HMAC of the IP>';
+-- kind is email, signin or password. Rows older than an hour are deleted as the server answers requests.
+CREATE TABLE IF NOT EXISTS attempts (
+  who TEXT NOT NULL,
+  kind TEXT NOT NULL,
   at INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS failures_account ON failures (account_id, at);
+CREATE INDEX IF NOT EXISTS attempts_who ON attempts (who, kind, at);
+CREATE INDEX IF NOT EXISTS attempts_at ON attempts (at);

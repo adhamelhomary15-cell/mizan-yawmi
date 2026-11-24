@@ -7,8 +7,16 @@
 
 const STORES = ['progress', 'workouts', 'settings'];
 const MAX_STORE = 2 * 1024 * 1024;           // characters of ciphertext per store
-const TOKEN_LIFE = 60 * 60 * 1000;           // email links: 1 hour
-const FAIL_WINDOW = 15 * 60 * 1000, FAIL_LIMIT = 5;
+const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+const TOKEN_LIFE = HOUR;                     // email links
+const SIGNIN_LIFE = 60 * DAY;                // a sign-in unused this long stops working (feature 037)
+// The abuse limits (feature 037): [attempts, window]; at the limit, the wait is the window. The longest window is an
+// hour, so older attempts are swept (constitution 3.1.0, Principle III).
+const LIMITS = {
+  email: {account: [3, HOUR], ip: [10, HOUR]},
+  signin: {account: [10, 5 * MIN], ip: [20, 15 * MIN]},
+  password: {account: [5, 15 * MIN]}
+};
 
 const enc = new TextEncoder();
 const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -43,15 +51,46 @@ async function sendEmail(env, to, subject, text){
     body: JSON.stringify({from: env.EMAIL_FROM, to, subject, text})});
   if (!r.ok) throw new Error('email ' + r.status);
 }
+// Who an attempt is counted against: the account, or the request's IP as a keyed hash (never the IP itself). No IP header
+// (local runs), no per-IP count.
+const accountKey = id => 'a:' + id;
+async function ipKey(env, request){
+  const ip = request.headers.get('CF-Connecting-IP');
+  return ip ? 'ip:' + b64url(await hmac(env.PEPPER, 'ip:' + ip)) : null;
+}
+async function over(env, kind, scope, who){
+  if (!who) return false;
+  const [max, window] = LIMITS[kind][scope];
+  const r = await env.DB.prepare('SELECT COUNT(*) AS n FROM attempts WHERE who = ? AND kind = ? AND at > ?').bind(who, kind, Date.now() - window).first();
+  return r.n >= max;
+}
+const note = (env, kind, who) => who ? env.DB.prepare('INSERT INTO attempts (who, kind, at) VALUES (?, ?, ?)').bind(who, kind, Date.now()).run() : null;
+const clearAttempts = (env, kind, id) => env.DB.prepare('DELETE FROM attempts WHERE who = ? AND kind = ?').bind(accountKey(id), kind);
+const wait = (kind, scope) => [429, {error: 'wait', retryAfter: LIMITS[kind][scope][1] / 1000}];
+// Old sign-ins, expired links and attempts past the longest window, deleted as requests come (no scheduled job).
+async function sweep(env){
+  const now = Date.now();
+  await env.DB.batch([env.DB.prepare('DELETE FROM signins WHERE last_seen_at < ?').bind(now - SIGNIN_LIFE),
+    env.DB.prepare('DELETE FROM email_tokens WHERE expires_at < ?').bind(now),
+    env.DB.prepare('DELETE FROM attempts WHERE at < ?').bind(now - HOUR)]);
+}
+// Every email goes through here. Past the account's limit it is not sent, and the route answers as usual: a «wait»
+// here would tell a stranger that the address has an account.
+async function mail(env, account, subject, text){
+  const who = accountKey(account.id);
+  if (await over(env, 'email', 'account', who)) return false;
+  await note(env, 'email', who);
+  await sendEmail(env, account.email, subject, text);
+  return true;
+}
 async function emailLink(env, account, kind){
   const token = randomToken(), now = Date.now();
-  await env.DB.prepare('DELETE FROM email_tokens WHERE expires_at < ?').bind(now).run();
   await env.DB.prepare('INSERT INTO email_tokens (token_hash, account_id, kind, expires_at) VALUES (?, ?, ?, ?)').bind(await sha256(token), account.id, kind, now + TOKEN_LIFE).run();
   const link = env.APP_URL + '#sync-' + kind + '=' + token;
   const text = kind === 'confirm'
     ? 'أكّد إيميلك عشان المزامنة تبدأ في ميزان يومي:\n' + link + '\n\nاللينك شغال ساعة واحدة. لو ماعملتش حساب، سيب الرسالة دي.'
     : 'عشان تحط باسورد جديد للمزامنة في ميزان يومي:\n' + link + '\n\nاللينك شغال ساعة واحدة. لو ماطلبتش ده، سيب الرسالة دي، وباسوردك زي ما هو.';
-  await sendEmail(env, account.email, kind === 'confirm' ? 'أكّد إيميلك' : 'باسورد جديد', text);
+  await mail(env, account, kind === 'confirm' ? 'أكّد إيميلك' : 'باسورد جديد', text);
 }
 // A single-use email token of a kind, still valid; it is spent by the caller.
 async function emailToken(env, token, kind){
@@ -69,36 +108,51 @@ async function signedIn(env, request){
   const m = /^Bearer ([A-Za-z0-9_-]{20,100})$/.exec(request.headers.get('Authorization') || '');
   if (!m) return null;
   const hash = await sha256(m[1]);
-  const row = await env.DB.prepare('SELECT a.* FROM signins s JOIN accounts a ON a.id = s.account_id WHERE s.token_hash = ?').bind(hash).first();
+  const row = await env.DB.prepare('SELECT a.*, s.last_seen_at AS signin_seen FROM signins s JOIN accounts a ON a.id = s.account_id WHERE s.token_hash = ?').bind(hash).first();
   if (!row) return null;
+  // unused for 60 days: signed out (feature 037); use keeps a device signed in
+  if (row.signin_seen < Date.now() - SIGNIN_LIFE) {
+    await env.DB.prepare('DELETE FROM signins WHERE token_hash = ?').bind(hash).run();
+    return null;
+  }
   await env.DB.prepare('UPDATE signins SET last_seen_at = ? WHERE token_hash = ?').bind(Date.now(), hash).run();
   return Object.assign(row, {tokenHash: hash});
 }
 const verifierOf = (env, signinKey) => sha256(signinKey + '.' + env.PEPPER);
 const byEmail = (env, email) => env.DB.prepare('SELECT * FROM accounts WHERE email = ?').bind(email).first();
 async function deleteAccount(env, id){
-  await env.DB.batch(['stores', 'signins', 'email_tokens', 'failures', 'accounts'].map(t =>
-    env.DB.prepare('DELETE FROM ' + t + ' WHERE ' + (t === 'accounts' ? 'id' : 'account_id') + ' = ?').bind(id)));
+  await env.DB.batch(['stores', 'signins', 'email_tokens', 'accounts'].map(t =>
+    env.DB.prepare('DELETE FROM ' + t + ' WHERE ' + (t === 'accounts' ? 'id' : 'account_id') + ' = ?').bind(id))
+    .concat(env.DB.prepare('DELETE FROM attempts WHERE who = ?').bind(accountKey(id))));
 }
 
 const routes = {
-  // The salt to derive keys with. An unknown email gets one that is always the same, so nobody can tell it apart.
+  // The salt to derive keys with. An unknown email, or an account never confirmed (which cannot sign in), gets one that is
+  // always the same for that email, so nobody can tell either apart from the other (feature 037).
   async 'POST /prelogin'(env, body){
     if (!isEmail(body.email)) return [400, {error: 'email'}];
     const a = await byEmail(env, body.email);
-    return [200, {salt: a ? a.salt : b64url((await hmac(env.PEPPER, 'salt:' + body.email)).slice(0, 16))}];
+    return [200, {salt: a && a.confirmed_at ? a.salt : b64url((await hmac(env.PEPPER, 'salt:' + body.email)).slice(0, 16))}];
   },
   // The same answer for a new email and a known one; a known, confirmed email only gets a note by email.
-  async 'POST /signup'(env, body){
+  // An IP asking for too many emails waits; an address past its own limit is simply not written to (see mail).
+  async 'POST /signup'(env, body, x, name, ip){
     if (!isEmail(body.email) || !isB64(body.salt, 40) || !isKey(body.signinKey) || !isKey(body.keyByPassword) || !isKey(body.keyByRecovery)) return [400, {error: 'fields'}];
+    if (await over(env, 'email', 'ip', ip)) return wait('email', 'ip');
+    await note(env, 'email', ip);
+    await sweep(env);
     const old = await byEmail(env, body.email);
     if (old && old.confirmed_at) {
-      await sendEmail(env, old.email, 'عندك حساب بالفعل', 'حد حاول يعمل حساب مزامنة في ميزان يومي بإيميلك، وإنت عندك حساب بالفعل. لو ده إنت، ادخل بباسوردك أو استخدم «نسيت الباسورد».');
+      await mail(env, old, 'عندك حساب بالفعل', 'حد حاول يعمل حساب مزامنة في ميزان يومي بإيميلك، وإنت عندك حساب بالفعل. لو ده إنت، ادخل بباسوردك أو استخدم «نسيت الباسورد».');
       return [200, {ok: true}];
     }
-    if (old) await deleteAccount(env, old.id);
-    await env.DB.prepare('INSERT INTO accounts (email, salt, verifier, key_by_password, key_by_recovery, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(body.email, body.salt, await verifierOf(env, body.signinKey), body.keyByPassword, body.keyByRecovery, Date.now()).run();
+    const verifier = await verifierOf(env, body.signinKey);
+    // an account never confirmed is updated in place, so its email count stays; its old links stop working
+    if (old) await env.DB.batch([env.DB.prepare('UPDATE accounts SET salt = ?, verifier = ?, key_by_password = ?, key_by_recovery = ?, created_at = ? WHERE id = ?')
+      .bind(body.salt, verifier, body.keyByPassword, body.keyByRecovery, Date.now(), old.id),
+      env.DB.prepare('DELETE FROM email_tokens WHERE account_id = ?').bind(old.id)]);
+    else await env.DB.prepare('INSERT INTO accounts (email, salt, verifier, key_by_password, key_by_recovery, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(body.email, body.salt, verifier, body.keyByPassword, body.keyByRecovery, Date.now()).run();
     await emailLink(env, await byEmail(env, body.email), 'confirm');
     return [200, {ok: true}];
   },
@@ -109,18 +163,22 @@ const routes = {
       env.DB.prepare('DELETE FROM email_tokens WHERE token_hash = ?').bind(t.token_hash)]);
     return [200, {ok: true}];
   },
-  async 'POST /signin'(env, body){
+  // Wrong keys slow the IP that sends them (over every account) and, for a shorter time, the account itself, so a
+  // stranger cannot keep the owner out for long, and not at all from another network (feature 037).
+  async 'POST /signin'(env, body, x, name, ip){
     if (!isEmail(body.email) || !isKey(body.signinKey)) return [400, {error: 'fields'}];
+    if (await over(env, 'signin', 'ip', ip)) return wait('signin', 'ip');
+    await sweep(env);
     const a = await byEmail(env, body.email);
-    if (!a || !a.confirmed_at) return [401, {error: 'signin'}];
-    const since = Date.now() - FAIL_WINDOW;
-    const fails = await env.DB.prepare('SELECT COUNT(*) AS n FROM failures WHERE account_id = ? AND at > ?').bind(a.id, since).first();
-    if (fails.n >= FAIL_LIMIT) return [429, {error: 'wait', retryAfter: FAIL_WINDOW / 1000}];
+    if (!a || !a.confirmed_at) { await note(env, 'signin', ip); return [401, {error: 'signin'}]; }
+    const who = accountKey(a.id);
+    if (await over(env, 'signin', 'account', who)) return wait('signin', 'account');
     if (!same(await verifierOf(env, body.signinKey), a.verifier)) {
-      await env.DB.prepare('INSERT INTO failures (account_id, at) VALUES (?, ?)').bind(a.id, Date.now()).run();
+      await note(env, 'signin', who);
+      await note(env, 'signin', ip);
       return [401, {error: 'signin'}];
     }
-    await env.DB.prepare('DELETE FROM failures WHERE account_id = ?').bind(a.id).run();
+    await clearAttempts(env, 'signin', a.id).run();
     return [200, {token: await newSignin(env, a.id), keyByPassword: a.key_by_password}];
   },
   async 'POST /signout'(env, body, a){
@@ -152,13 +210,19 @@ const routes = {
   // A new password: the old sign-in key proves it is the owner; every other device signs in again.
   async 'POST /password'(env, body, a){
     if (!isKey(body.signinKey) || !isB64(body.salt, 40) || !isKey(body.newSigninKey) || !isKey(body.keyByPassword)) return [400, {error: 'fields'}];
-    if (!same(await verifierOf(env, body.signinKey), a.verifier)) return [401, {error: 'signin'}];
+    // a signed-in device is not a free guessing machine (feature 037)
+    if (await over(env, 'password', 'account', accountKey(a.id))) return wait('password', 'account');
+    if (!same(await verifierOf(env, body.signinKey), a.verifier)) { await note(env, 'password', accountKey(a.id)); return [401, {error: 'signin'}]; }
     await env.DB.batch([env.DB.prepare('UPDATE accounts SET salt = ?, verifier = ?, key_by_password = ? WHERE id = ?').bind(body.salt, await verifierOf(env, body.newSigninKey), body.keyByPassword, a.id),
-      env.DB.prepare('DELETE FROM signins WHERE account_id = ? AND token_hash != ?').bind(a.id, a.tokenHash)]);
+      env.DB.prepare('DELETE FROM signins WHERE account_id = ? AND token_hash != ?').bind(a.id, a.tokenHash),
+      clearAttempts(env, 'password', a.id)]);
     return [200, {ok: true}];
   },
-  async 'POST /reset/start'(env, body){
+  async 'POST /reset/start'(env, body, x, name, ip){
     if (!isEmail(body.email)) return [400, {error: 'email'}];
+    if (await over(env, 'email', 'ip', ip)) return wait('email', 'ip');
+    await note(env, 'email', ip);
+    await sweep(env);
     const a = await byEmail(env, body.email);
     if (a && a.confirmed_at) await emailLink(env, a, 'reset');
     return [200, {ok: true}];
@@ -180,7 +244,7 @@ const routes = {
       .bind(body.salt, await verifierOf(env, body.signinKey), body.keyByPassword, body.keyByRecovery, t.account_id),
       env.DB.prepare('DELETE FROM signins WHERE account_id = ?').bind(t.account_id),
       env.DB.prepare('DELETE FROM email_tokens WHERE account_id = ? AND kind = ?').bind(t.account_id, 'reset'),
-      env.DB.prepare('DELETE FROM failures WHERE account_id = ?').bind(t.account_id)];
+      clearAttempts(env, 'signin', t.account_id), clearAttempts(env, 'password', t.account_id)];
     if (body.mode === 'wipe') stmts.push(env.DB.prepare('DELETE FROM stores WHERE account_id = ?').bind(t.account_id));
     await env.DB.batch(stmts);
     return [200, {token: await newSignin(env, t.account_id)}];
@@ -212,7 +276,7 @@ export default {
       if (!account) return reply(env, 401, {error: 'signin'});
     }
     try {
-      const [status, out] = await routes[route](env, body, account, name);
+      const [status, out] = await routes[route](env, body, account, name, await ipKey(env, request));
       return reply(env, status, out);
     } catch (e) {
       // the route only, never the body or the account
